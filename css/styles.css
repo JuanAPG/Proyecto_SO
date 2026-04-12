@@ -1,0 +1,680 @@
+/* ============================================================
+   OSim — Sistema de Diseño compartido
+   Archivo: styles.css
+   Instrucciones: Este archivo lo importan TODOS los módulos.
+   NO modificar sin avisar al equipo.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   1. IMPORTAR FUENTE
+   ---------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ----------------------------------------------------------
+   2. VARIABLES DE COLOR Y TIPOGRAFÍA
+   ---------------------------------------------------------- */
+:root {
+  /* Paleta principal SAP Blue */
+  --color-navy:        #042C53;   /* Navbar, fondos oscuros */
+  --color-blue-900:    #0C447C;
+  --color-blue-700:    #185FA5;   /* Botón primario, valores destacados */
+  --color-blue-500:    #378ADD;   /* Elementos secundarios, Ready */
+  --color-blue-200:    #B5D4F4;   /* Fondos de marcos usados */
+  --color-blue-50:     #E6F1FB;   /* Fondos con énfasis suave */
+
+  /* Estados de proceso */
+  --color-new:         #888780;   /* New */
+  --color-ready:       #378ADD;   /* Ready */
+  --color-running:     #639922;   /* Running */
+  --color-running-bg:  #EAF3DE;
+  --color-waiting:     #EF9F27;   /* Waiting */
+  --color-waiting-bg:  #FAEEDA;
+  --color-terminated:  #888780;   /* Terminated */
+  --color-fault:       #E24B4A;   /* Page fault / error */
+  --color-fault-bg:    #FCEBEB;
+  --color-fault-dark:  #A32D2D;
+
+  /* Superficies */
+  --surface-0:         #FFFFFF;
+  --surface-1:         #F4F6F9;   /* Fondo general de la app */
+  --surface-2:         #EDF1F7;   /* Paneles y secciones */
+  --border:            rgba(4, 44, 83, 0.12);
+  --border-strong:     rgba(4, 44, 83, 0.22);
+
+  /* Texto */
+  --text-primary:      #0D1B2A;
+  --text-secondary:    #4A5E72;
+  --text-muted:        #8298AC;
+  --text-on-dark:      #FFFFFF;
+  --text-on-blue:      #E6F1FB;
+
+  /* Tipografía */
+  --font-sans:   'IBM Plex Sans', sans-serif;
+  --font-mono:   'IBM Plex Mono', monospace;
+
+  /* Espaciado */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+
+  /* Sombras */
+  --shadow-sm:   0 1px 3px rgba(4,44,83,0.08);
+  --shadow-md:   0 4px 12px rgba(4,44,83,0.10);
+  --shadow-lg:   0 8px 24px rgba(4,44,83,0.12);
+
+  /* Transiciones */
+  --transition:  0.18s ease;
+}
+
+/* ----------------------------------------------------------
+   3. RESET Y BASE
+   ---------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ----------------------------------------------------------
+   4. NAVBAR
+   ---------------------------------------------------------- */
+.navbar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  background: var(--color-navy);
+  padding: 0 24px;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.navbar-logo {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-on-dark);
+  letter-spacing: 0.02em;
+  margin-right: 32px;
+  text-decoration: none;
+}
+
+.navbar-logo span {
+  color: var(--color-blue-500);
+}
+
+.navbar-item {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.60);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+  transition: color var(--transition), border-color var(--transition);
+  user-select: none;
+}
+
+.navbar-item:hover {
+  color: rgba(255,255,255,0.90);
+}
+
+.navbar-item.active {
+  color: var(--text-on-dark);
+  border-bottom: 2px solid var(--color-blue-500);
+  font-weight: 500;
+}
+
+/* ----------------------------------------------------------
+   5. LAYOUT Y CONTENEDORES
+   ---------------------------------------------------------- */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--surface-0);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.panel {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+/* ----------------------------------------------------------
+   6. BOTONES
+   ---------------------------------------------------------- */
+
+/* Botón primario (azul sólido) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition), transform var(--transition), opacity var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--color-blue-700);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--color-blue-900);
+}
+
+/* Botón secundario (borde azul) */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-blue-700);
+  border: 1.5px solid var(--color-blue-700);
+}
+
+.btn-secondary:hover {
+  background: var(--color-blue-50);
+}
+
+/* Botón ghost (borde gris) */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 0.5px solid var(--border-strong);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-2);
+}
+
+/* Botón de peligro */
+.btn-danger {
+  background: var(--color-fault-bg);
+  color: var(--color-fault-dark);
+  border: 0.5px solid rgba(226,75,74,0.25);
+}
+
+.btn-danger:hover {
+  background: #F7C1C1;
+}
+
+/* Tamaños */
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: 10px 24px;
+  font-size: 14px;
+}
+
+/* ----------------------------------------------------------
+   7. BADGES DE ESTADO
+   ---------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.badge-new {
+  background: #F1EFE8;
+  color: #5F5E5A;
+}
+.badge-new::before { background: var(--color-new); }
+
+.badge-ready {
+  background: var(--color-blue-50);
+  color: var(--color-blue-900);
+}
+.badge-ready::before { background: var(--color-ready); }
+
+.badge-running {
+  background: var(--color-running-bg);
+  color: #27500A;
+}
+.badge-running::before { background: var(--color-running); }
+
+.badge-waiting {
+  background: var(--color-waiting-bg);
+  color: #633806;
+}
+.badge-waiting::before { background: var(--color-waiting); }
+
+.badge-terminated {
+  background: #F1EFE8;
+  color: #5F5E5A;
+}
+.badge-terminated::before { background: var(--color-terminated); }
+
+.badge-fault {
+  background: var(--color-fault-bg);
+  color: var(--color-fault-dark);
+}
+.badge-fault::before { background: var(--color-fault); }
+
+/* ----------------------------------------------------------
+   8. TARJETAS DE MÉTRICA
+   ---------------------------------------------------------- */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.metric-card {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-blue-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value.fault {
+  color: var(--color-fault-dark);
+}
+
+.metric-value.good {
+  color: var(--color-running);
+}
+
+/* ----------------------------------------------------------
+   9. TABLA DE PROCESOS
+   ---------------------------------------------------------- */
+.process-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.process-table th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.process-table td {
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.process-table tr:last-child td {
+  border-bottom: none;
+}
+
+.process-table tr:hover td {
+  background: var(--surface-1);
+}
+
+.process-table td.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ----------------------------------------------------------
+   10. DIAGRAMA DE GANTT
+   ---------------------------------------------------------- */
+.gantt-container {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.gantt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.gantt-pid {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+
+.gantt-track {
+  flex: 1;
+  height: 28px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  position: relative;
+  min-width: 300px;
+}
+
+.gantt-block {
+  position: absolute;
+  top: 2px;
+  height: calc(100% - 4px);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  transition: opacity var(--transition);
+}
+
+/* Colores para los procesos en el Gantt (hasta 6 procesos) */
+.gantt-p1 { background: var(--color-blue-700); color: #fff; }
+.gantt-p2 { background: var(--color-blue-500); color: #fff; }
+.gantt-p3 { background: var(--color-blue-200); color: var(--color-blue-900); }
+.gantt-p4 { background: #C0DD97; color: #27500A; }
+.gantt-p5 { background: #FAC775; color: #633806; }
+.gantt-p6 { background: #F5C4B3; color: #993C1D; }
+
+.gantt-timeline {
+  display: flex;
+  padding-left: 38px;
+  margin-top: 2px;
+}
+
+.gantt-tick {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ----------------------------------------------------------
+   11. MARCOS DE MEMORIA
+   ---------------------------------------------------------- */
+.memory-grid {
+  display: grid;
+  gap: 5px;
+  /* Las columnas se definen dinámicamente con JS:
+     style="grid-template-columns: repeat(N, 1fr)" */
+}
+
+.memory-frame {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  transition: background var(--transition), border-color var(--transition), transform 0.15s ease;
+}
+
+.memory-frame-index {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.memory-frame-content {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Estados de marco */
+.frame-empty {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.frame-used {
+  background: var(--color-blue-50);
+  border-color: var(--color-blue-200);
+  color: var(--color-blue-900);
+}
+
+.frame-fault {
+  background: var(--color-fault-bg);
+  border-color: rgba(226,75,74,0.4);
+  color: var(--color-fault-dark);
+  animation: frameFault 0.5s ease;
+}
+
+.frame-evicted {
+  background: var(--color-waiting-bg);
+  border-color: rgba(239,159,39,0.4);
+  color: #633806;
+  animation: frameFault 0.5s ease;
+}
+
+@keyframes frameFault {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ----------------------------------------------------------
+   12. SELECTOR DE ALGORITMO (BOTONES TOGGLE)
+   ---------------------------------------------------------- */
+.algo-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.algo-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-0);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+
+.algo-btn:hover {
+  border-color: var(--color-blue-500);
+  color: var(--color-blue-700);
+  background: var(--color-blue-50);
+}
+
+.algo-btn.active {
+  background: var(--color-blue-700);
+  color: #fff;
+  border-color: var(--color-blue-700);
+}
+
+/* ----------------------------------------------------------
+   13. CAMPOS DE ENTRADA
+   ---------------------------------------------------------- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-0);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--color-blue-500);
+  box-shadow: 0 0 0 3px rgba(55,138,221,0.15);
+}
+
+.form-select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-0);
+  cursor: pointer;
+  outline: none;
+}
+
+.form-select:focus {
+  border-color: var(--color-blue-500);
+  box-shadow: 0 0 0 3px rgba(55,138,221,0.15);
+}
+
+/* ----------------------------------------------------------
+   14. DIVIDER Y UTILIDADES
+   ---------------------------------------------------------- */
+.divider {
+  height: 0.5px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-small {
+  font-size: 11px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+
+/* ----------------------------------------------------------
+   15. SCROLLBAR (para navegadores Webkit)
+   ---------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-blue-200);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-blue-500);
+}
