@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSim — Paginación de Memoria</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ----------------------------------------------------------
+       Chips de la cadena de referencias
+       ---------------------------------------------------------- */
+    .ref-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .ref-chip:hover {
+      border-color: var(--color-blue-500);
+      color: var(--color-blue-700);
+    }
+    .ref-chip-active {
+      background: var(--color-blue-700);
+      color: #fff;
+      border-color: var(--color-blue-700);
+      transform: scale(1.18);
+    }
+    .ref-chip-fault {
+      background: var(--color-fault-bg);
+      color: var(--color-fault-dark);
+      border-color: rgba(226, 75, 74, 0.4);
+    }
+    .ref-chip-hit {
+      background: var(--color-running-bg);
+      color: #27500A;
+      border-color: #C0DD97;
+    }
+
+    /* ----------------------------------------------------------
+       Layout dos columnas
+       ---------------------------------------------------------- */
+    .two-col {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 820px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* Botones de step deshabilitados */
+    .step-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-logo">OS<span>im</span></a>
+  <a href="index.html"      class="navbar-item">Procesos</a>
+  <a href="scheduling.html" class="navbar-item">Scheduling</a>
+  <a href="paginacion.html" class="navbar-item active">Paginación</a>
+  <a href="metricas.html"   class="navbar-item">Métricas</a>
+</nav>
+
+<!-- ============================================================
+     CONTENIDO PRINCIPAL
+     ============================================================ -->
+<div class="page-container">
+
+  <h1 class="page-title">Simulador de Paginación de Memoria</h1>
+  <p class="page-subtitle">
+    Visualiza paso a paso cómo FIFO, LRU, OPT, LFU y CLOCK reemplazan páginas en los marcos de memoria.
+  </p>
+
+  <div class="two-col">
+
+    <!-- ====================================================
+         COLUMNA IZQUIERDA — Formulario de configuración
+         ==================================================== -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+      <!-- Configuración de memoria -->
+      <div class="card">
+        <div class="card-title">Configuración de Memoria</div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+
+          <div class="form-group">
+            <label class="form-label" for="inp-frames">Número de marcos</label>
+            <input id="inp-frames"
+                   type="number"
+                   class="form-input"
+                   min="1" max="16" value="3"
+                   placeholder="Ej. 3" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inp-pagesize">Tamaño de página (KB)</label>
+            <input id="inp-pagesize"
+                   type="number"
+                   class="form-input"
+                   min="1" value="4"
+                   placeholder="Ej. 4" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inp-memoria">Tamaño de memoria total (KB)</label>
+            <input id="inp-memoria"
+                   type="number"
+                   class="form-input"
+                   min="1" value="64"
+                   placeholder="Ej. 64" />
+          </div>
+
+          <!-- Input de archivo oculto -->
+          <input type="file"
+                 id="file-input-memoria"
+                 accept=".txt"
+                 style="display:none;"
+                 onchange="onArchivoMemoriaSeleccionado(event)" />
+
+          <button class="btn btn-ghost btn-sm"
+                  style="margin-top:4px;"
+                  onclick="cargarArchivoMemoria()">
+            Cargar desde archivo
+          </button>
+
+        </div>
+      </div><!-- /card Configuración -->
+
+      <!-- Cadena de referencias -->
+      <div class="card">
+        <div class="card-title">Cadena de Referencias</div>
+
+        <div class="form-group">
+          <label class="form-label" for="inp-referencias">
+            Páginas separadas por espacio
+          </label>
+          <input id="inp-referencias"
+                 type="text"
+                 class="form-input"
+                 placeholder="Ej. 7 0 1 2 0 3 0 4 2 3"
+                 style="font-family:var(--font-mono);" />
+        </div>
+        <p class="text-muted text-small mt-8">
+          Ingresa números enteros &ge; 0 separados por espacios.
+        </p>
+      </div><!-- /card Cadena -->
+
+      <!-- Selector de algoritmo + botones de acción -->
+      <div class="card">
+        <div class="card-title">Algoritmo de Reemplazo</div>
+
+        <div class="algo-selector">
+          <button class="algo-btn active" data-algo="FIFO"
+                  onclick="seleccionarAlgoritmo('FIFO')">FIFO</button>
+          <button class="algo-btn" data-algo="LRU"
+                  onclick="seleccionarAlgoritmo('LRU')">LRU</button>
+          <button class="algo-btn" data-algo="OPT"
+                  onclick="seleccionarAlgoritmo('OPT')">OPT</button>
+          <button class="algo-btn" data-algo="LFU"
+                  onclick="seleccionarAlgoritmo('LFU')">LFU</button>
+          <button class="algo-btn" data-algo="CLOCK"
+                  onclick="seleccionarAlgoritmo('CLOCK')">CLOCK</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+          <button class="btn btn-primary"
+                  style="width:100%;"
+                  onclick="iniciarSimulacion()">
+            Simular
+          </button>
+          <button class="btn btn-ghost btn-sm"
+                  onclick="resetearSimulacion()">
+            Resetear
+          </button>
+        </div>
+      </div><!-- /card Algoritmo -->
+
+    </div><!-- /columna izquierda -->
+
+    <!-- ====================================================
+         COLUMNA DERECHA — Visualización
+         ==================================================== -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+      <!-- Estado actual + step-by-step -->
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <div class="card-title" style="margin-bottom:0;">Estado Actual</div>
+
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div>
+              <div class="metric-label">Referencia</div>
+              <div id="ref-actual" class="metric-value">—</div>
+            </div>
+            <div id="fault-badge"></div>
+          </div>
+        </div>
+
+        <!-- Controles step-by-step (ocultos hasta que se simule) -->
+        <div id="controles-steps"
+             style="display:none; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+          <button id="btn-first" class="btn btn-ghost btn-sm step-btn"
+                  onclick="primerPaso()" title="Primer paso">⏮</button>
+          <button id="btn-prev"  class="btn btn-ghost btn-sm step-btn"
+                  onclick="anteriorPaso()" title="Paso anterior">◀</button>
+          <span id="step-counter"
+                class="text-mono text-muted"
+                style="min-width:64px; text-align:center;">—</span>
+          <button id="btn-next"  class="btn btn-ghost btn-sm step-btn"
+                  onclick="siguientePaso()" title="Siguiente paso">▶</button>
+          <button id="btn-last"  class="btn btn-ghost btn-sm step-btn"
+                  onclick="ultimoPaso()" title="Último paso">⏭</button>
+        </div>
+
+        <!-- Cadena de referencias visual -->
+        <div class="card-title" style="font-size:11px; margin-bottom:8px;">
+          Cadena de referencias
+        </div>
+        <div id="cadena-visual"
+             class="panel"
+             style="display:flex; flex-wrap:wrap; gap:5px; min-height:44px; align-items:center;">
+          <p class="text-muted text-small">Aún no hay simulación.</p>
+        </div>
+      </div><!-- /card Estado -->
+
+      <!-- Marcos de memoria -->
+      <div class="card">
+        <div class="card-title">Marcos de Memoria</div>
+        <div id="memoria-grid" class="memory-grid">
+          <p style="color:var(--text-muted); font-size:13px; padding:16px 0;">
+            Configura y presiona Simular.
+          </p>
+        </div>
+      </div><!-- /card Marcos -->
+
+      <!-- Métricas de la simulación -->
+      <div class="card">
+        <div class="card-title">Métricas</div>
+        <div id="metricas-memoria" class="metrics-grid">
+          <p style="color:var(--text-muted); font-size:13px;">Sin datos aún.</p>
+        </div>
+      </div><!-- /card Métricas -->
+
+    </div><!-- /columna derecha -->
+
+  </div><!-- /two-col -->
+</div><!-- /page-container -->
+
+<!-- ============================================================
+     SCRIPTS
+     Nota: ui.js debe cargarse antes que paginacion.js porque
+     paginacion.js usa funciones definidas en ui.js.
+     ============================================================ -->
+<script src="js/ui.js"></script>
+<script src="js/paginacion.js"></script>
+
+</body>
+</html>

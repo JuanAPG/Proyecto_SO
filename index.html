@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSim — Simulador Visual de Sistemas Operativos</title>
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* ============================================================
+       ANIMACIONES DE ENTRADA
+       ============================================================ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(32px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes pulseRing {
+      0%   { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    @keyframes scanLine {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(400%);  }
+    }
+    @keyframes blockGrow {
+      from { width: 0; opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes framePop {
+      0%   { transform: scale(0.85); opacity: 0; }
+      60%  { transform: scale(1.06); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    /* ============================================================
+       HERO — fondo oscuro con patrón de puntos
+       ============================================================ */
+    .hero {
+      background:
+        radial-gradient(circle at 1px 1px, rgba(55,138,221,0.18) 1px, transparent 0)
+        0 0 / 28px 28px,
+        linear-gradient(160deg, #021E3A 0%, var(--color-navy) 55%, #0C3A6A 100%);
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Brillo sutil en la esquina superior derecha */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -80px;
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(55,138,221,0.14) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 64px 24px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 48px;
+      align-items: center;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* CHIP educativo */
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(55,138,221,0.18);
+      border: 1px solid rgba(55,138,221,0.40);
+      color: var(--color-blue-200);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      width: fit-content;
+      animation: fadeIn 0.5s ease both;
+    }
+
+    .hero-chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-blue-500);
+      position: relative;
+    }
+    .hero-chip-dot::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: var(--color-blue-500);
+      animation: pulseRing 1.6s ease-out infinite;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 600;
+      color: var(--text-on-dark);
+      line-height: 1.15;
+      margin-bottom: 16px;
+      animation: fadeInUp 0.55s ease 0.1s both;
+    }
+
+    .hero-title span {
+      color: var(--color-blue-500);
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.62);
+      line-height: 1.65;
+      max-width: 480px;
+      margin-bottom: 32px;
+      animation: fadeInUp 0.55s ease 0.2s both;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.55s ease 0.3s both;
+    }
+
+    /* ============================================================
+       PANEL DECORATIVO — mini simulación en el hero
+       ============================================================ */
+    .hero-panel {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      backdrop-filter: blur(4px);
+      animation: slideInRight 0.7s ease 0.25s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* línea de escaneo animada */
+    .hero-panel::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 25%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(55,138,221,0.07), transparent);
+      animation: scanLine 3.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .panel-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.40);
+    }
+
+    .panel-live {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--color-running);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-running);
+    }
+
+    /* Mini Gantt decorativo */
+    .mini-gantt {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+
+    .mini-gantt-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-pid {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      width: 18px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .mini-track {
+      flex: 1;
+      height: 20px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mini-block {
+      position: absolute;
+      top: 2px;
+      height: calc(100% - 4px);
+      border-radius: 2px;
+      animation: blockGrow 0.6s ease both;
+    }
+
+    /* Mini memoria decorativa */
+    .mini-memory {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .mini-frame {
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      animation: framePop 0.4s ease both;
+    }
+
+    .mini-frame-idx  { color: rgba(255,255,255,0.30); line-height: 1; }
+    .mini-frame-val  { font-weight: 600; line-height: 1.4; }
+
+    .mf-empty   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+    .mf-used    { background: rgba(55,138,221,0.22);  border: 1px solid rgba(55,138,221,0.35); color: var(--color-blue-200); }
+    .mf-fault   { background: rgba(226,75,74,0.22);   border: 1px solid rgba(226,75,74,0.40);  color: #F5AAAA; }
+    .mf-evicted { background: rgba(239,159,39,0.18);  border: 1px solid rgba(239,159,39,0.35); color: #FAC775; }
+
+    .panel-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 14px 0;
+    }
+
+    /* Mini métricas en el panel hero */
+    .mini-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mini-metric {
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .mini-metric-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 3px;
+    }
+
+    .mini-metric-val {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .mini-val-blue   { color: var(--color-blue-500); }
+    .mini-val-green  { color: var(--color-running); }
+    .mini-val-red    { color: var(--color-fault); }
+
+    /* ============================================================
+       STATS STRIP
+       ============================================================ */
+    .stats-strip {
+      background: var(--surface-0);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stats-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat-item {
+      padding: 22px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .stat-icon-blue   { background: var(--color-blue-50); }
+    .stat-icon-green  { background: var(--color-running-bg); }
+    .stat-icon-orange { background: var(--color-waiting-bg); }
+    .stat-icon-red    { background: var(--color-fault-bg); }
+
+    .stat-number {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--color-blue-700);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .stat-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ============================================================
+       SECCIÓN DE MÓDULOS
+       ============================================================ */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 56px 24px;
+    }
+
+    .section-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--color-blue-700);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      max-width: 540px;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    /* Cards de módulo */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .module-card {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-decoration: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .module-card:hover {
+      border-color: var(--color-blue-200);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+    }
+
+    .module-card:hover::before { opacity: 1; }
+
+    .mc-blue::before   { background: linear-gradient(90deg, var(--color-blue-700), var(--color-blue-500)); }
+    .mc-green::before  { background: linear-gradient(90deg, var(--color-running), #8BC34A); }
+    .mc-orange::before { background: linear-gradient(90deg, var(--color-waiting), #FAC775); }
+
+    .module-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+
+    .mi-blue   { background: var(--color-blue-50);   border: 1px solid var(--color-blue-200); }
+    .mi-green  { background: var(--color-running-bg); border: 1px solid #C0DD97; }
+    .mi-orange { background: var(--color-waiting-bg); border: 1px solid rgba(239,159,39,0.3); }
+
+    .module-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .module-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+
+    .module-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .module-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .module-tag {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+    }
+
+    .module-arrow {
+      font-size: 18px;
+      color: var(--color-blue-500);
+      transition: transform 0.2s ease;
+    }
+
+    .module-card:hover .module-arrow { transform: translateX(4px); }
+
+    /* Badge "Próximamente" */
+    .coming-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: var(--color-waiting-bg);
+      color: #633806;
+      border: 1px solid rgba(239,159,39,0.3);
+    }
+
+    /* ============================================================
+       ALGORITMOS — dos columnas
+       ============================================================ */
+    .algo-section {
+      background: var(--surface-0);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .algo-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .algo-group-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .algo-group-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* ============================================================
+       CÓMO FUNCIONA — 3 pasos
+       ============================================================ */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      position: relative;
+    }
+
+    /* línea conectora */
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: calc(50% / 3 + 28px);
+      right: calc(50% / 3 + 28px);
+      height: 1px;
+      background: linear-gradient(90deg, var(--color-blue-200), var(--color-blue-500), var(--color-blue-200));
+    }
+
+    .step-card {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--color-blue-700);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 0 6px var(--color-blue-50);
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       DESIGN SYSTEM SHOWCASE
+       ============================================================ */
+    .ds-section {
+      background: var(--color-navy);
+      padding: 48px 0;
+    }
+
+    .ds-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .ds-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 24px;
+    }
+
+    .ds-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .ds-color-chip {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .footer {
+      background: #021729;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 28px 24px;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-logo {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.70);
+      text-decoration: none;
+    }
+
+    .footer-logo span { color: var(--color-blue-500); }
+
+    .footer-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.28);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-link {
+      font-size: 12px;
+      color: rgba(255,255,255,0.40);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-link:hover { color: rgba(255,255,255,0.75); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 900px) {
+      .hero-inner      { grid-template-columns: 1fr; }
+      .hero-panel      { display: none; }
+      .modules-grid    { grid-template-columns: 1fr; }
+      .steps-grid      { grid-template-columns: 1fr; }
+      .steps-grid::before { display: none; }
+      .algo-inner      { grid-template-columns: 1fr; }
+      .stats-inner     { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 540px) {
+      .stats-inner { grid-template-columns: 1fr 1fr; }
+      .stat-item   { padding: 16px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-logo">OS<span>im</span></a>
+  <a href="index.html"      class="navbar-item active">Inicio</a>
+  <a href="scheduling.html" class="navbar-item">Scheduling</a>
+  <a href="paginacion.html" class="navbar-item">Paginación</a>
+  <a href="metricas.html"   class="navbar-item">Métricas</a>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero">
+  <div class="hero-inner">
+
+    <!-- Texto principal -->
+    <div>
+      <div class="hero-chip">
+        <span class="hero-chip-dot"></span>
+        Simulador Educativo · SO · UDEM
+      </div>
+
+      <h1 class="hero-title">
+        Visualiza cómo funciona<br />
+        un <span>Sistema Operativo</span><br />
+        en tiempo real
+      </h1>
+
+      <p class="hero-subtitle">
+        Anima los algoritmos de <strong style="color:rgba(255,255,255,0.82)">scheduling de CPU</strong>
+        y <strong style="color:rgba(255,255,255,0.82)">reemplazo de páginas</strong> paso a paso,
+        directamente en el navegador, sin instalar nada.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="scheduling.html" class="btn btn-primary btn-lg">
+          Scheduling CPU →
+        </a>
+        <a href="paginacion.html" class="btn btn-secondary btn-lg"
+           style="color:var(--color-blue-200); border-color:rgba(55,138,221,0.45);
+                  background:rgba(55,138,221,0.12);">
+          Paginación →
+        </a>
+      </div>
+    </div>
+
+    <!-- Panel decorativo — simulación estática -->
+    <div class="hero-panel">
+
+      <div class="panel-header">
+        <span class="panel-label">Diagrama de Gantt</span>
+        <span class="panel-live">
+          <span class="panel-live-dot"></span>FCFS
+        </span>
+      </div>
+
+      <!-- Mini Gantt -->
+      <div class="mini-gantt">
+        <div class="mini-gantt-row">
+          <span class="mini-pid">P1</span>
+          <div class="mini-track">
+            <div class="mini-block gantt-p1"
+                 style="left:0%; width:38%; animation-delay:0.4s;"></div>
+          </div>
+        </div>
+        <div class="mini-gantt-row">
+          <span class="mini-pid">P2</span>
+          <div class="mini-track">
+            <div class="mini-block gantt-p2"
+                 style="left:38%; width:22%; animation-delay:0.55s;"></div>
+          </div>
+        </div>
+        <div class="mini-gantt-row">
+          <span class="mini-pid">P3</span>
+          <div class="mini-track">
+            <div class="mini-block gantt-p4"
+                 style="left:60%; width:28%; animation-delay:0.7s;"></div>
+          </div>
+        </div>
+        <div class="mini-gantt-row">
+          <span class="mini-pid">P4</span>
+          <div class="mini-track">
+            <div class="mini-block gantt-p5"
+                 style="left:88%; width:12%; animation-delay:0.85s;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="panel-header">
+        <span class="panel-label">Marcos de Memoria · FIFO</span>
+        <span class="panel-live">
+          <span class="panel-live-dot" style="background:var(--color-fault);"></span>
+          3 fallos
+        </span>
+      </div>
+
+      <!-- Mini memoria -->
+      <div class="mini-memory">
+        <div class="mini-frame mf-used" style="animation-delay:0.9s;">
+          <span class="mini-frame-idx">#0</span>
+          <span class="mini-frame-val">P1·7</span>
+        </div>
+        <div class="mini-frame mf-used" style="animation-delay:1.0s;">
+          <span class="mini-frame-idx">#1</span>
+          <span class="mini-frame-val">P1·0</span>
+        </div>
+        <div class="mini-frame mf-fault" style="animation-delay:1.1s;">
+          <span class="mini-frame-idx">#2</span>
+          <span class="mini-frame-val">P2·1</span>
+        </div>
+        <div class="mini-frame mf-evicted" style="animation-delay:1.2s;">
+          <span class="mini-frame-idx">#3</span>
+          <span class="mini-frame-val">P3·2</span>
+        </div>
+        <div class="mini-frame mf-used" style="animation-delay:1.3s;">
+          <span class="mini-frame-idx">#4</span>
+          <span class="mini-frame-val">P1·3</span>
+        </div>
+        <div class="mini-frame mf-empty" style="animation-delay:1.4s;">
+          <span class="mini-frame-idx">#5</span>
+          <span class="mini-frame-val" style="color:rgba(255,255,255,0.18);">—</span>
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Mini métricas -->
+      <div class="mini-metrics">
+        <div class="mini-metric">
+          <div class="mini-metric-label">Page Faults</div>
+          <div class="mini-metric-val mini-val-red">9</div>
+        </div>
+        <div class="mini-metric">
+          <div class="mini-metric-label">Page Hits</div>
+          <div class="mini-metric-val mini-val-green">4</div>
+        </div>
+        <div class="mini-metric">
+          <div class="mini-metric-label">Avg Wait</div>
+          <div class="mini-metric-val mini-val-blue">3.2s</div>
+        </div>
+      </div>
+
+    </div><!-- /hero-panel -->
+
+  </div><!-- /hero-inner -->
+</section>
+
+<!-- ============================================================
+     STATS STRIP
+     ============================================================ -->
+<div class="stats-strip">
+  <div class="stats-inner">
+
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-blue">📊</div>
+      <div>
+        <div class="stat-number">5</div>
+        <div class="stat-desc">Algoritmos de Scheduling</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-green">🗂️</div>
+      <div>
+        <div class="stat-number">5</div>
+        <div class="stat-desc">Algoritmos de Paginación</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-orange">▶</div>
+      <div>
+        <div class="stat-number">Paso</div>
+        <div class="stat-desc">a paso animado</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-red">🌐</div>
+      <div>
+        <div class="stat-number">0</div>
+        <div class="stat-desc">Instalaciones necesarias</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     MÓDULOS
+     ============================================================ -->
+<div class="section">
+  <div class="section-eyebrow">Módulos del simulador</div>
+  <h2 class="section-title">Todo lo que necesitas para aprender SO</h2>
+  <p class="section-subtitle">
+    Tres módulos independientes que trabajan juntos. Captura procesos, elige un
+    algoritmo y observa la animación.
+  </p>
+
+  <div class="modules-grid">
+
+    <!-- Scheduling -->
+    <a href="scheduling.html" class="module-card mc-blue">
+      <div class="module-icon mi-blue">⏱</div>
+      <div class="module-title">Scheduling de CPU</div>
+      <p class="module-desc">
+        Genera el diagrama de Gantt animado para FCFS, Round Robin, SJF, SRTF
+        y Priority Scheduling. Compara tiempos de espera y respuesta visualmente.
+      </p>
+      <div class="module-footer">
+        <div class="module-tags">
+          <span class="module-tag">FCFS</span>
+          <span class="module-tag">RR</span>
+          <span class="module-tag">SJF</span>
+          <span class="module-tag">SRTF</span>
+          <span class="module-tag">Priority</span>
+        </div>
+        <span class="module-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Paginación -->
+    <a href="paginacion.html" class="module-card mc-green">
+      <div class="module-icon mi-green">🗂</div>
+      <div class="module-title">Paginación de Memoria</div>
+      <p class="module-desc">
+        Observa qué página entra y cuál es expulsada en cada referencia.
+        Cinco algoritmos de reemplazo con navegación paso a paso y métricas
+        de page faults.
+      </p>
+      <div class="module-footer">
+        <div class="module-tags">
+          <span class="module-tag">FIFO</span>
+          <span class="module-tag">LRU</span>
+          <span class="module-tag">OPT</span>
+          <span class="module-tag">LFU</span>
+          <span class="module-tag">CLOCK</span>
+        </div>
+        <span class="module-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Métricas -->
+    <a href="metricas.html" class="module-card mc-orange">
+      <span class="coming-badge">Próximamente</span>
+      <div class="module-icon mi-orange">📈</div>
+      <div class="module-title">Métricas y Comparación</div>
+      <p class="module-desc">
+        Compara los resultados de distintos algoritmos en gráficas. Exporta
+        reportes y analiza qué estrategia es más eficiente para tu carga
+        de trabajo.
+      </p>
+      <div class="module-footer">
+        <div class="module-tags">
+          <span class="module-tag">Gráficas</span>
+          <span class="module-tag">Comparación</span>
+          <span class="module-tag">Exportar</span>
+        </div>
+        <span class="module-arrow" style="color:var(--color-waiting);">→</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     ALGORITMOS SHOWCASE
+     ============================================================ -->
+<div class="algo-section">
+  <div class="algo-inner">
+
+    <div>
+      <div class="section-eyebrow" style="margin-bottom:6px;">CPU Scheduling</div>
+      <div class="algo-group-title">Algoritmos de planificación</div>
+      <div class="algo-group-sub">
+        Elige el algoritmo y observa el Gantt generarse en tiempo real.
+      </div>
+      <div class="algo-selector">
+        <span class="algo-btn active">FCFS</span>
+        <span class="algo-btn">Round Robin</span>
+        <span class="algo-btn">SJF</span>
+        <span class="algo-btn">SRTF</span>
+        <span class="algo-btn">Priority</span>
+      </div>
+      <p class="text-small text-muted mt-12">
+        Implementado por Persona A · <a href="scheduling.html"
+          style="color:var(--color-blue-500); text-decoration:none;">Ir al módulo →</a>
+      </p>
+    </div>
+
+    <div>
+      <div class="section-eyebrow" style="margin-bottom:6px;">Paginación de Memoria</div>
+      <div class="algo-group-title">Algoritmos de reemplazo</div>
+      <div class="algo-group-sub">
+        Navega paso a paso y ve qué marco se libera en cada referencia.
+      </div>
+      <div class="algo-selector">
+        <span class="algo-btn active">FIFO</span>
+        <span class="algo-btn">LRU</span>
+        <span class="algo-btn">OPT</span>
+        <span class="algo-btn">LFU</span>
+        <span class="algo-btn">CLOCK</span>
+      </div>
+      <p class="text-small text-muted mt-12">
+        Implementado por Persona B · <a href="paginacion.html"
+          style="color:var(--color-blue-500); text-decoration:none;">Ir al módulo →</a>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     CÓMO FUNCIONA
+     ============================================================ -->
+<div class="section">
+  <div class="section-eyebrow">Flujo de uso</div>
+  <h2 class="section-title">Tres pasos para simular</h2>
+  <p class="section-subtitle" style="margin-bottom:40px;">
+    Sin configuración previa. Abre la página y empieza a explorar.
+  </p>
+
+  <div class="steps-grid">
+
+    <div class="step-card">
+      <div class="step-number">1</div>
+      <div class="step-title">Captura los procesos</div>
+      <p class="step-desc">
+        Ingresa PID, tiempo de llegada, burst time y prioridad manualmente
+        o carga un archivo <code style="font-family:var(--font-mono);font-size:11px;
+        background:var(--surface-2);padding:1px 5px;border-radius:3px;">.txt</code>
+        con el formato del equipo.
+      </p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-number">2</div>
+      <div class="step-title">Elige el algoritmo</div>
+      <p class="step-desc">
+        Selecciona entre los cinco algoritmos de scheduling o los cinco de
+        paginación con un solo clic. El simulador recalcula al instante.
+      </p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-number">3</div>
+      <div class="step-title">Observa la animación</div>
+      <p class="step-desc">
+        Navega paso a paso o deja correr la simulación completa. Ve el Gantt
+        crecer y los marcos llenarse mientras las métricas se actualizan en
+        tiempo real.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     DESIGN SYSTEM SHOWCASE
+     ============================================================ -->
+<div class="ds-section">
+  <div class="ds-inner">
+    <div class="ds-title">Design System · OSim</div>
+
+    <!-- Badges de estado -->
+    <div class="ds-row">
+      <span class="badge badge-new">New</span>
+      <span class="badge badge-ready">Ready</span>
+      <span class="badge badge-running">Running</span>
+      <span class="badge badge-waiting">Waiting</span>
+      <span class="badge badge-terminated">Terminated</span>
+      <span class="badge badge-fault">Page Fault</span>
+    </div>
+
+    <!-- Botones -->
+    <div class="ds-row">
+      <button class="btn btn-primary btn-sm">Primario</button>
+      <button class="btn btn-secondary btn-sm"
+              style="color:var(--color-blue-200); border-color:rgba(55,138,221,0.45);
+                     background:rgba(55,138,221,0.12);">Secundario</button>
+      <button class="btn btn-ghost btn-sm"
+              style="color:rgba(255,255,255,0.55); border-color:rgba(255,255,255,0.15);">Ghost</button>
+      <button class="btn btn-danger btn-sm">Peligro</button>
+    </div>
+
+    <!-- Chips de algoritmo -->
+    <div class="ds-row">
+      <button class="algo-btn active"
+              style="border-color:var(--color-blue-700);">Activo</button>
+      <button class="algo-btn"
+              style="background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.45);
+                     border-color:rgba(255,255,255,0.15);">Inactivo</button>
+    </div>
+
+    <!-- Paleta de colores -->
+    <div class="ds-row" style="margin-bottom:0;">
+      <div class="ds-color-chip" style="background:var(--color-blue-700);"  title="blue-700"></div>
+      <div class="ds-color-chip" style="background:var(--color-blue-500);"  title="blue-500"></div>
+      <div class="ds-color-chip" style="background:var(--color-blue-200);"  title="blue-200"></div>
+      <div class="ds-color-chip" style="background:var(--color-blue-50);border:1px solid rgba(255,255,255,0.15);"  title="blue-50"></div>
+      <div class="ds-color-chip" style="background:var(--color-running);"   title="running"></div>
+      <div class="ds-color-chip" style="background:var(--color-waiting);"   title="waiting"></div>
+      <div class="ds-color-chip" style="background:var(--color-fault);"     title="fault"></div>
+      <div class="ds-color-chip" style="background:#C0DD97;"                title="gantt-p4"></div>
+      <div class="ds-color-chip" style="background:#FAC775;"                title="gantt-p5"></div>
+      <div class="ds-color-chip" style="background:#F5C4B3;"                title="gantt-p6"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="index.html" class="footer-logo">OS<span>im</span></a>
+    <span class="footer-text">
+      Proyecto Final · Sistemas Operativos · UDEM 2025
+    </span>
+    <div class="footer-links">
+      <a href="scheduling.html" class="footer-link">Scheduling</a>
+      <a href="paginacion.html" class="footer-link">Paginación</a>
+      <a href="metricas.html"   class="footer-link">Métricas</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/ui.js"></script>
+
+</body>
+</html>
