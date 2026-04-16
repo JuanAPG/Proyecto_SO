@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSim — CPU Scheduling</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ============================================================
+       LAYOUT PRINCIPAL
+       ============================================================ */
+    .scheduling-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+      min-height: calc(100vh - 60px);
+      background: var(--surface-1);
+    }
+
+    /* Panel lateral izquierdo */
+    .scheduling-sidebar {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .algo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .algo-item {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-0);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .algo-item:hover {
+      border-color: var(--color-blue-500);
+      background: var(--color-blue-50);
+    }
+
+    .algo-item.active {
+      background: var(--color-blue-700);
+      color: white;
+      border-color: var(--color-blue-700);
+    }
+
+    .algo-category {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .algo-category-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ============================================================
+       ÁREA PRINCIPAL
+       ============================================================ */
+    .scheduling-main {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 24px;
+    }
+
+    /* Panel de entrada de procesos */
+    .input-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .form-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-family: var(--font-base);
+      color: var(--text-primary);
+      background: var(--surface-1);
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-blue-500);
+      background: var(--surface-0);
+      box-shadow: 0 0 0 3px var(--color-blue-50);
+    }
+
+    .input-actions {
+      display: flex;
+      gap: 8px;
+      grid-column: -2 / -1;
+    }
+
+    /* ============================================================
+       TABLA DE PROCESOS
+       ============================================================ */
+    .processes-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    tbody tr:hover {
+      background: var(--surface-2);
+    }
+
+    .td-center {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* ============================================================
+       ÁREA DE VISUALIZACIÓN — Gantt y Métricas
+       ============================================================ */
+    .execution-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+    }
+
+    .gantt-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .gantt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gantt-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .gantt-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Canvas para Gantt */
+    #ganttCanvas {
+      width: 100%;
+      height: 300px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-1);
+      display: block;
+    }
+
+    /* Timeline debajo del Gantt */
+    .gantt-timeline {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 0 4px;
+      font-family: var(--font-mono);
+    }
+
+    /* Panel de métricas derecha */
+    .metrics-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .metrics-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .metrics-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: var(--surface-2);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-blue-700);
+      font-family: var(--font-mono);
+    }
+
+    .metric-value.good {
+      color: var(--color-running);
+    }
+
+    .metric-value.fault {
+      color: var(--color-fault);
+    }
+
+    /* ============================================================
+       CONTROL DE QUANTUM
+       ============================================================ */
+    .quantum-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: var(--surface-2);
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+    }
+
+    .quantum-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .quantum-input {
+      width: 60px;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn-run {
+      background: var(--color-running);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-run:hover {
+      background: #5a8000;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-clear {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+      border-color: var(--color-fault);
+      color: var(--color-fault);
+    }
+
+    .btn-upload {
+      background: var(--color-blue-700);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-upload:hover {
+      background: var(--color-blue-500);
+      transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       QUEUE VISUALIZATION
+       ============================================================ */
+    .queue-visualization {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--color-blue-50);
+      border: 1px solid var(--color-blue-200);
+      border-radius: var(--radius-lg);
+      margin-top: 16px;
+    }
+
+    .queue-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      min-width: 80px;
+    }
+
+    .queue-items {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      flex: 1;
+    }
+
+    .queue-item {
+      padding: 6px 10px;
+      background: white;
+      border: 1px solid var(--color-blue-200);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-blue-700);
+      white-space: nowrap;
+      font-family: var(--font-mono);
+    }
+
+    .queue-item.running {
+      background: var(--color-running);
+      color: white;
+      border-color: var(--color-running);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 1024px) {
+      .scheduling-container {
+        grid-template-columns: 1fr;
+      }
+      .scheduling-sidebar {
+        position: static;
+        max-height: none;
+      }
+      .input-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .execution-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .scheduling-container {
+        padding: 16px;
+      }
+      .input-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .input-actions {
+        grid-column: 1 / -1;
+      }
+      .algo-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-logo">OS<span>im</span></a>
+  <a href="index.html"      class="navbar-item">Inicio</a>
+  <a href="scheduling.html" class="navbar-item active">Scheduling</a>
+  <a href="paginacion.html" class="navbar-item">Paginación</a>
+  <a href="metricas.html"   class="navbar-item">Métricas</a>
+</nav>
+
+<!-- ============================================================
+     CONTENEDOR PRINCIPAL
+     ============================================================ -->
+<div class="scheduling-container">
+
+  <!-- SIDEBAR: selector de algoritmos -->
+  <aside class="scheduling-sidebar">
+
+    <div class="sidebar-title">📊 Algoritmos</div>
+
+    <div class="algo-list" id="algoList">
+      <!-- Non-Preemptive -->
+      <div class="algo-category">
+        <div class="algo-category-title">Non-Preemptive</div>
+        <button class="algo-item active" data-algo="fcfs">FCFS</button>
+        <button class="algo-item" data-algo="sjf">SJF</button>
+        <button class="algo-item" data-algo="hrrn">HRRN</button>
+      </div>
+
+      <!-- Preemptive -->
+      <div class="algo-category">
+        <div class="algo-category-title">Preemptive</div>
+        <button class="algo-item" data-algo="rr">Round Robin</button>
+        <button class="algo-item" data-algo="srtf">SRTF</button>
+        <button class="algo-item" data-algo="priority">Priority</button>
+      </div>
+
+      <!-- Advanced -->
+      <div class="algo-category">
+        <div class="algo-category-title">Advanced</div>
+        <button class="algo-item" data-algo="mlq">Multilevel Queue</button>
+        <button class="algo-item" data-algo="mlfq">Multilevel Feedback</button>
+      </div>
+    </div>
+
+    <!-- Control de Quantum (solo Round Robin) -->
+    <div class="quantum-control" id="quantumControl" style="display:none;">
+      <label class="quantum-label">Quantum:</label>
+      <input type="number" class="quantum-input" id="quantumValue" value="2" min="1" max="20" />
+    </div>
+
+  </aside>
+
+  <!-- MAIN: formulario, tabla y ejecución -->
+  <main class="scheduling-main">
+
+    <!-- ============================================================
+         PANEL 1: Entrada de procesos
+         ============================================================ -->
+    <section class="input-panel">
+      <div class="panel-title">➕ Crear Procesos</div>
+
+      <div class="input-grid">
+        <div class="form-group">
+          <label class="form-label">PID</label>
+          <input type="number" class="form-input" id="inputPid" placeholder="1" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Arrival</label>
+          <input type="number" class="form-input" id="inputArrival" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Burst</label>
+          <input type="number" class="form-input" id="inputBurst" placeholder="5" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <input type="number" class="form-input" id="inputPriority" placeholder="1" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pages</label>
+          <input type="number" class="form-input" id="inputPages" placeholder="4" min="1" />
+        </div>
+        <div class="input-actions">
+          <button class="btn-run" id="btnAddProcess">Agregar</button>
+          <button class="btn-clear" id="btnClearAll">Limpiar</button>
+          <label class="btn-upload" style="margin:0; cursor:pointer;">
+            Cargar
+            <input type="file" id="fileInput" accept=".txt" style="display:none;" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PANEL 2: Tabla de procesos
+         ============================================================ -->
+    <section class="processes-panel">
+      <div class="panel-title">📋 Procesos cargados</div>
+
+      <div class="table-container">
+        <table id="processTable">
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>Arrival</th>
+              <th>Burst</th>
+              <th>Priority</th>
+              <th>Pages</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="processTableBody">
+            <!-- Se rellena dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cola Ready visualization -->
+      <div class="queue-visualization" id="queueVisualization" style="display:none;">
+        <span class="queue-label">RAM CPU</span>
+        <div class="queue-items" id="queueItems">
+          <!-- Se rellena dinámicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PANEL 3: Ejecución (Gantt + Métricas)
+         ============================================================ -->
+    <section class="execution-panel" id="executionPanel" style="display:none;">
+
+      <!-- Gantt container -->
+      <div class="gantt-container">
+        <div class="gantt-header">
+          <div class="gantt-title" id="ganttTitle">Diagrama de Gantt — FCFS</div>
+          <div class="gantt-controls">
+            <button class="btn-run" id="btnExecute">▶ Ejecutar</button>
+            <button class="btn-clear" id="btnReset">↺ Limpiar</button>
+          </div>
+        </div>
+
+        <canvas id="ganttCanvas"></canvas>
+
+        <div class="gantt-timeline" id="ganttTimeline">
+          <!-- Se rellena dinámicamente con tiempos -->
+        </div>
+      </div>
+
+      <!-- Métricas panel -->
+      <div class="metrics-panel">
+        <div class="metrics-title">📊 Métricas</div>
+        <div class="metrics-list" id="metricsList">
+          <div class="metric-row">
+            <span class="metric-label">Avg Waiting</span>
+            <span class="metric-value">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Avg Turnaround</span>
+            <span class="metric-value">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Avg Response</span>
+            <span class="metric-value">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">CPU Utilization</span>
+            <span class="metric-value good">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Makespan</span>
+            <span class="metric-value">—</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="js/ui.js"></script>
+<script src="js/procesos.js"></script>
+<script src="js/scheduling.js"></script>
+<script src="js/scheduling-ui.js"></script>
+
+</body>
+</html>
