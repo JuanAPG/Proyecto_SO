@@ -83,11 +83,7 @@ function seleccionarAlgoritmo(algo) {
 function _togglePriorityField(activo) {
   const grupo = document.getElementById("groupPriority");
   if (!grupo) return;
-  if (activo) {
-    grupo.classList.remove("field-na");
-  } else {
-    grupo.classList.add("field-na");
-  }
+  grupo.style.display = activo ? "" : "none";
 }
 
 /* ----------------------------------------------------------
