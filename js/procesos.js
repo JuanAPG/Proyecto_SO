@@ -70,8 +70,13 @@ function agregarProceso() {
   // Actualizar tabla visual
   renderizarTablaProcesos();
 
-  // Mostrar panel de ejecución
-  document.getElementById("executionPanel").style.display = "grid";
+  // Mostrar panel de ejecución con animación la primera vez
+  const panel = document.getElementById("executionPanel");
+  if (panel.style.display === "none" || !panel.style.display) {
+    panel.style.display = "grid";
+    panel.classList.add("panel-enter");
+    panel.addEventListener("animationend", () => panel.classList.remove("panel-enter"), { once: true });
+  }
   document.getElementById("queueVisualization").style.display = "flex";
 }
 
@@ -121,6 +126,9 @@ function renderizarTablaProcesos() {
 
   procesosGlobales.forEach((proceso, idx) => {
     const fila = document.createElement("tr");
+    fila.className = "row-enter";
+    fila.style.animationDelay = `${idx * 35}ms`;
+    fila.style.opacity = "0";
     fila.innerHTML = `
       <td class="td-center">${proceso.pid}</td>
       <td class="td-center">${proceso.arrivalTime}</td>

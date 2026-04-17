@@ -451,6 +451,69 @@
     }
 
     /* ============================================================
+       ANIMACIONES
+       ============================================================ */
+
+    /* Fila de proceso entrando */
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateX(-14px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .row-enter { animation: rowSlideIn 0.22s ease forwards; }
+
+    /* Panel de ejecución apareciendo */
+    @keyframes panelFadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .panel-enter { animation: panelFadeIn 0.35s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+    /* Tarjeta de métrica haciendo pop */
+    @keyframes metricPop {
+      0%   { transform: scale(0.88); opacity: 0; }
+      65%  { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    .metric-pop { animation: metricPop 0.30s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+    /* Queue item rebotando */
+    @keyframes queueBounce {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.18); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .queue-enter { animation: queueBounce 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+    /* Botón de algoritmo seleccionado — flash de anillo */
+    @keyframes algoRing {
+      0%   { box-shadow: 0 0 0 0   rgba(24,95,165,0.55); }
+      50%  { box-shadow: 0 0 0 6px rgba(24,95,165,0.18); }
+      100% { box-shadow: 0 0 0 0   rgba(24,95,165,0); }
+    }
+    .algo-ring { animation: algoRing 0.45s ease forwards; }
+
+    /* Badge de algoritmo activo apareciendo */
+    @keyframes badgePop {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Campo deshabilitado (no aplica para el algoritmo) */
+    .field-na {
+      opacity: 0.32;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .field-na .form-label { text-decoration: line-through; }
+
+    /* Pulso suave en el Gantt canvas mientras carga */
+    @keyframes canvasPulse {
+      0%,100% { box-shadow: none; }
+      50%      { box-shadow: 0 0 0 3px rgba(24,95,165,0.20); }
+    }
+    .gantt-loading { animation: canvasPulse 0.8s ease infinite; }
+
+    /* ============================================================
        RESPONSIVE
        ============================================================ */
     @media (max-width: 1024px) {
@@ -564,7 +627,7 @@
           <label class="form-label">Burst</label>
           <input type="number" class="form-input" id="inputBurst" placeholder="5" min="1" />
         </div>
-        <div class="form-group">
+        <div class="form-group" id="groupPriority">
           <label class="form-label">Priority</label>
           <input type="number" class="form-input" id="inputPriority" placeholder="1" min="1" />
         </div>
