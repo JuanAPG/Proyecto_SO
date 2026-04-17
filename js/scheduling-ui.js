@@ -74,7 +74,7 @@ function seleccionarAlgoritmo(algo) {
 
 function ejecutarSimulacion() {
   if (procesosGlobales.length === 0) {
-    alert("⚠️ Agrega procesos primero");
+    alert("Agrega procesos primero");
     return;
   }
 

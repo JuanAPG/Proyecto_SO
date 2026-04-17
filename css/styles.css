@@ -514,22 +514,36 @@ html, body {
 
 .frame-fault {
   background: var(--color-fault-bg);
-  border-color: rgba(226,75,74,0.4);
+  border-color: rgba(226,75,74,0.55);
   color: var(--color-fault-dark);
-  animation: frameFault 0.5s ease;
+  animation: frameFault 0.55s ease;
 }
 
 .frame-evicted {
   background: var(--color-waiting-bg);
-  border-color: rgba(239,159,39,0.4);
+  border-color: rgba(239,159,39,0.55);
   color: #633806;
-  animation: frameFault 0.5s ease;
+  animation: frameEvicted 0.55s ease;
 }
 
 @keyframes frameFault {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.08); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1);    box-shadow: none; }
+  30%  { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(226,75,74,0.25); }
+  60%  { transform: scale(1.06); }
+  100% { transform: scale(1);    box-shadow: none; }
+}
+
+@keyframes frameEvicted {
+  0%   { transform: scale(1);    box-shadow: none; }
+  30%  { transform: scale(1.10); box-shadow: 0 0 0 4px rgba(239,159,39,0.30); }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1);    box-shadow: none; }
+}
+
+@keyframes frameHitPulse {
+  0%   { box-shadow: none; }
+  40%  { box-shadow: 0 0 0 4px rgba(99,153,34,0.30); }
+  100% { box-shadow: none; }
 }
 
 /* ----------------------------------------------------------

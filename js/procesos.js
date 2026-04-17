@@ -26,7 +26,7 @@ function obtenerProcesoDesdeFórmula() {
   const pages = parseInt(document.getElementById("inputPages")?.value) || 1;
 
   if (!burstTime || burstTime <= 0) {
-    alert("⚠️ Burst Time es requerido y debe ser > 0");
+    alert("Burst Time es requerido y debe ser > 0");
     return null;
   }
 
@@ -41,7 +41,7 @@ function obtenerProcesoDesdeFórmula() {
 
   const validacion = validarProceso(proceso);
   if (!validacion.valido) {
-    alert("❌ Error en proceso:\n" + validacion.errores.join("\n"));
+    alert("Error en proceso:\n" + validacion.errores.join("\n"));
     return null;
   }
 
@@ -57,7 +57,7 @@ function agregarProceso() {
 
   // Verificar que el PID no exista
   if (procesosGlobales.find((p) => p.pid === proceso.pid)) {
-    alert(`⚠️ PID ${proceso.pid} ya existe`);
+    alert(`PID ${proceso.pid} ya existe`);
     return;
   }
 
@@ -192,12 +192,12 @@ function cargarDesdearchivo(file) {
         }
       }
 
-      alert(`✅ Cargados ${contador} procesos`);
+      alert(`Cargados ${contador} procesos`);
       renderizarTablaProcesos();
       document.getElementById("executionPanel").style.display = "grid";
       document.getElementById("queueVisualization").style.display = "flex";
     } catch (error) {
-      alert(`❌ Error al cargar: ${error.message}`);
+      alert(`Error al cargar: ${error.message}`);
     }
   };
   reader.readAsText(file);

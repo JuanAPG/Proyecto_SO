@@ -546,7 +546,7 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
  */
 function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2) {
   if (!procesos || procesos.length === 0) {
-    alert("⚠️ Agrega procesos primero");
+    alert("Agrega procesos primero");
     return null;
   }
 
@@ -568,7 +568,7 @@ function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2) {
     case "mlfq":
       return algoritmo_MultilevelFeedbackQueue(procesos);
     default:
-      alert(`❌ Algoritmo no reconocido: ${nombreAlgo}`);
+      alert(`Algoritmo no reconocido: ${nombreAlgo}`);
       return null;
   }
 }
