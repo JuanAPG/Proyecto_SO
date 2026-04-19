@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSim — Métricas y Comparación</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+    <nav class="navbar">
+        <a href="index.html" class="navbar-logo">OS<span>im</span></a>
+        <a href="index.html" class="navbar-item">Inicio</a>
+        <a href="scheduling.html" class="navbar-item">Scheduling</a>
+        <a href="paginacion.html" class="navbar-item">Paginación</a>
+        <a href="metricas.html" class="navbar-item active">Métricas</a>
+    </nav>
+
+    <!-- ============================================================
+     CONTENIDO PRINCIPAL
+     ============================================================ -->
+    <div class="metrics-page">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <div>
+                <div class="page-eyebrow">Módulo 3</div>
+                <h1 class="page-title">Métricas y Comparación</h1>
+                <p class="page-subtitle">
+                    Analiza y compara el desempeño de los algoritmos de scheduling
+                    y de reemplazo de páginas con los mismos datos.
+                </p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost btn-sm" onclick="cargarDatosEjemplo()">
+                    Cargar datos de ejemplo
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="ejecutarTodo()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                        fill="currentColor" style="vertical-align:middle;margin-right:4px">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    Comparar todo
+                </button>
+            </div>
+        </div>
+
+        <!-- MÓDULO TABS — Scheduling / Paginación / Estados -->
+        <div>
+            <div class="module-tabs">
+                <button class="module-tab active" onclick="switchModule('scheduling', this)">
+                    <span class="tab-dot"></span>
+                    Scheduling de CPU
+                </button>
+                <button class="module-tab" onclick="switchModule('paginacion', this)">
+                    <span class="tab-dot"></span>
+                    Paginación de Memoria
+                </button>
+                <button class="module-tab" onclick="switchModule('estados', this)">
+                    <span class="tab-dot"></span>
+                    Diagrama de Estados
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+       MÓDULO: SCHEDULING
+       ============================================================ -->
+        <div id="module-scheduling" class="module-panel active">
+
+            <!-- Sub-tabs -->
+            <div class="section-tabs">
+                <button class="section-tab active" onclick="switchSub('sched','resultados',this)">Resultados por
+                    proceso</button>
+                <button class="section-tab" onclick="switchSub('sched','comparacion',this)">Comparación de
+                    algoritmos</button>
+            </div>
+
+            <!-- SUB: Resultados -->
+            <div id="sched-sub-resultados" class="sub-panel active">
+
+                <!-- KPIs -->
+                <div class="kpi-row">
+                    <div class="kpi-card acc-blue">
+                        <div class="kpi-label">Avg Waiting</div>
+                        <div class="kpi-value kpi-blue" id="s-kpi-awt">—</div>
+                        <div class="kpi-sub">segundos promedio</div>
+                    </div>
+                    <div class="kpi-card acc-green">
+                        <div class="kpi-label">Avg Turnaround</div>
+                        <div class="kpi-value kpi-green" id="s-kpi-atat">—</div>
+                        <div class="kpi-sub">segundos promedio</div>
+                    </div>
+                    <div class="kpi-card acc-orange">
+                        <div class="kpi-label">Avg Response</div>
+                        <div class="kpi-value kpi-orange" id="s-kpi-art">—</div>
+                        <div class="kpi-sub">segundos promedio</div>
+                    </div>
+                    <div class="kpi-card acc-purple">
+                        <div class="kpi-label">CPU Utilization</div>
+                        <div class="kpi-value kpi-purple" id="s-kpi-cpu">—</div>
+                        <div class="kpi-sub">% del tiempo total</div>
+                    </div>
+                    <div class="kpi-card acc-red">
+                        <div class="kpi-label">Makespan</div>
+                        <div class="kpi-value kpi-red" id="s-kpi-makespan">—</div>
+                        <div class="kpi-sub">tiempo total</div>
+                    </div>
+                </div>
+
+                <!-- Tabla -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Tabla de métricas por proceso</div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="algo-chip" id="s-algo-chip">
+                                <span id="s-chip-dot"
+                                    style="width:7px;height:7px;border-radius:50%;background:var(--color-blue-700);display:inline-block;"></span>
+                                FCFS
+                            </span>
+                            <select id="s-algo-sel" class="form-input"
+                                style="font-size:12px;padding:6px 10px;height:auto;"
+                                onchange="cambiarAlgoTabla(this.value)">
+                                <option value="fcfs">FCFS</option>
+                                <option value="sjf">SJF</option>
+                                <option value="hrrn">HRRN</option>
+                                <option value="rr">Round Robin</option>
+                                <option value="srtf">SRTF</option>
+                                <option value="priority">Priority</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="metrics-table">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Arrival</th>
+                                    <th>Burst</th>
+                                    <th>Priority</th>
+                                    <th>Completion</th>
+                                    <th>Turnaround</th>
+                                    <th>Waiting</th>
+                                    <th>Response</th>
+                                    <th>WT barra</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s-metrics-body"></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="tfoot-label">Promedios</td>
+                                    <td class="td-num" id="s-foot-tat">—</td>
+                                    <td class="td-num" id="s-foot-wt">—</td>
+                                    <td class="td-num" id="s-foot-rt">—</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Gráficas -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">Waiting Time por proceso</div>
+                        <div class="chart-sub">Tiempo en cola antes de ejecutarse</div>
+                        <div class="chart-wrap"><canvas id="s-chart-wt"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Turnaround Time por proceso</div>
+                        <div class="chart-sub">Tiempo total desde llegada hasta fin</div>
+                        <div class="chart-wrap"><canvas id="s-chart-tat"></canvas></div>
+                    </div>
+                </div>
+
+            </div><!-- /sched-resultados -->
+
+            <!-- SUB: Comparación scheduling -->
+            <div id="sched-sub-comparacion" class="sub-panel">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Algoritmos a comparar</div>
+                        <button class="btn btn-ghost btn-sm" onclick="seleccionarTodosS()">Todos</button>
+                    </div>
+                    <div class="comp-algo-selector" id="s-comp-selector"></div>
+                    <button class="btn btn-primary" onclick="ejecutarCompS()">Ejecutar comparación</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Comparación visual — promedios</div>
+                        <div style="font-size:12px;color:var(--text-muted);">Mismos procesos, distintos algoritmos</div>
+                    </div>
+                    <div class="chart-wrap-lg"><canvas id="s-chart-comp-main"></canvas></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Tabla comparativa detallada</div>
+                    </div>
+                    <div class="comp-table-wrap">
+                        <table class="comp-table">
+                            <thead>
+                                <tr>
+                                    <th>Algoritmo</th>
+                                    <th>Avg Waiting</th>
+                                    <th>Avg Turnaround</th>
+                                    <th>Avg Response</th>
+                                    <th>CPU %</th>
+                                    <th>Makespan</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="s-comp-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">Avg Waiting por algoritmo</div>
+                        <div class="chart-sub">Menor es mejor</div>
+                        <div class="chart-wrap"><canvas id="s-chart-comp-wt"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Avg Turnaround por algoritmo</div>
+                        <div class="chart-sub">Menor es mejor</div>
+                        <div class="chart-wrap"><canvas id="s-chart-comp-tat"></canvas></div>
+                    </div>
+                </div>
+
+            </div><!-- /sched-comparacion -->
+
+        </div><!-- /module-scheduling -->
+
+        <!-- ============================================================
+       MÓDULO: PAGINACIÓN
+       ============================================================ -->
+        <div id="module-paginacion" class="module-panel">
+
+            <!-- Sub-tabs -->
+            <div class="section-tabs">
+                <button class="section-tab active" onclick="switchSub('pag','resultados',this)">Resultados
+                    actuales</button>
+                <button class="section-tab" onclick="switchSub('pag','comparacion',this)">Comparación de
+                    algoritmos</button>
+            </div>
+
+            <!-- SUB: Resultados paginación -->
+            <div id="pag-sub-resultados" class="sub-panel active">
+
+                <!-- KPIs -->
+                <div class="kpi-row kpi-row-4">
+                    <div class="kpi-card acc-red">
+                        <div class="kpi-label">Page Faults</div>
+                        <div class="kpi-value kpi-red" id="p-kpi-faults">—</div>
+                        <div class="kpi-sub">fallos de página</div>
+                    </div>
+                    <div class="kpi-card acc-green">
+                        <div class="kpi-label">Page Hits</div>
+                        <div class="kpi-value kpi-green" id="p-kpi-hits">—</div>
+                        <div class="kpi-sub">accesos en memoria</div>
+                    </div>
+                    <div class="kpi-card acc-blue">
+                        <div class="kpi-label">Hit Rate</div>
+                        <div class="kpi-value kpi-blue" id="p-kpi-hitrate">—</div>
+                        <div class="kpi-sub">% de aciertos</div>
+                    </div>
+                    <div class="kpi-card acc-orange">
+                        <div class="kpi-label">Marcos</div>
+                        <div class="kpi-value kpi-orange" id="p-kpi-frames">—</div>
+                        <div class="kpi-sub">marcos disponibles</div>
+                    </div>
+                </div>
+
+                <!-- Info del algoritmo activo -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Resumen de la simulación</div>
+                        <span class="algo-chip" id="p-algo-chip">
+                            <span
+                                style="width:7px;height:7px;border-radius:50%;background:var(--pag-fifo);display:inline-block;"></span>
+                            FIFO
+                        </span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <!-- Hit rate bar -->
+                        <div>
+                            <div
+                                style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:8px;">
+                                Hit Rate</div>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <div class="fault-bar-track" style="flex:1;">
+                                    <div class="hit-bar-fill" id="p-hit-bar" style="width:0%"></div>
+                                </div>
+                                <span class="td-num" id="p-hit-pct">0%</span>
+                            </div>
+                            <div style="font-size:11px;color:var(--text-muted);">Mayor % = mejor algoritmo</div>
+                        </div>
+                        <!-- Fault rate bar -->
+                        <div>
+                            <div
+                                style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:8px;">
+                                Fault Rate</div>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <div class="fault-bar-track" style="flex:1;">
+                                    <div class="fault-bar-fill" id="p-fault-bar"
+                                        style="width:0%;background:var(--color-fault);"></div>
+                                </div>
+                                <span class="td-num" id="p-fault-pct">0%</span>
+                            </div>
+                            <div style="font-size:11px;color:var(--text-muted);">Menor % = mejor algoritmo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de referencias -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Detalle por referencia</div>
+                        <div style="display:flex;gap:10px;font-size:11px;align-items:center;">
+                            <span style="display:flex;align-items:center;gap:4px;color:var(--color-fault-dark);">
+                                <span
+                                    style="width:10px;height:10px;background:var(--color-fault-bg);border:1px solid rgba(226,75,74,0.4);border-radius:2px;display:inline-block;"></span>Fault
+                            </span>
+                            <span style="display:flex;align-items:center;gap:4px;color:#27500A;">
+                                <span
+                                    style="width:10px;height:10px;background:var(--color-running-bg);border:1px solid #C0DD97;border-radius:2px;display:inline-block;"></span>Hit
+                            </span>
+                            <span style="display:flex;align-items:center;gap:4px;color:#633806;">
+                                <span
+                                    style="width:10px;height:10px;background:#FAEEDA;border:1px solid rgba(239,159,39,0.5);border-radius:2px;display:inline-block;"></span>Reemplazo
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ref-table-wrap">
+                        <table class="ref-table">
+                            <thead>
+                                <tr>
+                                    <th>Ref #</th>
+                                    <th>Página</th>
+                                    <th>Resultado</th>
+                                    <th>Página expulsada</th>
+                                    <th>Marcos actuales</th>
+                                </tr>
+                            </thead>
+                            <tbody id="p-ref-body">
+                                <tr>
+                                    <td colspan="5" style="color:var(--text-muted);padding:24px;">Sin datos. Ejecuta la
+                                        simulación de paginación primero.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Gráfica faults por paso -->
+                <div class="chart-card">
+                    <div class="chart-title">Fallos de página acumulados</div>
+                    <div class="chart-sub">Acumulado conforme avanza la cadena de referencias</div>
+                    <div class="chart-wrap"><canvas id="p-chart-faults"></canvas></div>
+                </div>
+
+            </div><!-- /pag-resultados -->
+
+            <!-- SUB: Comparación paginación -->
+            <div id="pag-sub-comparacion" class="sub-panel">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Comparar algoritmos de reemplazo</div>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+                        Misma cadena de referencias y mismos marcos — todos los algoritmos lado a lado.
+                    </p>
+                    <button class="btn btn-primary" onclick="ejecutarCompP()">Ejecutar comparación</button>
+                </div>
+
+                <!-- Gráfica barras faults -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Page Faults por algoritmo</div>
+                        <div style="font-size:12px;color:var(--text-muted);">Menor = mejor</div>
+                    </div>
+                    <div class="chart-wrap-lg"><canvas id="p-chart-comp"></canvas></div>
+                </div>
+
+                <!-- Tabla comparación paginación -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Tabla comparativa</div>
+                    </div>
+                    <div class="comp-table-wrap">
+                        <table class="comp-table">
+                            <thead>
+                                <tr>
+                                    <th>Algoritmo</th>
+                                    <th>Page Faults</th>
+                                    <th>Page Hits</th>
+                                    <th>Hit Rate</th>
+                                    <th>Fault Rate</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="p-comp-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">Hit Rate por algoritmo</div>
+                        <div class="chart-sub">Mayor es mejor</div>
+                        <div class="chart-wrap"><canvas id="p-chart-hitrate"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Fallos acumulados — todos los algoritmos</div>
+                        <div class="chart-sub">Evolución a lo largo de la cadena</div>
+                        <div class="chart-wrap"><canvas id="p-chart-evolution"></canvas></div>
+                    </div>
+                </div>
+
+            </div><!-- /pag-comparacion -->
+
+        </div><!-- /module-paginacion -->
+
+        <!-- ============================================================
+       MÓDULO: DIAGRAMA DE ESTADOS
+       ============================================================ -->
+        <div id="module-estados" class="module-panel">
+
+            <!-- SVG diagrama -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Diagrama de transición de estados</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <span class="badge badge-new">New</span>
+                        <span class="badge badge-ready">Ready</span>
+                        <span class="badge badge-running">Running</span>
+                        <span class="badge badge-waiting">Waiting</span>
+                        <span class="badge badge-terminated">Terminated</span>
+                    </div>
+                </div>
+                <div class="state-diagram-area">
+                    <svg class="state-diagram-svg" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <marker id="arr-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                orient="auto-start-reverse">
+                                <path d="M1 1L9 5L1 9" fill="none" stroke="#888780" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </marker>
+                            <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                orient="auto-start-reverse">
+                                <path d="M1 1L9 5L1 9" fill="none" stroke="#1D9E75" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </marker>
+                            <marker id="arr-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                orient="auto-start-reverse">
+                                <path d="M1 1L9 5L1 9" fill="none" stroke="#BA7517" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </marker>
+                            <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                orient="auto-start-reverse">
+                                <path d="M1 1L9 5L1 9" fill="none" stroke="#A32D2D" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </marker>
+                            <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                orient="auto-start-reverse">
+                                <path d="M1 1L9 5L1 9" fill="none" stroke="#378ADD" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </marker>
+                        </defs>
+
+                        <!-- NEW -->
+                        <rect x="20" y="86" width="110" height="54" rx="10" fill="#E6F1FB" stroke="#B5D4F4"
+                            stroke-width="1.5" />
+                        <text x="75" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#0C447C"
+                            font-family="system-ui,sans-serif">New</text>
+                        <text x="75" y="126" text-anchor="middle" font-size="10" fill="#185FA5"
+                            font-family="system-ui,sans-serif">Proceso creado</text>
+
+                        <!-- READY -->
+                        <rect x="200" y="86" width="130" height="54" rx="10" fill="#EAF3DE" stroke="#C0DD97"
+                            stroke-width="1.5" />
+                        <text x="265" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#27500A"
+                            font-family="system-ui,sans-serif">Ready</text>
+                        <text x="265" y="126" text-anchor="middle" font-size="10" fill="#3B6D11"
+                            font-family="system-ui,sans-serif">En cola, espera CPU</text>
+
+                        <!-- RUNNING -->
+                        <rect x="400" y="86" width="140" height="54" rx="10" fill="#E1F5EE" stroke="#9FE1CB"
+                            stroke-width="2" />
+                        <text x="470" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#085041"
+                            font-family="system-ui,sans-serif">Running</text>
+                        <text x="470" y="126" text-anchor="middle" font-size="10" fill="#0F6E56"
+                            font-family="system-ui,sans-serif">Ejecutando en CPU</text>
+
+                        <!-- WAITING -->
+                        <rect x="400" y="178" width="140" height="48" rx="10" fill="#FAEEDA" stroke="#FAC775"
+                            stroke-width="1.5" />
+                        <text x="470" y="198" text-anchor="middle" font-size="13" font-weight="600" fill="#633806"
+                            font-family="system-ui,sans-serif">Waiting</text>
+                        <text x="470" y="216" text-anchor="middle" font-size="10" fill="#854F0B"
+                            font-family="system-ui,sans-serif">E/S o evento externo</text>
+
+                        <!-- TERMINATED -->
+                        <rect x="610" y="86" width="130" height="54" rx="10" fill="#F1EFE8" stroke="#D3D1C7"
+                            stroke-width="1.5" />
+                        <text x="675" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#444441"
+                            font-family="system-ui,sans-serif">Terminated</text>
+                        <text x="675" y="126" text-anchor="middle" font-size="10" fill="#5F5E5A"
+                            font-family="system-ui,sans-serif">Proceso finalizado</text>
+
+                        <!-- New → Ready -->
+                        <line x1="130" y1="113" x2="198" y2="113" stroke="#888780" stroke-width="1.5"
+                            marker-end="url(#arr-s)" />
+                        <text x="164" y="106" text-anchor="middle" font-size="9" fill="#888780"
+                            font-family="system-ui,sans-serif">admitted</text>
+
+                        <!-- Ready → Running -->
+                        <line x1="330" y1="113" x2="398" y2="113" stroke="#1D9E75" stroke-width="1.5"
+                            marker-end="url(#arr-g)" />
+                        <text x="364" y="106" text-anchor="middle" font-size="9" fill="#1D9E75"
+                            font-family="system-ui,sans-serif">scheduled</text>
+
+                        <!-- Running → Terminated -->
+                        <line x1="540" y1="113" x2="608" y2="113" stroke="#A32D2D" stroke-width="1.5"
+                            marker-end="url(#arr-r)" />
+                        <text x="574" y="106" text-anchor="middle" font-size="9" fill="#A32D2D"
+                            font-family="system-ui,sans-serif">exit</text>
+
+                        <!-- Running → Ready (preempt, curva arriba) -->
+                        <path d="M470 86 Q470 36 265 86" fill="none" stroke="#378ADD" stroke-width="1.5"
+                            stroke-dasharray="5 3" marker-end="url(#arr-b)" />
+                        <text x="360" y="30" text-anchor="middle" font-size="9" fill="#378ADD"
+                            font-family="system-ui,sans-serif">preempted (preemptive only)</text>
+
+                        <!-- Running → Waiting -->
+                        <line x1="470" y1="140" x2="470" y2="176" stroke="#BA7517" stroke-width="1.5"
+                            marker-end="url(#arr-o)" />
+                        <text x="500" y="163" text-anchor="start" font-size="9" fill="#BA7517"
+                            font-family="system-ui,sans-serif">I/O request</text>
+
+                        <!-- Waiting → Ready -->
+                        <path d="M400 202 Q300 238 265 142" fill="none" stroke="#BA7517" stroke-width="1.5"
+                            stroke-dasharray="5 3" marker-end="url(#arr-o)" />
+                        <text x="300" y="236" text-anchor="middle" font-size="9" fill="#BA7517"
+                            font-family="system-ui,sans-serif">I/O completado</text>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Simulación en vivo -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Simulación en vivo de estados</div>
+                    <div class="sim-controls">
+                        <span class="sim-time" id="sim-time-display">T = 0 s</span>
+                        <button class="btn btn-ghost btn-sm" onclick="simStep()">Siguiente paso →</button>
+                        <button class="btn btn-ghost btn-sm" id="btnSimAuto" onclick="toggleSimAuto()">▶ Auto</button>
+                        <button class="btn btn-ghost btn-sm" onclick="resetSim()">↺ Reiniciar</button>
+                    </div>
+                </div>
+
+                <!-- CPU -->
+                <div style="margin-bottom:16px;">
+                    <div class="cpu-label" style="margin-bottom:8px;">CPU — Proceso en ejecución</div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="cpu-box" id="cpu-box">Idle</div>
+                        <div style="font-size:12px;color:var(--text-muted);" id="cpu-info">Sin proceso activo</div>
+                    </div>
+                </div>
+
+                <!-- Cola de listos -->
+                <div class="ready-queue-wrap" style="margin-bottom:16px;">
+                    <div class="rq-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        Cola de listos (Ready Queue)
+                    </div>
+                    <div class="ready-queue-items" id="ready-queue-items">
+                        <span style="font-size:12px;color:var(--text-muted);">Cola vacía</span>
+                    </div>
+                </div>
+
+                <!-- Cards de procesos -->
+                <div class="process-states-grid" id="proc-states-grid"></div>
+            </div>
+
+        </div><!-- /module-estados -->
+
+    </div><!-- /metrics-page -->
+
+    <!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+    <script src="js/ui.js"></script>
+    <script>
+        /* ================================================================
+           DATOS GLOBALES
+           ================================================================ */
+        let PROCESSES = [];
+        let S_RESULTS = {};   // scheduling: { algo: [{pid,ct,tat,wt,rt,...}] }
+        let P_DATA = null; // paginación: { algo, frames, refs, steps, faults, hits }
+        let S_ACTIVE = 'fcfs';
+
+        const S_ALGOS = [
+            { key: 'fcfs', label: 'FCFS', color: '#378ADD' },
+            { key: 'sjf', label: 'SJF', color: '#1D9E75' },
+            { key: 'hrrn', label: 'HRRN', color: '#BA7517' },
+            { key: 'rr', label: 'Round Robin', color: '#D85A30' },
+            { key: 'srtf', label: 'SRTF', color: '#D4537E' },
+            { key: 'priority', label: 'Priority', color: '#7F77DD' },
+        ];
+
+        const P_ALGOS = [
+            { key: 'fifo', label: 'FIFO', color: '#378ADD' },
+            { key: 'lru', label: 'LRU', color: '#1D9E75' },
+            { key: 'opt', label: 'OPT', color: '#7F77DD' },
+            { key: 'lfu', label: 'LFU', color: '#D85A30' },
+            { key: 'clock', label: 'Clock', color: '#BA7517' },
+        ];
+
+        let s_selectedAlgos = new Set(['fcfs', 'sjf', 'hrrn', 'rr', 'srtf']);
+
+        /* ================================================================
+           ALGORITMOS DE SCHEDULING
+           ================================================================ */
+        function calcFCFS(p) { const ps = p.map(x => ({ ...x })).sort((a, b) => a.arrival - b.arrival); let t = 0; return ps.map(proc => { if (t < proc.arrival) t = proc.arrival; const rt = t - proc.arrival, ct = t + proc.burst, tat = ct - proc.arrival, wt = tat - proc.burst; t = ct; return { ...proc, ct, tat, wt, rt: Math.max(0, rt) }; }); }
+        function calcSJF(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.sort((a, b) => a.burst - b.burst); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
+        function calcHRRN(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.forEach(x => { x._rr = (t - x.arrival + x.burst) / x.burst; }); av.sort((a, b) => b._rr - a._rr); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
+        function calcRR(p, q = 2) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1 })); const sorted = [...ps].sort((a, b) => a.arrival - b.arrival); const queue = []; let t = 0, idx = 0; const res = []; const arrived = new Set(); while (true) { while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (!queue.length) { if (idx >= sorted.length) break; t = sorted[idx].arrival; continue; } const c = queue.shift(); if (c.firstRun < 0) c.firstRun = t; const run = Math.min(c.remaining, q); t += run; c.remaining -= run; while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (c.remaining > 0) queue.push(c); else { const ct = t, tat = ct - c.arrival, wt = tat - c.burst, rt = c.firstRun - c.arrival; res.push({ pid: c.pid, arrival: c.arrival, burst: c.burst, priority: c.priority, ct, tat, wt, rt: Math.max(0, rt) }); } } return res.sort((a, b) => a.pid - b.pid); }
+        function calcSRTF(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.remaining - b.remaining || (a.arrival - b.arrival)); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
+        function calcPriority(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.priority - b.priority); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
+
+        function runS(key, procs) { switch (key) { case 'fcfs': return calcFCFS(procs); case 'sjf': return calcSJF(procs); case 'hrrn': return calcHRRN(procs); case 'rr': return calcRR(procs); case 'srtf': return calcSRTF(procs); case 'priority': return calcPriority(procs); default: return calcFCFS(procs); } }
+        function avg(arr, k) { return arr.length ? arr.reduce((s, x) => s + (x[k] || 0), 0) / arr.length : 0; }
+        function makespan(arr) { return arr.reduce((m, x) => Math.max(m, x.ct || 0), 0); }
+
+        /* ================================================================
+           ALGORITMOS DE PAGINACIÓN
+           ================================================================ */
+        function simFIFO(refs, frames) {
+            const mem = [], queue = []; let faults = 0, hits = 0; const steps = [];
+            for (let i = 0; i < refs.length; i++) {
+                const pg = refs[i]; let fault = false, evicted = null;
+                if (mem.includes(pg)) { hits++; }
+                else { fault = true; faults++; if (mem.length >= frames) { evicted = queue.shift(); mem.splice(mem.indexOf(evicted), 1); } mem.push(pg); queue.push(pg); }
+                steps.push({ ref: i, page: pg, fault, evicted, mem: [...mem] });
+            }
+            return { faults, hits, steps };
+        }
+        function simLRU(refs, frames) {
+            const mem = [], used = []; let faults = 0, hits = 0; const steps = [];
+            for (let i = 0; i < refs.length; i++) {
+                const pg = refs[i]; let fault = false, evicted = null;
+                if (mem.includes(pg)) { hits++; used.splice(used.indexOf(pg), 1); used.push(pg); }
+                else { fault = true; faults++; if (mem.length >= frames) { evicted = used.shift(); mem.splice(mem.indexOf(evicted), 1); } mem.push(pg); used.push(pg); }
+                steps.push({ ref: i, page: pg, fault, evicted, mem: [...mem] });
+            }
+            return { faults, hits, steps };
+        }
+        function simOPT(refs, frames) {
+            const mem = []; let faults = 0, hits = 0; const steps = [];
+            for (let i = 0; i < refs.length; i++) {
+                const pg = refs[i]; let fault = false, evicted = null;
+                if (mem.includes(pg)) { hits++; }
+                else { fault = true; faults++; if (mem.length >= frames) { const nxt = mem.map(p => { const fi = refs.indexOf(p, i + 1); return fi === -1 ? Infinity : fi; }); const idx = nxt.indexOf(Math.max(...nxt)); evicted = mem[idx]; mem.splice(idx, 1); } mem.push(pg); }
+                steps.push({ ref: i, page: pg, fault, evicted, mem: [...mem] });
+            }
+            return { faults, hits, steps };
+        }
+        function simLFU(refs, frames) {
+            const mem = [], freq = {}; let faults = 0, hits = 0; const steps = [];
+            for (let i = 0; i < refs.length; i++) {
+                const pg = refs[i]; let fault = false, evicted = null;
+                if (!freq[pg]) freq[pg] = 0;
+                if (mem.includes(pg)) { hits++; freq[pg]++; }
+                else { fault = true; faults++; if (mem.length >= frames) { const minF = Math.min(...mem.map(p => freq[p])); evicted = mem.find(p => freq[p] === minF); mem.splice(mem.indexOf(evicted), 1); } mem.push(pg); freq[pg]++; }
+                steps.push({ ref: i, page: pg, fault, evicted, mem: [...mem] });
+            }
+            return { faults, hits, steps };
+        }
+        function simClock(refs, frames) {
+            const mem = new Array(frames).fill(null), bits = new Array(frames).fill(0); let ptr = 0, faults = 0, hits = 0; const steps = [];
+            for (let i = 0; i < refs.length; i++) {
+                const pg = refs[i]; let fault = false, evicted = null;
+                const idx = mem.indexOf(pg);
+                if (idx !== -1) { hits++; bits[idx] = 1; }
+                else { fault = true; faults++; while (bits[ptr] === 1) { bits[ptr] = 0; ptr = (ptr + 1) % frames; } evicted = mem[ptr]; mem[ptr] = pg; bits[ptr] = 1; ptr = (ptr + 1) % frames; }
+                steps.push({ ref: i, page: pg, fault, evicted, mem: mem.filter(x => x !== null) });
+            }
+            return { faults, hits, steps };
+        }
+
+        function runP(key, refs, frames) { switch (key) { case 'fifo': return simFIFO(refs, frames); case 'lru': return simLRU(refs, frames); case 'opt': return simOPT(refs, frames); case 'lfu': return simLFU(refs, frames); case 'clock': return simClock(refs, frames); default: return simFIFO(refs, frames); } }
+
+        /* ================================================================
+           DATOS DE EJEMPLO
+           ================================================================ */
+        const EJ_PROCS = [
+            { pid: 1, arrival: 0, burst: 6, priority: 2, pages: 3 },
+            { pid: 2, arrival: 1, burst: 4, priority: 1, pages: 2 },
+            { pid: 3, arrival: 2, burst: 9, priority: 4, pages: 5 },
+            { pid: 4, arrival: 3, burst: 3, priority: 3, pages: 2 },
+            { pid: 5, arrival: 4, burst: 5, priority: 2, pages: 4 },
+        ];
+        const EJ_REFS = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1];
+        const EJ_FRAMES = 3;
+
+        function cargarDatosEjemplo() {
+            PROCESSES = JSON.parse(JSON.stringify(EJ_PROCS));
+            S_RESULTS = {};
+            S_RESULTS[S_ACTIVE] = runS(S_ACTIVE, PROCESSES);
+            P_DATA = {
+                refs: EJ_REFS, frames: EJ_FRAMES,
+                ...runP('fifo', EJ_REFS, EJ_FRAMES), algo: 'fifo'
+            };
+            renderAll();
+        }
+
+        function cargarDesdeLS() {
+            try {
+                const rp = localStorage.getItem('osim_processes');
+                const rs = localStorage.getItem('osim_results');
+                const rpag = localStorage.getItem('osim_paginacion');
+                if (rp) PROCESSES = JSON.parse(rp);
+                if (rs) { const r = JSON.parse(rs); S_ACTIVE = r.algo; S_RESULTS[r.algo] = r.data; }
+                if (rpag) P_DATA = JSON.parse(rpag);
+            } catch (e) { }
+        }
+
+        function ejecutarTodo() {
+            if (!PROCESSES.length) cargarDatosEjemplo();
+            S_ALGOS.forEach(a => { if (!S_RESULTS[a.key]) S_RESULTS[a.key] = runS(a.key, PROCESSES); });
+            if (!P_DATA) P_DATA = { refs: EJ_REFS, frames: EJ_FRAMES, ...runP('fifo', EJ_REFS, EJ_FRAMES), algo: 'fifo' };
+            renderAll();
+        }
+
+        function renderAll() {
+            renderTablaS();
+            renderKPIsS();
+            renderChartsS();
+            renderKPIsP();
+            renderTablaP();
+            renderChartFaultsP();
+            renderCompSSelector();
+            initSim();
+        }
+
+        /* ================================================================
+           SCHEDULING — render
+           ================================================================ */
+        let chartSWT = null, chartSTAT = null;
+
+        function renderTablaS() {
+            const rows = S_RESULTS[S_ACTIVE] || [];
+            if (!rows.length) return;
+            const maxWT = Math.max(...rows.map(x => x.wt), 1);
+            const minWT = Math.min(...rows.map(x => x.wt));
+            const maxWTv = Math.max(...rows.map(x => x.wt));
+            document.getElementById('s-metrics-body').innerHTML = rows.map(r => `
+    <tr>
+      <td class="td-pid">P${r.pid}</td>
+      <td class="td-num">${r.arrival}</td>
+      <td class="td-num">${r.burst}</td>
+      <td class="td-num">${r.priority || '—'}</td>
+      <td class="td-num">${r.ct}</td>
+      <td class="td-num">${r.tat}</td>
+      <td class="td-num ${r.wt === minWT ? 'td-best' : r.wt === maxWTv ? 'td-worst' : ''}">${r.wt}</td>
+      <td class="td-num">${r.rt}</td>
+      <td><div class="inline-bar-wrap"><div class="inline-bar"><div class="inline-bar-fill" style="width:${Math.round(r.wt / maxWT * 100)}%"></div></div><span class="td-num">${r.wt}s</span></div></td>
+    </tr>
+  `).join('');
+            document.getElementById('s-foot-tat').textContent = avg(rows, 'tat').toFixed(2) + 's';
+            document.getElementById('s-foot-wt').textContent = avg(rows, 'wt').toFixed(2) + 's';
+            document.getElementById('s-foot-rt').textContent = avg(rows, 'rt').toFixed(2) + 's';
+        }
+
+        function renderKPIsS() {
+            const rows = S_RESULTS[S_ACTIVE] || []; if (!rows.length) return;
+            const ms = makespan(rows); const tb = rows.reduce((s, x) => s + x.burst, 0);
+            document.getElementById('s-kpi-awt').textContent = avg(rows, 'wt').toFixed(2) + 's';
+            document.getElementById('s-kpi-atat').textContent = avg(rows, 'tat').toFixed(2) + 's';
+            document.getElementById('s-kpi-art').textContent = avg(rows, 'rt').toFixed(2) + 's';
+            document.getElementById('s-kpi-cpu').textContent = ms > 0 ? Math.round(tb / ms * 100) + '%' : '—';
+            document.getElementById('s-kpi-makespan').textContent = ms + 's';
+        }
+
+        function renderChartsS() {
+            const rows = S_RESULTS[S_ACTIVE] || []; if (!rows.length) return;
+            const labels = rows.map(r => 'P' + r.pid);
+            const algo = S_ALGOS.find(a => a.key === S_ACTIVE) || S_ALGOS[0];
+            if (chartSWT) chartSWT.destroy();
+            chartSWT = new Chart(document.getElementById('s-chart-wt'), {
+                type: 'bar', data: { labels, datasets: [{ label: 'Waiting Time', data: rows.map(r => r.wt), backgroundColor: algo.color + '33', borderColor: algo.color, borderWidth: 2, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } }
+            });
+            if (chartSTAT) chartSTAT.destroy();
+            chartSTAT = new Chart(document.getElementById('s-chart-tat'), {
+                type: 'bar', data: { labels, datasets: [{ label: 'Turnaround', data: rows.map(r => r.tat), backgroundColor: '#1D9E7533', borderColor: '#1D9E75', borderWidth: 2, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } }
+            });
+        }
+
+        function cambiarAlgoTabla(val) {
+            S_ACTIVE = val;
+            if (!S_RESULTS[val]) S_RESULTS[val] = runS(val, PROCESSES);
+            const a = S_ALGOS.find(x => x.key === val) || S_ALGOS[0];
+            document.getElementById('s-algo-chip').innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${a.color};display:inline-block;"></span>${a.label}`;
+            renderTablaS(); renderKPIsS(); renderChartsS();
+        }
+
+        /* ================================================================
+           SCHEDULING — comparación
+           ================================================================ */
+        let chartSCompMain = null, chartSCompWT = null, chartSCompTAT = null;
+
+        function renderCompSSelector() {
+            const wrap = document.getElementById('s-comp-selector');
+            wrap.innerHTML = S_ALGOS.map(a => `
+    <button class="comp-algo-btn ${s_selectedAlgos.has(a.key) ? 'selected' : ''}"
+            style="${s_selectedAlgos.has(a.key) ? 'background:' + a.color + ';border-color:' + a.color : ''}"
+            onclick="toggleS('${a.key}',this,'${a.color}')">
+      <span class="comp-dot" style="background:${s_selectedAlgos.has(a.key) ? 'rgba(255,255,255,0.7)' : a.color}"></span>
+      ${a.label}
+    </button>
+  `).join('');
+        }
+
+        function toggleS(key, btn, color) {
+            if (s_selectedAlgos.has(key)) { if (s_selectedAlgos.size <= 1) return; s_selectedAlgos.delete(key); btn.classList.remove('selected'); btn.style.background = ''; btn.style.borderColor = ''; btn.querySelector('.comp-dot').style.background = color; }
+            else { s_selectedAlgos.add(key); btn.classList.add('selected'); btn.style.background = color; btn.style.borderColor = color; btn.querySelector('.comp-dot').style.background = 'rgba(255,255,255,0.7)'; }
+        }
+
+        function seleccionarTodosS() { S_ALGOS.forEach(a => s_selectedAlgos.add(a.key)); renderCompSSelector(); }
+
+        function ejecutarCompS() {
+            if (!PROCESSES.length) { alert('Carga datos primero.'); return; }
+            const keys = [...s_selectedAlgos];
+            keys.forEach(k => { if (!S_RESULTS[k]) S_RESULTS[k] = runS(k, PROCESSES); });
+            const datos = keys.map(k => { const r = S_RESULTS[k]; const ms = makespan(r); const tb = r.reduce((s, x) => s + x.burst, 0); return { key: k, label: S_ALGOS.find(a => a.key === k)?.label || k, color: S_ALGOS.find(a => a.key === k)?.color || '#378ADD', awt: avg(r, 'wt'), atat: avg(r, 'tat'), art: avg(r, 'rt'), cpu: ms > 0 ? Math.round(tb / ms * 100) : 0, ms }; }).sort((a, b) => a.awt - b.awt);
+            const maxWT = datos[datos.length - 1]?.awt || 1;
+            document.getElementById('s-comp-body').innerHTML = datos.map((d, i) => `
+    <tr>
+      <td><div class="comp-algo-name"><span class="comp-dot" style="background:${d.color}"></span>${d.label}</div></td>
+      <td><div class="comp-color-bar"><div class="comp-bar-track"><div class="comp-bar-inner" style="width:${Math.round(d.awt / maxWT * 100)}%;background:${d.color}"></div></div><span class="comp-td-val">${d.awt.toFixed(2)}s</span></div></td>
+      <td class="comp-td-val">${d.atat.toFixed(2)}s</td>
+      <td class="comp-td-val">${d.art.toFixed(2)}s</td>
+      <td class="comp-td-val">${d.cpu}%</td>
+      <td class="comp-td-val">${d.ms}s</td>
+      <td>${i === 0 ? '<span class="badge-best">Mejor</span>' : ''}${i === datos.length - 1 && datos.length > 1 ? '<span class="badge-worst">Mayor espera</span>' : ''}</td>
+    </tr>
+  `).join('');
+            if (chartSCompMain) chartSCompMain.destroy();
+            chartSCompMain = new Chart(document.getElementById('s-chart-comp-main'), { type: 'bar', data: { labels: datos.map(d => d.label), datasets: [{ label: 'Avg Waiting', data: datos.map(d => +d.awt.toFixed(2)), backgroundColor: datos.map(d => d.color + '55'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 6 }, { label: 'Avg Turnaround', data: datos.map(d => +d.atat.toFixed(2)), backgroundColor: datos.map(d => d.color + '22'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } } });
+            if (chartSCompWT) chartSCompWT.destroy();
+            chartSCompWT = new Chart(document.getElementById('s-chart-comp-wt'), { type: 'bar', data: { labels: datos.map(d => d.label), datasets: [{ label: 'Avg Waiting', data: datos.map(d => +d.awt.toFixed(2)), backgroundColor: datos.map(d => d.color + '55'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } } });
+            if (chartSCompTAT) chartSCompTAT.destroy();
+            chartSCompTAT = new Chart(document.getElementById('s-chart-comp-tat'), { type: 'bar', data: { labels: datos.map(d => d.label), datasets: [{ label: 'Avg Turnaround', data: datos.map(d => +d.atat.toFixed(2)), backgroundColor: datos.map(d => d.color + '55'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } } });
+        }
+
+        /* ================================================================
+           PAGINACIÓN — render
+           ================================================================ */
+        let chartPFaults = null;
+
+        function renderKPIsP() {
+            if (!P_DATA) return;
+            const total = P_DATA.faults + P_DATA.hits;
+            const hitPct = total > 0 ? Math.round(P_DATA.hits / total * 100) : 0;
+            const faultPct = 100 - hitPct;
+            document.getElementById('p-kpi-faults').textContent = P_DATA.faults;
+            document.getElementById('p-kpi-hits').textContent = P_DATA.hits;
+            document.getElementById('p-kpi-hitrate').textContent = hitPct + '%';
+            document.getElementById('p-kpi-frames').textContent = P_DATA.frames;
+            document.getElementById('p-hit-bar').style.width = hitPct + '%';
+            document.getElementById('p-fault-bar').style.width = faultPct + '%';
+            document.getElementById('p-hit-pct').textContent = hitPct + '%';
+            document.getElementById('p-fault-pct').textContent = faultPct + '%';
+            const pa = P_ALGOS.find(a => a.key === P_DATA.algo) || P_ALGOS[0];
+            document.getElementById('p-algo-chip').innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${pa.color};display:inline-block;"></span>${pa.label}`;
+        }
+
+        function renderTablaP() {
+            if (!P_DATA || !P_DATA.steps) return;
+            document.getElementById('p-ref-body').innerHTML = P_DATA.steps.map((s, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td class="${s.fault ? 'cell-fault' : ''}">${s.page}</td>
+      <td>${s.fault ? '<span class="badge badge-fault">Fault</span>' : '<span class="badge badge-running">Hit</span>'}</td>
+      <td class="${s.evicted !== null ? 'cell-evicted' : 'td-num'}">${s.evicted !== null ? s.evicted : '—'}</td>
+      <td class="td-num">[${s.mem.join(', ')}]</td>
+    </tr>
+  `).join('');
+        }
+
+        function renderChartFaultsP() {
+            if (!P_DATA || !P_DATA.steps) return;
+            let acc = 0;
+            const acum = P_DATA.steps.map(s => { if (s.fault) acc++; return acc; });
+            if (chartPFaults) chartPFaults.destroy();
+            chartPFaults = new Chart(document.getElementById('p-chart-faults'), {
+                type: 'line',
+                data: { labels: P_DATA.steps.map((_, i) => 'R' + (i + 1)), datasets: [{ label: 'Fallos acumulados', data: acum, borderColor: '#E24B4A', backgroundColor: '#E24B4A22', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 }, stepSize: 1 } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 15 } } } }
+            });
+        }
+
+        /* ================================================================
+           PAGINACIÓN — comparación
+           ================================================================ */
+        let chartPComp = null, chartPHitrate = null, chartPEvol = null;
+
+        function ejecutarCompP() {
+            if (!P_DATA) { alert('Ejecuta la simulación de paginación primero.'); return; }
+            const refs = P_DATA.refs, frames = P_DATA.frames;
+            const datos = P_ALGOS.map(a => { const r = runP(a.key, refs, frames); const total = r.faults + r.hits; return { ...a, faults: r.faults, hits: r.hits, hitrate: total > 0 ? Math.round(r.hits / total * 100) : 0, steps: r.steps }; }).sort((a, b) => a.faults - b.faults);
+            const maxF = datos[datos.length - 1]?.faults || 1;
+            document.getElementById('p-comp-body').innerHTML = datos.map((d, i) => `
+    <tr>
+      <td><div class="comp-algo-name"><span class="comp-dot" style="background:${d.color}"></span>${d.label}</div></td>
+      <td><div class="comp-color-bar"><div class="comp-bar-track"><div class="comp-bar-inner" style="width:${Math.round(d.faults / maxF * 100)}%;background:${d.color}"></div></div><span class="comp-td-val">${d.faults}</span></div></td>
+      <td class="comp-td-val">${d.hits}</td>
+      <td class="comp-td-val">${d.hitrate}%</td>
+      <td class="comp-td-val">${100 - d.hitrate}%</td>
+      <td>${i === 0 ? '<span class="badge-best">Mejor</span>' : ''}${i === datos.length - 1 && datos.length > 1 ? '<span class="badge-worst">Más fallos</span>' : ''}</td>
+    </tr>
+  `).join('');
+            if (chartPComp) chartPComp.destroy();
+            chartPComp = new Chart(document.getElementById('p-chart-comp'), { type: 'bar', data: { labels: datos.map(d => d.label), datasets: [{ label: 'Page Faults', data: datos.map(d => d.faults), backgroundColor: datos.map(d => d.color + '55'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 }, stepSize: 1 } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } } });
+            if (chartPHitrate) chartPHitrate.destroy();
+            chartPHitrate = new Chart(document.getElementById('p-chart-hitrate'), { type: 'bar', data: { labels: datos.map(d => d.label), datasets: [{ label: 'Hit Rate %', data: datos.map(d => d.hitrate), backgroundColor: datos.map(d => d.color + '55'), borderColor: datos.map(d => d.color), borderWidth: 2, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } } });
+            // Evolución acumulada
+            if (chartPEvol) chartPEvol.destroy();
+            chartPEvol = new Chart(document.getElementById('p-chart-evolution'), {
+                type: 'line',
+                data: { labels: refs.map((_, i) => 'R' + (i + 1)), datasets: datos.map(d => { let acc = 0; return { label: d.label, data: d.steps.map(s => { if (s.fault) acc++; return acc; }), borderColor: d.color, backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 0 }; }) },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 11 }, stepSize: 1 } }, x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 12 } } } }
+            });
+        }
+
+        /* ================================================================
+           DIAGRAMA DE ESTADOS — simulación
+           ================================================================ */
+        let simProcs = [], simTimeline = [], simStep_idx = 0, simAutoInt = null, simAutoOn = false;
+        const STATE_LABELS = { new: 'New', ready: 'Ready', running: 'Running', waiting: 'Waiting', terminated: 'Terminated' };
+
+        function initSim() {
+            if (!PROCESSES.length) return;
+            simProcs = PROCESSES.map(p => ({ ...p, state: 'new', remaining: p.burst, firstRun: -1 }));
+            simTimeline = buildTimeline();
+            simStep_idx = 0;
+            renderSimUI();
+        }
+
+        function buildTimeline() {
+            const p = [...PROCESSES].sort((a, b) => a.arrival - b.arrival);
+            const tl = [{ t: 0, events: p.map(x => ({ pid: x.pid, state: 'new' })) }];
+            let t = 0;
+            for (const proc of p) {
+                if (t < proc.arrival) t = proc.arrival;
+                tl.push({ t, events: [{ pid: proc.pid, state: 'running' }] });
+                t += proc.burst;
+                tl.push({ t, events: [{ pid: proc.pid, state: 'terminated' }] });
+            }
+            return tl;
+        }
+
+        function simStep() {
+            if (!simTimeline.length) { initSim(); return; }
+            if (simStep_idx >= simTimeline.length) return;
+            const step = simTimeline[simStep_idx];
+            document.getElementById('sim-time-display').textContent = 'T = ' + step.t + ' s';
+            step.events.forEach(ev => { const sp = simProcs.find(x => x.pid === ev.pid); if (sp) sp.state = ev.state; });
+            simProcs.forEach(sp => { if (sp.state === 'new' && sp.arrival <= step.t) sp.state = 'ready'; });
+            renderSimUI();
+            simStep_idx++;
+        }
+
+        function renderSimUI() {
+            const running = simProcs.find(x => x.state === 'running');
+            const cpuBox = document.getElementById('cpu-box');
+            const cpuInfo = document.getElementById('cpu-info');
+            if (running) { cpuBox.textContent = 'P' + running.pid; cpuBox.style.background = 'var(--color-running)'; cpuBox.style.color = 'white'; cpuInfo.textContent = 'Burst: ' + running.burst + ' s | Prioridad: ' + (running.priority || '—'); }
+            else { cpuBox.textContent = 'Idle'; cpuBox.style.background = 'var(--surface-2)'; cpuBox.style.color = 'var(--text-muted)'; cpuInfo.textContent = 'Sin proceso activo'; }
+            const ready = simProcs.filter(x => x.state === 'ready');
+            const rq = document.getElementById('ready-queue-items');
+            rq.innerHTML = ready.length ? ready.map((p, i) => `${i > 0 ? '<span class="rq-arrow-sep">›</span>' : ''}<div class="rq-item">P${p.pid}<span class="rq-burst">BT:${p.burst}</span></div>`).join('') : '<span style="font-size:12px;color:var(--text-muted);">Cola vacía</span>';
+            document.getElementById('proc-states-grid').innerHTML = simProcs.map(p => `
+    <div class="proc-state-card state-${p.state}">
+      <div class="proc-card-pid">P${p.pid}</div>
+      <span class="badge badge-${p.state}">${STATE_LABELS[p.state] || p.state}</span>
+      <div style="font-size:10px;color:var(--text-muted);">AT:${p.arrival} BT:${p.burst}</div>
+    </div>
+  `).join('');
+        }
+
+        function resetSim() {
+            if (simAutoOn) toggleSimAuto();
+            simStep_idx = 0;
+            simProcs = PROCESSES.map(p => ({ ...p, state: 'new', remaining: p.burst }));
+            document.getElementById('sim-time-display').textContent = 'T = 0 s';
+            renderSimUI();
+        }
+
+        function toggleSimAuto() {
+            const btn = document.getElementById('btnSimAuto');
+            if (simAutoOn) { clearInterval(simAutoInt); simAutoOn = false; btn.textContent = '▶ Auto'; }
+            else { simAutoOn = true; btn.textContent = '⏸ Pause'; simAutoInt = setInterval(() => { if (simStep_idx >= simTimeline.length) { toggleSimAuto(); return; } simStep(); }, 900); }
+        }
+
+        /* ================================================================
+           TABS
+           ================================================================ */
+        function switchModule(id, btn) {
+            document.querySelectorAll('.module-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.module-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById('module-' + id).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function switchSub(mod, id, btn) {
+            const prefix = mod + '-sub-';
+            document.querySelectorAll(`[id^="${prefix}"]`).forEach(p => p.classList.remove('active'));
+            btn.parentElement.querySelectorAll('.section-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(prefix + id).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        /* ================================================================
+           INIT
+           ================================================================ */
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCompSSelector();
+            cargarDesdeLS();
+            if (!PROCESSES.length) cargarDatosEjemplo();
+            else {
+                if (!S_RESULTS[S_ACTIVE]) S_RESULTS[S_ACTIVE] = runS(S_ACTIVE, PROCESSES);
+                renderAll();
+            }
+        });
+    </script>
+
+</body>
+
+</html>

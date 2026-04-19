@@ -707,3 +707,12 @@ function onArchivoMemoriaSeleccionado(event) {
   reader.readAsText(file);
   event.target.value = "";
 }
+
+localStorage.setItem('osim_paginacion', JSON.stringify({
+  algo: algoActual,      // 'fifo', 'lru', 'opt', etc.
+  refs: cadenaDeRefs,    // [7, 0, 1, 2, 0, 3, ...]
+  frames: numMarcos,     // 3
+  faults: totalFaults,
+  hits: totalHits,
+  steps: pasos           // el array de pasos que ya genera paginacion.js
+}));
