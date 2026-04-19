@@ -111,6 +111,16 @@ function ejecutarSimulacion() {
   dibujarGantt();
   actualizarMetricas();
   actualizarQueueDinámica();
+
+  localStorage.setItem('osim_scheduling', JSON.stringify({
+    algoritmo: resultadoActual.algoritmo,
+    avgWaiting: resultadoActual.metricas.avgWaiting,
+    avgTurnaround: resultadoActual.metricas.avgTurnaround,
+    cpuUtilization: resultadoActual.metricas.cpuUtilization,
+    makespan: resultadoActual.metricas.makespan,
+    totalProcesos: resultadoActual.procesos.length
+  }));
+  
 }
 
 /* ----------------------------------------------------------
