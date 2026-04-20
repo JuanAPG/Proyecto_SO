@@ -280,6 +280,63 @@ function construirMarcos(frames, framesPrev, fault, refActual) {
 }
 
 /* ----------------------------------------------------------
+   RENDER CINE — Renderiza los asientos de la sala de cine
+   ---------------------------------------------------------- */
+
+function renderCine(marcos, paso) {
+  const area = document.getElementById("cine-area-asientos");
+  if (!area) return;
+
+  const esClockSC  = algoritmoActivo === "clock" || algoritmoActivo === "sc";
+  const manecilla  = (paso.manecilla !== undefined) ? paso.manecilla : -1;
+
+  area.innerHTML = marcos.map((m, i) => {
+    const estadoClase = `cine-est-${m.estado}`;
+    const label       = m.pagina !== null ? String(m.pagina) : "—";
+    const usher       = (esClockSC && manecilla === i)
+      ? `<div class="cine-usher-aqui">acomodador</div>`
+      : "";
+    const refBit = (paso.refBits && esClockSC)
+      ? `<span class="cine-ref-bit cine-ref-bit-${paso.refBits[i] === 1 ? "on" : "off"}">R:${paso.refBits[i]}</span>`
+      : "";
+
+    return `
+      <div class="cine-asiento ${estadoClase}">
+        ${usher}
+        <div class="cine-back">
+          <span>${label}</span>
+          ${refBit}
+        </div>
+        <div class="cine-cushion"></div>
+        <div class="cine-pg-num">Marco ${i}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ----------------------------------------------------------
+   ALARMA — Breve pitido Web Audio API en page fault
+   ---------------------------------------------------------- */
+
+let _audioCtx = null;
+
+function tocarAlarma() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(440, _audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(220, _audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.18);
+    osc.start(_audioCtx.currentTime);
+    osc.stop(_audioCtx.currentTime + 0.18);
+  } catch (_) { /* silenciar si no hay soporte */ }
+}
+
+/* ----------------------------------------------------------
    FUNCIÓN PRINCIPAL — iniciarSimulacion()
    ---------------------------------------------------------- */
 function iniciarSimulacion() {
@@ -361,13 +418,13 @@ function mostrarPaso(idx) {
     paso.fault,
     paso.referencia
   );
-  renderMarcos(document.getElementById("memoria-grid"), marcos, configMemoria.frames);
+  renderCine(marcos, paso);
 
   // Referencia actual
   const refEl = document.getElementById("ref-actual");
   if (refEl) {
     refEl.textContent = paso.referencia;
-    refEl.className   = "metric-value " + (paso.fault ? "fault" : "good");
+    refEl.className   = "cine-now-num " + (paso.fault ? "fault" : "good");
   }
 
   // Badge fault / hit
@@ -412,6 +469,17 @@ function mostrarPaso(idx) {
       refBitsEl.style.display = "none";
     }
   }
+
+  // Contadores de faults/hits en la barra inferior del cine
+  const faultsSoFar = historial.slice(0, idx + 1).filter(p => p.fault).length;
+  const hitsSoFar   = historial.slice(0, idx + 1).filter(p => !p.fault).length;
+  const cineFaultsEl = document.getElementById("cine-faults");
+  if (cineFaultsEl) cineFaultsEl.textContent = faultsSoFar;
+  const cineHitsEl = document.getElementById("cine-hits");
+  if (cineHitsEl) cineHitsEl.textContent = hitsSoFar;
+
+  // Alarma sonora en page fault
+  if (paso.fault) tocarAlarma();
 
   // Cadena visual
   renderCadenaVisual(idx);
@@ -614,6 +682,22 @@ function seleccionarAlgoritmo(nombre) {
   if (refBitsEl && historial.length === 0) {
     refBitsEl.style.display = (nombre === "clock" || nombre === "sc") ? "block" : "none";
   }
+
+  // Actualizar pantalla del cine
+  const cineBadge = document.getElementById("cine-algo-badge");
+  if (cineBadge) cineBadge.textContent = _nombreAlgo(nombre);
+
+  const cineDesc = document.getElementById("cine-algo-desc-screen");
+  if (cineDesc) {
+    const cineDescs = {
+      fifo:  "El acomodador saca al que lleva más tiempo sentado",
+      lru:   "El acomodador saca al que menos fue visto recientemente",
+      opt:   "El acomodador saca al que tardará más en volver",
+      clock: "El acomodador da segunda oportunidad con bit de referencia",
+      sc:    "Como Clock, pero usando cola ordenada con segunda oportunidad",
+    };
+    cineDesc.textContent = cineDescs[nombre] || "";
+  }
 }
 
 /* ----------------------------------------------------------
@@ -638,14 +722,19 @@ function resetearSimulacion() {
   cadenaReferencias = [];
   configMemoria     = {};
 
-  const grid = document.getElementById("memoria-grid");
-  if (grid) grid.innerHTML = `<p style="color:var(--text-muted);font-size:13px;padding:16px 0;">Configura y presiona Simular.</p>`;
+  const asientos = document.getElementById("cine-area-asientos");
+  if (asientos) asientos.innerHTML = `<p class="cine-placeholder-text">Configura y presiona Simular.</p>`;
+
+  const cineFaultsEl = document.getElementById("cine-faults");
+  if (cineFaultsEl) cineFaultsEl.textContent = "0";
+  const cineHitsEl = document.getElementById("cine-hits");
+  if (cineHitsEl) cineHitsEl.textContent = "0";
 
   const metricas = document.getElementById("metricas-paginacion");
   if (metricas) metricas.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">Sin datos aún.</p>`;
 
   const cadenaVisual = document.getElementById("cadena-visual");
-  if (cadenaVisual) cadenaVisual.innerHTML = `<p class="text-muted text-small">Aún no hay simulación.</p>`;
+  if (cadenaVisual) cadenaVisual.innerHTML = `<p class="cine-placeholder-text">Aún no hay simulación.</p>`;
 
   const controles = document.getElementById("controles-steps");
   if (controles) controles.style.display = "none";
@@ -707,12 +796,3 @@ function onArchivoMemoriaSeleccionado(event) {
   reader.readAsText(file);
   event.target.value = "";
 }
-
-localStorage.setItem('osim_paginacion', JSON.stringify({
-  algo: algoActual,      // 'fifo', 'lru', 'opt', etc.
-  refs: cadenaDeRefs,    // [7, 0, 1, 2, 0, 3, ...]
-  frames: numMarcos,     // 3
-  faults: totalFaults,
-  hits: totalHits,
-  steps: pasos           // el array de pasos que ya genera paginacion.js
-}));

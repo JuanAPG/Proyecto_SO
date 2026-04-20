@@ -208,41 +208,326 @@
     }
 
     /* -------------------------------------------------------
-       Marcos más grandes y visibles
+       CINEMA THEATER — Sala de Cine
        ------------------------------------------------------- */
-    .memory-frame {
-      height: 54px !important;
-      border-radius: 8px !important;
-      font-size: 11px !important;
+    .cine-sala {
+      background: #0D1B2A;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
     }
-    .memory-frame-content { font-size: 13px !important; font-weight: 600 !important; }
 
-    /* -------------------------------------------------------
-       Leyenda de estados
-       ------------------------------------------------------- */
-    .legend {
+    .cine-controls-bar {
+      background: #0A1520;
+      padding: 10px 14px;
       display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 8px;
+      flex-direction: column;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
+    .cine-controls-bar .progress-track { margin-bottom: 0; flex: 1; }
+    #controles-steps { align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    .cine-btn-nav {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #B0C4D8;
+      border-radius: 6px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
       flex-shrink: 0;
     }
-    .dot-empty   { background: var(--surface-2); border: 1px solid var(--border-strong); }
-    .dot-used    { background: var(--color-blue-50); border: 1px solid var(--color-blue-200); }
-    .dot-fault   { background: var(--color-fault-bg); border: 1px solid rgba(226,75,74,0.4); }
-    .dot-evicted { background: var(--color-waiting-bg); border: 1px solid rgba(239,159,39,0.4); }
+    .cine-btn-nav:hover:not(:disabled) {
+      background: rgba(24,95,165,0.35);
+      border-color: rgba(24,95,165,0.5);
+      color: #fff;
+    }
+    .cine-btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .cine-btn-play {
+      background: var(--color-blue-700);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex; align-items: center;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .cine-btn-play:hover { background: #0D4580; }
+    .cine-btn-play.btn-auto-playing {
+      background: var(--color-fault) !important;
+      border-color: var(--color-fault) !important;
+    }
+
+    .cine-step-counter {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #7090B0;
+      min-width: 48px;
+      text-align: center;
+    }
+    .cine-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+
+    /* Interior */
+    .cine-interior {
+      padding: 14px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Screen */
+    .cine-pantalla {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0A1520;
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      padding: 12px 12px 10px;
+    }
+    .cine-screen-glow {
+      position: absolute;
+      top: -20px; left: 50%;
+      transform: translateX(-50%);
+      width: 200px; height: 60px;
+      background: radial-gradient(ellipse, rgba(24,95,165,0.5) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cine-screen-body { position: relative; z-index: 1; }
+    .cine-algo-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: #E0EFFF;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 20px rgba(99,153,255,0.6);
+    }
+    .cine-algo-desc-screen {
+      font-size: 11px;
+      color: #7090B0;
+      margin: 4px 0 0;
+      font-style: italic;
+    }
+
+    /* Now row */
+    .cine-now-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .cine-now-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 4px 10px;
+    }
+    .cine-now-label {
+      font-size: 10px;
+      color: #5A7A9A;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .cine-now-num {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: #C8DFFF;
+    }
+    .cine-now-num.fault { color: #FF6B6B; text-shadow: 0 0 10px rgba(255,107,107,0.4); }
+    .cine-now-num.good  { color: #7BC67E; text-shadow: 0 0 10px rgba(123,198,126,0.35); }
+
+    /* Queue / entrada */
+    .cine-entrada-wrap {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .cine-entrada-label {
+      font-size: 10px;
+      color: #5A7A9A;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cine-cola { display: flex; flex-wrap: wrap; gap: 4px; min-height: 34px; }
+    .cine-placeholder-text { color: #3A5A7A; font-size: 12px; font-style: italic; }
+
+    /* Seats area */
+    .cine-asientos-area {
+      background: rgba(0,0,0,0.18);
+      border-radius: 10px;
+      padding: 16px 12px 12px;
+      min-height: 110px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    /* Individual seat */
+    .cine-asiento {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: default;
+      transition: transform 0.2s ease;
+      position: relative;
+    }
+    .cine-asiento:hover { transform: translateY(-2px); }
+
+    .cine-back {
+      width: 56px; height: 50px;
+      border-radius: 8px 8px 4px 4px;
+      background: #1E3040;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: #7090B0;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: visible;
+    }
+    .cine-cushion {
+      width: 60px; height: 14px;
+      border-radius: 4px 4px 8px 8px;
+      background: #1E3040;
+      border: 1.5px solid rgba(255,255,255,0.06);
+      transition: all 0.3s ease;
+    }
+    .cine-pg-num {
+      font-size: 9px;
+      color: #3A5A7A;
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+    .cine-ref-bit {
+      font-size: 9px;
+      color: #5A7A9A;
+      font-family: var(--font-mono);
+      line-height: 1;
+    }
+    .cine-ref-bit-on { color: #60A0E0; }
+    .cine-ref-bit-off { color: #3A5A7A; }
+
+    /* Seat states */
+    .cine-est-empty .cine-back    { background:#141E2A; color:#2A4A6A; border-color:rgba(255,255,255,0.04); }
+    .cine-est-empty .cine-cushion { background:#141E2A; border-color:rgba(255,255,255,0.03); }
+
+    .cine-est-used .cine-back    { background:#1A3A6A; color:#80B8FF; border-color:rgba(99,153,255,0.3); }
+    .cine-est-used .cine-cushion { background:#152D58; border-color:rgba(99,153,255,0.2); }
+
+    .cine-est-fault .cine-back {
+      background:#5C1A1A; color:#FF8080; border-color:rgba(255,107,107,0.5);
+      box-shadow:0 0 14px rgba(255,80,80,0.35);
+      animation: cine-fault-shake 0.35s ease;
+    }
+    .cine-est-fault .cine-cushion { background:#4A1515; border-color:rgba(255,107,107,0.3); }
+
+    .cine-est-evicted .cine-back {
+      background:#5C3A0A; color:#FFB060; border-color:rgba(239,159,39,0.5);
+      box-shadow:0 0 12px rgba(239,159,39,0.28);
+      animation: cine-evict-flash 0.4s ease;
+    }
+    .cine-est-evicted .cine-cushion { background:#4A2E08; border-color:rgba(239,159,39,0.3); }
+
+    /* Usher pointer (Clock/SC) */
+    .cine-usher-aqui {
+      position: absolute;
+      top: -16px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--color-blue-700);
+      color: #fff;
+      border-radius: 4px;
+      padding: 1px 5px;
+      white-space: nowrap;
+      font-family: var(--font-mono);
+      z-index: 2;
+      letter-spacing: 0.04em;
+    }
+    .cine-usher-aqui::after {
+      content: "";
+      position: absolute;
+      bottom: -4px; left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--color-blue-700);
+    }
+
+    /* Counter bar */
+    .cine-barra-inf {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 2px 0;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .cine-cont { display: flex; align-items: center; gap: 5px; }
+    .cine-cont-icono { display:flex; align-items:center; }
+    .cine-cont-num { font-family:var(--font-mono); font-size:18px; font-weight:700; }
+    .cine-cont-fault .cine-cont-num { color:#FF6B6B; }
+    .cine-cont-hit   .cine-cont-num { color:#7BC67E; }
+    .cine-cont-lbl { font-size:10px; color:#5A7A9A; text-transform:uppercase; letter-spacing:0.05em; }
+    .cine-barra-sep { width:1px; height:20px; background:rgba(255,255,255,0.08); }
+
+    /* Dark-mode overrides for ref-chip inside cine */
+    .cine-cola .ref-chip {
+      background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.12); color:#8AAAC8;
+    }
+    .cine-cola .ref-chip:hover { border-color:rgba(99,153,255,0.5); color:#C8DFFF; }
+    .cine-cola .ref-chip-active  { background:rgba(24,95,165,0.55); color:#E0EFFF; border-color:rgba(99,153,255,0.5); box-shadow:none; }
+    .cine-cola .ref-chip-fault   { background:rgba(226,75,74,0.2); color:#FF8080; border-color:rgba(255,107,107,0.3); }
+    .cine-cola .ref-chip-hit     { background:rgba(123,198,126,0.15); color:#7BC67E; border-color:rgba(123,198,126,0.3); }
+
+    /* Badge overrides inside cinema */
+    .cine-now-row .badge-fault   { background:rgba(226,75,74,0.2); color:#FF8080; border-color:rgba(255,107,107,0.3); }
+    .cine-now-row .badge-running { background:rgba(123,198,126,0.15); color:#7BC67E; border-color:rgba(123,198,126,0.3); }
+    .cine-now-row .badge-expulsada { background:rgba(239,159,39,0.15); color:#FFB060; border-color:rgba(239,159,39,0.3); }
+
+    /* Ref-bits panel inside cine — dark mode */
+    #ref-bits-panel .ref-bits-title { color:#5A7A9A; }
+    #ref-bits-panel .ref-bit-cell   { border-color:rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#B0C8E0; }
+    #ref-bits-panel .ref-bit-idx    { color:#3A5A7A; }
+    #ref-bits-panel .ref-bit-val    { color:#B0C8E0; }
+    #ref-bits-panel .ref-bit-on     { background:rgba(24,95,165,0.3); border-color:rgba(24,95,165,0.5); }
+    #ref-bits-panel .ref-bit-off    { background:rgba(255,255,255,0.03); }
+    #ref-bits-panel .ref-bit-ptr    { box-shadow:0 0 0 2px rgba(24,95,165,0.4); }
+    #ref-bits-panel .ref-bit-arrow  { color:#5090D0; }
+
+    @keyframes cine-fault-shake {
+      0%,100% { transform:translateX(0); }
+      20% { transform:translateX(-4px); }
+      40% { transform:translateX(4px); }
+      60% { transform:translateX(-2px); }
+      80% { transform:translateX(2px); }
+    }
+    @keyframes cine-evict-flash {
+      0%   { transform:scale(1); }
+      30%  { transform:scale(1.1); }
+      65%  { transform:scale(0.95); }
+      100% { transform:scale(1); }
+    }
   </style>
 </head>
 <body>
@@ -377,115 +662,109 @@
     </div><!-- /columna izquierda -->
 
     <!-- ====================================================
-         COLUMNA DERECHA — Visualización
+         COLUMNA DERECHA — Teatro de Cine
          ==================================================== -->
     <div style="display:flex; flex-direction:column; gap:16px;">
 
-      <!-- Estado actual + controles step-by-step -->
-      <div class="card">
+      <!-- ─── SALA DE CINE ─────────────────────────────────── -->
+      <div class="cine-sala">
 
-        <!-- Encabezado: info de estado -->
-        <div style="display:flex; align-items:center; justify-content:space-between;
-                    margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-          <div class="card-title" style="margin-bottom:0;">Estado Actual</div>
-          <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-            <div>
-              <div class="metric-label">Referencia</div>
-              <div id="ref-actual" class="metric-value">—</div>
+        <!-- Barra de controles (sobre el teatro) -->
+        <div class="cine-controls-bar">
+          <div class="progress-track" style="margin-bottom:0; flex:1;">
+            <div class="progress-fill" id="progress-bar"></div>
+          </div>
+
+          <div id="controles-steps"
+               style="display:none; align-items:center; gap:6px; flex-wrap:wrap;">
+            <button id="btn-first" class="cine-btn-nav step-btn" onclick="primerPaso()" title="Primer paso">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
+            </button>
+            <button id="btn-prev" class="cine-btn-nav step-btn" onclick="anteriorPaso()" title="Anterior">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
+            </button>
+            <span id="step-counter" class="cine-step-counter">—</span>
+            <button id="btn-next" class="cine-btn-nav step-btn" onclick="siguientePaso()" title="Siguiente">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
+            </button>
+            <button id="btn-last" class="cine-btn-nav step-btn" onclick="ultimoPaso()" title="Último paso">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
+            </button>
+            <div class="cine-sep"></div>
+            <button id="btn-auto" class="cine-btn-play" onclick="simularTodo()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Simular todo
+            </button>
+          </div>
+        </div>
+
+        <!-- Interior oscuro del teatro -->
+        <div class="cine-interior">
+
+          <!-- PANTALLA en la parte superior -->
+          <div class="cine-pantalla">
+            <div class="cine-screen-glow"></div>
+            <div class="cine-screen-body">
+              <div class="cine-algo-badge" id="cine-algo-badge">FIFO</div>
+              <p class="cine-algo-desc-screen" id="cine-algo-desc-screen">
+                El acomodador saca al que lleva más tiempo sentado
+              </p>
+            </div>
+          </div>
+
+          <!-- Indicador de referencia actual -->
+          <div class="cine-now-row">
+            <div class="cine-now-chip">
+              <span class="cine-now-label">Referencia</span>
+              <span class="cine-now-num" id="ref-actual">—</span>
             </div>
             <div id="fault-badge"></div>
             <div id="pagina-expulsada"></div>
           </div>
-        </div>
 
-        <!-- Barra de progreso -->
-        <div class="progress-track">
-          <div class="progress-fill" id="progress-bar"></div>
-        </div>
-
-        <!-- Controles step-by-step -->
-        <div id="controles-steps"
-             style="display:none; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-
-          <button id="btn-first" class="btn btn-ghost btn-sm step-btn"
-                  onclick="primerPaso()" title="Primer paso">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/>
-            </svg>
-          </button>
-
-          <button id="btn-prev" class="btn btn-ghost btn-sm step-btn"
-                  onclick="anteriorPaso()" title="Paso anterior">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="15 18 9 12 15 6 15 18"/>
-            </svg>
-          </button>
-
-          <span id="step-counter" class="text-mono text-muted"
-                style="min-width:68px; text-align:center; font-size:12px;">—</span>
-
-          <button id="btn-next" class="btn btn-ghost btn-sm step-btn"
-                  onclick="siguientePaso()" title="Siguiente paso">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="9 18 15 12 9 6 9 18"/>
-            </svg>
-          </button>
-
-          <button id="btn-last" class="btn btn-ghost btn-sm step-btn"
-                  onclick="ultimoPaso()" title="Último paso">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/>
-            </svg>
-          </button>
-
-          <!-- Separador -->
-          <div style="width:1px; height:20px; background:var(--border-strong); margin:0 4px;"></div>
-
-          <!-- Auto-play -->
-          <button id="btn-auto" class="btn btn-ghost btn-sm" onclick="simularTodo()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                 fill="currentColor" style="vertical-align:middle;margin-right:4px">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            Simular todo
-          </button>
-
-        </div>
-
-        <!-- Cadena de referencias visual -->
-        <div class="card-title" style="font-size:11px; margin-bottom:6px;">
-          Cadena de referencias
-          <span style="font-weight:400; color:var(--text-muted);margin-left:6px;">
-            — haz clic en cualquier chip para saltar al paso
-          </span>
-        </div>
-        <div id="cadena-visual" class="panel"
-             style="display:flex; flex-wrap:wrap; gap:5px; min-height:44px; align-items:center;">
-          <p class="text-muted text-small">Aún no hay simulación.</p>
-        </div>
-      </div>
-
-      <!-- Marcos de memoria -->
-      <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-          <div class="card-title" style="margin-bottom:0;">Marcos de Memoria</div>
-          <div class="legend">
-            <div class="legend-item"><div class="legend-dot dot-empty"></div>Vacío</div>
-            <div class="legend-item"><div class="legend-dot dot-used"></div>Ocupado</div>
-            <div class="legend-item"><div class="legend-dot dot-fault"></div>Nuevo (fault)</div>
-            <div class="legend-item"><div class="legend-dot dot-evicted"></div>Reemplazo</div>
+          <!-- Cola de personas (cadena de referencias) -->
+          <div class="cine-entrada-wrap">
+            <div class="cine-entrada-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Cola de acceso — clic para saltar al paso
+            </div>
+            <div id="cadena-visual" class="cine-cola">
+              <p class="cine-placeholder-text">Aún no hay simulación.</p>
+            </div>
           </div>
-        </div>
 
-        <div id="memoria-grid" class="memory-grid">
-          <p style="color:var(--text-muted); font-size:13px; padding:16px 0;">
-            Configura y presiona Simular.
-          </p>
-        </div>
+          <!-- ASIENTOS del teatro -->
+          <div id="cine-area-asientos" class="cine-asientos-area">
+            <p class="cine-placeholder-text">Configura y presiona Simular.</p>
+          </div>
 
-        <!-- Panel de bits de referencia (visible solo con CLOCK o SC) -->
-        <div id="ref-bits-panel"></div>
-      </div>
+          <!-- Panel bits de referencia (Clock / SC) -->
+          <div id="ref-bits-panel"></div>
+
+          <!-- Barra inferior: contadores -->
+          <div class="cine-barra-inf">
+            <div class="cine-cont cine-cont-fault">
+              <span class="cine-cont-icono" id="cine-fault-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#FF6B6B"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              <span class="cine-cont-num" id="cine-faults">0</span>
+              <span class="cine-cont-lbl">fallos</span>
+            </div>
+            <div class="cine-barra-sep"></div>
+            <div class="cine-cont cine-cont-hit">
+              <span class="cine-cont-icono">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7BC67E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span class="cine-cont-num" id="cine-hits">0</span>
+              <span class="cine-cont-lbl">hits</span>
+            </div>
+            <div style="flex:1"></div>
+            <div id="fault-badge-hidden" style="display:none"></div>
+            <div id="pagina-expulsada-hidden" style="display:none"></div>
+          </div>
+
+        </div><!-- /cine-interior -->
+      </div><!-- /cine-sala -->
 
       <!-- Métricas -->
       <div class="card">
