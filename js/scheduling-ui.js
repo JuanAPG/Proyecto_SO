@@ -131,29 +131,38 @@ function dibujarGantt() {
   const canvas = document.getElementById("ganttCanvas");
   if (!canvas || !resultadoActual) return;
 
-  const ctx    = canvas.getContext("2d");
-  const ancho  = canvas.offsetWidth;
-  const alto   = canvas.offsetHeight;
-  canvas.width = ancho;
+  const ctx   = canvas.getContext("2d");
+  const ancho = canvas.offsetWidth;
+  const alto  = canvas.offsetHeight;
+  canvas.width  = ancho;
   canvas.height = alto;
 
-  const procesos = resultadoActual.procesos;
+  // Usar segmentos cronológicos; fallback a un bloque por proceso
+  const segments = resultadoActual.segments ||
+    [...resultadoActual.procesos]
+      .sort((a, b) => a.startTime - b.startTime)
+      .map(p => ({ pid: p.pid, start: p.startTime, end: p.finishTime }));
+
   const makespan = resultadoActual.metricas.makespan;
-  if (makespan === 0) return;
+  if (!segments.length || makespan === 0) return;
+
+  // PIDs únicos en orden de primera aparición (para filas del Gantt)
+  const seenPids = [];
+  segments.forEach(s => { if (!seenPids.includes(s.pid)) seenPids.push(s.pid); });
 
   const margenIzq    = 54;
   const margenDer    = 20;
   const margenArriba = 24;
   const margenAbajo  = 44;
-
-  const anchoGrafico = ancho - margenIzq - margenDer;
-  const altoGrafico  = alto  - margenArriba - margenAbajo;
-  const alturaProceso = Math.min(38, altoGrafico / procesos.length);
+  const anchoGrafico  = ancho - margenIzq - margenDer;
+  const altoGrafico   = alto  - margenArriba - margenAbajo;
+  const alturaProceso = Math.min(38, altoGrafico / seenPids.length);
   const espacioFila   = alturaProceso + 6;
 
-  const colores = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
+  const colores  = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
+  const pidToIdx = {};
+  seenPids.forEach((pid, i) => { pidToIdx[pid] = i; });
 
-  // ── Dibujar todo en un canvas fuera de pantalla ──────────
   const off    = document.createElement("canvas");
   off.width    = ancho;
   off.height   = alto;
@@ -172,17 +181,16 @@ function dibujarGantt() {
   offCtx.lineTo(ancho - margenDer, altoGrafico + margenArriba);
   offCtx.stroke();
 
-  // Ticks de tiempo sobre el eje
+  // Ticks y guías verticales de tiempo
   const paso = Math.ceil(makespan / 10);
-  offCtx.fillStyle = "#8298AC";
-  offCtx.font = "10px 'IBM Plex Mono', monospace";
-  offCtx.textAlign = "center";
+  offCtx.fillStyle  = "#8298AC";
+  offCtx.font       = "10px 'IBM Plex Mono', monospace";
+  offCtx.textAlign  = "center";
   for (let t = 0; t <= makespan; t += paso) {
     const x = margenIzq + (t / makespan) * anchoGrafico;
-    // línea guía vertical (sutil)
     offCtx.save();
     offCtx.strokeStyle = "rgba(0,0,0,0.07)";
-    offCtx.lineWidth = 1;
+    offCtx.lineWidth   = 1;
     offCtx.beginPath();
     offCtx.moveTo(x, margenArriba);
     offCtx.lineTo(x, altoGrafico + margenArriba);
@@ -191,86 +199,86 @@ function dibujarGantt() {
     offCtx.fillText(t, x, altoGrafico + margenArriba + 16);
   }
 
-  // Bloques de proceso
-  procesos.forEach((p, idx) => {
-    const y     = margenArriba + idx * espacioFila;
-    const color = colores[idx % colores.length];
+  // Etiquetas PID en el eje Y
+  seenPids.forEach((pid, idx) => {
+    const y = margenArriba + idx * espacioFila;
+    offCtx.fillStyle  = "#000000";
+    offCtx.font       = "bold 11px 'IBM Plex Mono', monospace";
+    offCtx.textAlign  = "right";
+    offCtx.fillText(`P${pid}`, margenIzq - 8, y + alturaProceso / 2 + 4);
+  });
 
-    // Etiqueta PID (izquierda)
-    offCtx.fillStyle = "#000000";
-    offCtx.font = "bold 11px 'IBM Plex Mono', monospace";
-    offCtx.textAlign = "right";
-    offCtx.fillText(`P${p.pid}`, margenIzq - 8, y + alturaProceso / 2 + 4);
+  // Bloques por segmento (un proceso puede tener múltiples bloques)
+  segments.forEach(seg => {
+    const idx         = pidToIdx[seg.pid];
+    const color       = colores[idx % colores.length];
+    const y           = margenArriba + idx * espacioFila;
+    const xBloque     = margenIzq + (seg.start / makespan) * anchoGrafico;
+    const anchoBloque = ((seg.end - seg.start) / makespan) * anchoGrafico;
+    if (anchoBloque < 1) return;
 
-    const xBloque    = margenIzq + (p.startTime / makespan) * anchoGrafico;
-    const anchoBloque = ((p.finishTime - p.startTime) / makespan) * anchoGrafico;
-
-    // Gradiente en el bloque
     const grad = offCtx.createLinearGradient(xBloque, y, xBloque, y + alturaProceso);
     grad.addColorStop(0, _colorBright(color));
     grad.addColorStop(1, color);
 
-    // Sombra del bloque
-    offCtx.shadowColor = "rgba(0,0,0,0.18)";
-    offCtx.shadowBlur  = 4;
+    offCtx.shadowColor   = "rgba(0,0,0,0.18)";
+    offCtx.shadowBlur    = 4;
     offCtx.shadowOffsetY = 2;
-
-    // Bloque redondeado
     _roundRect(offCtx, xBloque, y, anchoBloque, alturaProceso, 4);
     offCtx.fillStyle = grad;
     offCtx.fill();
 
-    offCtx.shadowBlur = 0;
+    offCtx.shadowBlur    = 0;
     offCtx.shadowOffsetY = 0;
-
-    // Borde
-    offCtx.strokeStyle = "rgba(0,0,0,0.25)";
-    offCtx.lineWidth = 1;
+    offCtx.strokeStyle   = "rgba(0,0,0,0.25)";
+    offCtx.lineWidth     = 1;
     _roundRect(offCtx, xBloque, y, anchoBloque, alturaProceso, 4);
     offCtx.stroke();
 
-    // Texto dentro
     if (anchoBloque > 22) {
       offCtx.fillStyle = "#FFFFFF";
-      offCtx.font = `bold ${Math.min(11, anchoBloque / 3)}px 'IBM Plex Mono', monospace`;
+      offCtx.font      = `bold ${Math.min(11, anchoBloque / 3)}px 'IBM Plex Mono', monospace`;
       offCtx.textAlign = "center";
-      offCtx.fillText(`P${p.pid}`, xBloque + anchoBloque / 2, y + alturaProceso / 2 + 4);
+      offCtx.fillText(`P${seg.pid}`, xBloque + anchoBloque / 2, y + alturaProceso / 2 + 4);
     }
-
-    // Tiempo inicio / fin
-    offCtx.fillStyle = "#365670";
-    offCtx.font = "9px 'IBM Plex Mono', monospace";
-    offCtx.textAlign = "center";
-    offCtx.fillText(p.startTime,  xBloque,               y - 6);
-    offCtx.fillText(p.finishTime, xBloque + anchoBloque, y - 6);
   });
 
-  // ── Animar barrido de izquierda a derecha ───────────────
-  const DUR   = 750; // ms
-  const start = performance.now();
+  // Marcadores de cambio de contexto — línea roja punteada donde cambia el proceso en CPU
+  for (let i = 1; i < segments.length; i++) {
+    if (segments[i].pid !== segments[i - 1].pid) {
+      const x = margenIzq + (segments[i].start / makespan) * anchoGrafico;
+      offCtx.save();
+      offCtx.strokeStyle = "rgba(220,50,50,0.5)";
+      offCtx.lineWidth   = 1.5;
+      offCtx.setLineDash([3, 3]);
+      offCtx.beginPath();
+      offCtx.moveTo(x, margenArriba);
+      offCtx.lineTo(x, altoGrafico + margenArriba);
+      offCtx.stroke();
+      offCtx.restore();
+    }
+  }
 
+  // Animación de barrido izquierda → derecha
+  const DUR   = 750;
+  const start = performance.now();
   function frame(ahora) {
     const t    = Math.min((ahora - start) / DUR, 1);
-    const ease = 1 - Math.pow(1 - t, 3); // cubic ease-out
-
+    const ease = 1 - Math.pow(1 - t, 3);
     ctx.clearRect(0, 0, ancho, alto);
     ctx.save();
     ctx.beginPath();
-    // Revelar desde margenIzq hacia la derecha
     ctx.rect(0, 0, margenIzq + anchoGrafico * ease, alto);
     ctx.clip();
     ctx.drawImage(off, 0, 0);
     ctx.restore();
-
     if (t < 1) {
       requestAnimationFrame(frame);
     } else {
-      // Dibujo completo — quitar pulso de carga
       canvas.classList.remove("gantt-loading");
       actualizarTimelineGantt(makespan, paso);
     }
   }
-
   requestAnimationFrame(frame);
 }
 
@@ -318,11 +326,12 @@ function actualizarMetricas() {
   const m = resultadoActual.metricas;
 
   const datos = [
-    { label: "Avg Waiting",      raw: m.avgWaiting,      sufijo: "ms" },
-    { label: "Avg Turnaround",   raw: m.avgTurnaround,   sufijo: "ms" },
-    { label: "Avg Response",     raw: m.avgResponse,     sufijo: "ms" },
-    { label: "CPU Utilization",  raw: m.cpuUtilization,  sufijo: "",   clase: "good" },
-    { label: "Makespan",         raw: m.makespan,        sufijo: "ms" },
+    { label: "Avg Waiting",      raw: m.avgWaiting,                          sufijo: "ms" },
+    { label: "Avg Turnaround",   raw: m.avgTurnaround,                       sufijo: "ms" },
+    { label: "Avg Response",     raw: m.avgResponse,                         sufijo: "ms" },
+    { label: "CPU Utilization",  raw: m.cpuUtilization,                      sufijo: "", clase: "good" },
+    { label: "Makespan",         raw: m.makespan,                            sufijo: "ms" },
+    { label: "Context Switches", raw: resultadoActual.contextSwitches ?? 0,  sufijo: "" },
   ];
 
   const lista = document.getElementById("metricsList");
@@ -400,6 +409,7 @@ function limpiarGantt() {
     <div class="metric-row"><span class="metric-label">Avg Response</span><span class="metric-value">—</span></div>
     <div class="metric-row"><span class="metric-label">CPU Utilization</span><span class="metric-value good">—</span></div>
     <div class="metric-row"><span class="metric-label">Makespan</span><span class="metric-value">—</span></div>
+    <div class="metric-row"><span class="metric-label">Context Switches</span><span class="metric-value">—</span></div>
   `;
 
   const timeline = document.getElementById("ganttTimeline");
