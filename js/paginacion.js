@@ -403,12 +403,20 @@ function actualizarAcomodador(algo) {
    FLASH DE FALLO — parpadeo rojo de la sala
    ---------------------------------------------------------- */
 function triggerFaultFlash() {
-  const el = document.getElementById("fault-flash");
-  if (!el) return;
-  el.classList.remove("active");
-  void el.offsetWidth; // reflow
-  el.classList.add("active");
-  setTimeout(() => el.classList.remove("active"), 400);
+  const el    = document.getElementById("fault-flash");
+  const cinema = document.getElementById("memory-cinema");
+  if (el) {
+    el.classList.remove("active");
+    void el.offsetWidth;
+    el.classList.add("active");
+    setTimeout(() => el.classList.remove("active"), 450);
+  }
+  if (cinema) {
+    cinema.classList.remove("fault-shake");
+    void cinema.offsetWidth;
+    cinema.classList.add("fault-shake");
+    setTimeout(() => cinema.classList.remove("fault-shake"), 400);
+  }
 }
 
 /* ----------------------------------------------------------
@@ -468,10 +476,18 @@ function mostrarPaso(idx) {
   // Narrador
   actualizarNarrador(paso);
 
-  // Flash en page fault
+  // Flash en page fault / hit
   if (paso.fault) {
     triggerFaultFlash();
     tocarAlarma();
+  } else {
+    const hf = document.getElementById("hit-flash");
+    if (hf) {
+      hf.classList.remove("active");
+      void hf.offsetWidth;
+      hf.classList.add("active");
+      setTimeout(() => hf.classList.remove("active"), 400);
+    }
   }
 
   // Bits de referencia
