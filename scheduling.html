@@ -252,25 +252,53 @@
       gap: 8px;
     }
 
-    /* Canvas para Gantt */
-    #ganttCanvas {
-      width: 100%;
-      height: 300px;
+    /* Contenedor HTML del Gantt (reemplaza canvas) */
+    #ganttChart {
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       background: var(--surface-1);
-      display: block;
+      padding: 16px 12px 8px;
+      overflow-x: auto;
+    }
+    #ganttChart .gantt-pid { width: 48px; font-weight: 700; font-size: 12px; color: var(--text-primary); }
+    #ganttChart .gantt-track { height: 36px; min-width: 320px; }
+    #ganttChart .gantt-block { height: calc(100% - 4px); top: 2px; color: #fff; font-size: 11px; font-weight: 700; font-family: var(--font-mono); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.18); }
+    #ganttChart .gantt-row { margin-bottom: 4px; }
+
+    /* Marcador de cambio de contexto */
+    .gantt-cs {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 0;
+      border-left: 1.5px dashed rgba(220,50,50,0.5);
+      pointer-events: none;
+      z-index: 1;
     }
 
-    /* Timeline debajo del Gantt */
-    .gantt-timeline {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-muted);
-      padding: 0 4px;
-      font-family: var(--font-mono);
+    /* Animación de entrada para bloques HTML */
+    @keyframes ganttBlockReveal {
+      from { transform: scaleX(0); opacity: 0; }
+      to   { transform: scaleX(1); opacity: 1; }
     }
+    .gantt-block-enter {
+      transform-origin: left center;
+      animation: ganttBlockReveal 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    /* Botón editar */
+    .btn-edit {
+      background: var(--color-blue-50);
+      color: var(--color-blue-700);
+      border: 1px solid var(--color-blue-200);
+      padding: 4px 8px;
+      border-radius: var(--radius-md);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-right: 4px;
+    }
+    .btn-edit:hover { background: var(--color-blue-200); }
 
     /* Panel de métricas derecha */
     .metrics-panel {
@@ -510,12 +538,48 @@
     }
     .field-na .form-label { text-decoration: line-through; }
 
-    /* Pulso suave en el Gantt canvas mientras carga */
-    @keyframes canvasPulse {
-      0%,100% { box-shadow: none; }
-      50%      { box-shadow: 0 0 0 3px rgba(24,95,165,0.20); }
+    /* Panel de estados de procesos */
+    .states-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(4,44,83,0.08);
     }
-    .gantt-loading { animation: canvasPulse 0.8s ease infinite; }
+
+    /* Diagrama de estados */
+    .state-machine { display: flex; flex-direction: column; gap: 0; width: fit-content; margin-bottom: 20px; }
+    .smd-top { display: flex; align-items: flex-start; gap: 6px; }
+    .smd-node {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      font-family: var(--font-mono); white-space: nowrap; text-align: center;
+      min-width: 80px;
+    }
+    .smd-new        { background: #e8e8e6; color: #555; border: 1.5px solid #ccc; }
+    .smd-ready      { background: var(--color-blue-50); color: var(--color-blue-700); border: 1.5px solid var(--color-blue-200); }
+    .smd-running    { background: #EAF3DE; color: #27500A; border: 1.5px solid #C0DD97; }
+    .smd-waiting    { background: var(--color-waiting-bg); color: #633806; border: 1.5px solid #FAC775; }
+    .smd-terminated { background: #f0f0f0; color: #555; border: 1.5px dashed #bbb; }
+    .smd-arr { font-size: 16px; color: var(--text-muted); line-height: 34px; padding: 0 2px; }
+    .smd-running-group { display: flex; flex-direction: column; align-items: center; }
+    .smd-branch { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 4px; }
+    .smd-branch-arr { font-size: 14px; color: var(--text-muted); line-height: 1; }
+    .smd-back-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Cards de estado de proceso */
+    .psc-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .psc-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      min-width: 140px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .psc-pid { font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); }
+    .psc-metrics { display: flex; gap: 8px; flex-wrap: wrap; }
+    .psc-metric { font-size: 11px; color: var(--text-secondary); }
+    .psc-metric strong { color: var(--text-primary); }
 
     /* ============================================================
        RESPONSIVE
@@ -631,9 +695,9 @@
           <label class="form-label">Burst</label>
           <input type="number" class="form-input" id="inputBurst" min="1" />
         </div>
-        <div class="form-group" id="groupPriority">
+        <div class="form-group">
           <label class="form-label">Priority</label>
-          <input type="number" class="form-input" id="inputPriority" min="1" />
+          <input type="number" class="form-input" id="inputPriority" min="1" value="1" />
         </div>
         <div class="form-group">
           <label class="form-label">Pages</label>
@@ -641,6 +705,7 @@
         </div>
         <div class="input-actions">
           <button class="btn-run" id="btnAddProcess">Agregar</button>
+          <button class="btn-clear" id="btnCancelEdit" style="display:none; border-color:var(--color-waiting); color:var(--color-waiting);">✕ Cancelar</button>
           <button class="btn-clear" id="btnClearAll">Limpiar</button>
           <label class="btn-upload" style="margin:0; cursor:pointer;">
             Cargar
@@ -699,11 +764,7 @@
           </div>
         </div>
 
-        <canvas id="ganttCanvas"></canvas>
-
-        <div class="gantt-timeline" id="ganttTimeline">
-          <!-- Se rellena dinámicamente con tiempos -->
-        </div>
+        <div id="ganttChart" class="gantt-container"></div>
       </div>
 
       <!-- Métricas panel -->
@@ -733,6 +794,39 @@
         </div>
       </div>
 
+    </section>
+
+    <!-- ============================================================
+         PANEL 4: Diagrama de estados + cards de proceso
+         ============================================================ -->
+    <section class="states-panel" id="statesPanel" style="display:none;">
+      <div class="panel-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Diagrama de Estados
+      </div>
+
+      <!-- Diagrama estático de estados -->
+      <div class="state-machine">
+        <div class="smd-top">
+          <div class="smd-node smd-new">New</div>
+          <div class="smd-arr">→</div>
+          <div class="smd-node smd-ready">Ready</div>
+          <div class="smd-arr">→</div>
+          <div class="smd-running-group">
+            <div class="smd-node smd-running">Running</div>
+            <div class="smd-branch">
+              <div class="smd-branch-arr">↕</div>
+              <div class="smd-node smd-waiting">Waiting</div>
+              <div class="smd-back-label">↩ → Ready</div>
+            </div>
+          </div>
+          <div class="smd-arr" style="line-height:34px">→</div>
+          <div class="smd-node smd-terminated">Terminated</div>
+        </div>
+      </div>
+
+      <!-- Cards de estado por proceso (después de ejecutar) -->
+      <div class="psc-grid" id="processStateGrid"></div>
     </section>
 
   </main>
