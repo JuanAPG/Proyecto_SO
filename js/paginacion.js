@@ -186,6 +186,65 @@ function construirMarcos(frames, framesPrev, fault, refActual) {
 }
 
 /* ----------------------------------------------------------
+   SVG DE BUTACA — ilustración real de asiento de cine
+   ---------------------------------------------------------- */
+const SEAT_C = {
+  empty:   { arm:'#0A1620', back:'#0D1C2C', hr:'#1A3550', fold:'#060F18', cush:'#0A1620', pers:null,     num:null      },
+  used:    { arm:'#152D55', back:'#1A3A6A', hr:'#25508A', fold:'#102550', cush:'#152D58', pers:'#5A8ACC', num:'#90B8F0' },
+  fault:   { arm:'#4A1515', back:'#5C1A1A', hr:'#7A2020', fold:'#3A1010', cush:'#4A1515', pers:'#FF8080', num:'#FF8080' },
+  evicted: { arm:'#4A2D00', back:'#5C3800', hr:'#7A4A00', fold:'#3A2200', cush:'#4A2D00', pers:'#FFB060', num:'#FFB060' },
+  hit:     { arm:'#152D55', back:'#1A3A6A', hr:'#25508A', fold:'#102550', cush:'#152D58', pers:'#7BC67E', num:'#7BC67E' },
+};
+
+function seatSVG(estado, pagina, refBit, esPtr) {
+  const c = SEAT_C[estado] || SEAT_C.used;
+  const isEmpty = estado === 'empty';
+
+  const ptrEl  = esPtr
+    ? `<polygon points="29,0 23,-11 35,-11" fill="#378ADD" stroke="none"/>`
+    : '';
+
+  const persEl = c.pers
+    ? `<circle cx="29" cy="17" r="5.5" fill="${c.pers}" opacity="0.85"/>
+       <path d="M17 35 Q17 26 29 26 Q41 26 41 35" fill="${c.pers}" opacity="0.75" stroke="none"/>`
+    : '';
+
+  const numEl  = pagina !== null && pagina !== undefined
+    ? `<text x="29" y="41" text-anchor="middle" dominant-baseline="middle"
+             font-family="IBM Plex Mono,monospace" font-size="11" font-weight="700"
+             fill="${c.num}" letter-spacing="0">${pagina}</text>`
+    : '';
+
+  const refEl  = refBit !== undefined
+    ? `<text x="29" y="51" text-anchor="middle" dominant-baseline="middle"
+             font-family="IBM Plex Mono,monospace" font-size="7"
+             fill="${refBit === 1 ? '#5090D0' : '#2A4060'}">R:${refBit}</text>`
+    : '';
+
+  const cushEl = isEmpty
+    ? `<rect x="8" y="52" width="42" height="5" rx="2.5" fill="${c.fold}"/>`
+    : `<rect x="8" y="52" width="42" height="18" rx="5" fill="${c.cush}"/>
+       <rect x="16" y="57" width="26" height="2" rx="1" fill="${c.arm}" opacity="0.35"/>`;
+
+  return `<svg class="seat-svg" viewBox="0 0 58 75" width="58" height="75"
+               xmlns="http://www.w3.org/2000/svg" overflow="visible" aria-hidden="true">
+    ${ptrEl}
+    <rect x="0"  y="18" width="8"  height="36" rx="4" fill="${c.arm}"/>
+    <rect x="50" y="18" width="8"  height="36" rx="4" fill="${c.arm}"/>
+    <rect x="8"  y="2"  width="42" height="48" rx="7" fill="${c.back}"/>
+    <rect x="16" y="5"  width="26" height="9"  rx="4.5" fill="${c.hr}" opacity="0.7"/>
+    <line x1="15" y1="28" x2="43" y2="28" stroke="${c.hr}" stroke-width="1" opacity="0.22" stroke-dasharray="3,2"/>
+    ${persEl}
+    ${numEl}
+    ${refEl}
+    <rect x="8"  y="48" width="42" height="5"  rx="2.5" fill="${c.fold}"/>
+    ${cushEl}
+    <rect x="14" y="70" width="7"  height="5"  rx="2" fill="${c.arm}"/>
+    <rect x="37" y="70" width="7"  height="5"  rx="2" fill="${c.arm}"/>
+  </svg>`;
+}
+
+/* ----------------------------------------------------------
    RENDER SALA DE CINE — Asientos
    ---------------------------------------------------------- */
 function renderSala(marcos, paso) {
@@ -195,10 +254,9 @@ function renderSala(marcos, paso) {
   const n = marcos.length;
   if (n === 0) { grid.innerHTML = '<div class="cinema-placeholder">Sin marcos configurados.</div>'; return; }
 
-  const esClockSC  = algoritmoActivo === "clock" || algoritmoActivo === "sc";
-  const manecilla  = (paso && paso.manecilla !== undefined) ? paso.manecilla : -1;
+  const esClockSC = algoritmoActivo === "clock" || algoritmoActivo === "sc";
+  const manecilla = (paso && paso.manecilla !== undefined) ? paso.manecilla : -1;
 
-  // Dividir en filas de 4
   const cols = 4;
   const filas = [];
   for (let i = 0; i < n; i += cols) filas.push(marcos.slice(i, i + cols));
@@ -206,32 +264,26 @@ function renderSala(marcos, paso) {
   grid.innerHTML = filas.map((fila) => {
     const tienePasillo = fila.length > 2;
     const left  = tienePasillo ? fila.slice(0, 2) : fila;
-    const right = tienePasillo ? fila.slice(2) : [];
-
-    const PERSON_SVG = `<svg class="seat-person-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a5.5 5.5 0 0 1 11 0v2"/></svg>`;
+    const right = tienePasillo ? fila.slice(2)    : [];
 
     const renderSeat = (m) => {
-      const usher = (esClockSC && manecilla === m.indice)
+      const usherEl = (esClockSC && manecilla === m.indice)
         ? `<div class="usher-pointer">▼ aquí</div>` : "";
-      const refBitEl = (paso && paso.refBits && esClockSC)
-        ? `<span class="seat-ref-bit seat-ref-bit-${paso.refBits[m.indice] === 1 ? "on" : "off"}">R:${paso.refBits[m.indice]}</span>` : "";
-      const occupied = m.pagina !== null;
-      const personEl = occupied ? PERSON_SVG : "";
-      const numEl    = occupied ? `<span class="seat-page-num">${m.pagina}</span>` : "";
+      const refBit = (paso && paso.refBits && esClockSC) ? paso.refBits[m.indice] : undefined;
+      const esPtr  = esClockSC && manecilla === m.indice;
       return `
         <div class="seat seat-${m.estado}">
-          ${usher}
-          <div class="seat-back">${personEl}${numEl}${refBitEl}</div>
-          <div class="seat-cushion"></div>
+          ${usherEl}
+          ${seatSVG(m.estado, m.pagina, refBit, esPtr)}
           <div class="seat-frame-label">Marco ${m.indice}</div>
         </div>`;
     };
 
-    const leftHTML  = left.map(renderSeat).join("");
-    const rightHTML = right.map(renderSeat).join("");
-    const aisleHTML = tienePasillo ? `<div class="seat-aisle"></div>` : "";
-
-    return `<div class="seat-row ${tienePasillo ? "has-aisle" : ""}">${leftHTML}${aisleHTML}${rightHTML}</div>`;
+    return `<div class="seat-row ${tienePasillo ? "has-aisle" : ""}">
+      ${left.map(renderSeat).join("")}
+      ${tienePasillo ? `<div class="seat-aisle"></div>` : ""}
+      ${right.map(renderSeat).join("")}
+    </div>`;
   }).join("");
 }
 
@@ -647,8 +699,11 @@ function iniciarSimulacion() {
     { lbl: "Marcos usados",  val: `${usados}/${numFrames}`, cls: "" },
   ]);
 
-  // Mostrar playback bar
-  document.getElementById("playback-bar").style.display = "flex";
+  // Habilitar controles de playback
+  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = false;
+  });
   document.getElementById("cnt-faults").textContent = "0";
   document.getElementById("cnt-hits").textContent   = "0";
 
@@ -771,7 +826,11 @@ function resetearSimulacion() {
   document.getElementById("narrator-text").className   = "";
   document.getElementById("narrator-icon").innerHTML   = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7090B0" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   document.getElementById("pb-progress-fill").style.width = "0%";
-  document.getElementById("playback-bar").style.display = "none";
+  /* playback-bar siempre visible — deshabilitar nav hasta nueva simulación */
+  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
   document.getElementById("refbits-area").style.display = "none";
   document.getElementById("seccion-comparacion").style.display = "none";
   document.getElementById("pb-counter").textContent = "— / —";

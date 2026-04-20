@@ -52,14 +52,14 @@
     @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
     /* ═══════════════════════════════════════════════════════
-       CONTROLES IZQUIERDA — tarjeta oscura
+       CONTROLES IZQUIERDA — tarjeta clara
     ═══════════════════════════════════════════════════════ */
     .ctrl-panel {
-      background: #000000;
-      border: 1px solid rgba(255,255,255,0.07);
+      background: var(--surface-0);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 18px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -69,26 +69,26 @@
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #b1cfde;
+      color: var(--text-muted);
       margin-bottom: 10px;
     }
     .ctrl-input {
       width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--surface-1);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      color: #C8DFFF;
+      color: var(--text-primary);
       font-family: var(--font-mono);
       font-size: 13px;
       padding: 9px 12px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .ctrl-input:focus { border-color: rgba(61,104,123,0.5); }
-    .ctrl-input::placeholder { color: #365670; }
+    .ctrl-input:focus { border-color: var(--color-blue-500); box-shadow: 0 0 0 3px var(--color-blue-50); }
+    .ctrl-input::placeholder { color: var(--text-muted); }
     .ctrl-label {
       font-size: 11px;
-      color: #5A7A9A;
+      color: var(--text-muted);
       margin-bottom: 5px;
       display: block;
     }
@@ -101,8 +101,8 @@
       gap: 6px;
     }
     .algo-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: var(--surface-1);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 8px 8px;
       cursor: pointer;
@@ -110,33 +110,34 @@
       text-align: center;
       position: relative;
     }
-    .algo-card:hover { background: rgba(61,104,123,0.12); border-color: rgba(61,104,123,0.3); }
+    .algo-card:hover { background: var(--color-blue-50); border-color: var(--color-blue-500); }
     .algo-card.active {
-      background: rgba(61,104,123,0.2);
-      border-color: rgba(61,104,123,0.55);
-      box-shadow: 0 0 14px rgba(61,104,123,0.15);
+      background: var(--color-blue-700);
+      border-color: var(--color-blue-700);
+      box-shadow: 0 4px 12px rgba(61,104,123,0.25);
     }
     .algo-card-icon { font-size: 20px; display: block; margin-bottom: 4px; }
     .algo-card-name {
       font-size: 11px;
       font-weight: 700;
-      color: #b1cfde;
+      color: var(--text-primary);
       font-family: var(--font-mono);
       letter-spacing: 0.04em;
     }
     .algo-card-sub {
       font-size: 9px;
-      color: #4A6A8A;
+      color: var(--text-muted);
       margin-top: 2px;
     }
-    .algo-card.active .algo-card-name { color: #b1cfde; }
+    .algo-card.active .algo-card-name { color: #fff; }
+    .algo-card.active .algo-card-sub  { color: rgba(255,255,255,0.7); }
     .algo-card:last-child { grid-column: span 2; }
 
     /* Botones de acción */
     .btn-cine-primary {
       width: 100%;
-      background: linear-gradient(135deg, #3d687b, #365670);
-      border: 1px solid rgba(177,207,222,0.3);
+      background: var(--color-blue-700);
+      border: none;
       color: #fff;
       border-radius: 10px;
       padding: 11px;
@@ -150,12 +151,12 @@
       transition: all 0.2s;
       font-family: var(--font-sans);
     }
-    .btn-cine-primary:hover { background: linear-gradient(135deg, #b1cfde, #3d687b); box-shadow: 0 4px 16px rgba(61,104,123,0.35); }
+    .btn-cine-primary:hover { background: #185FA5; box-shadow: 0 4px 16px rgba(61,104,123,0.3); }
     .btn-cine-ghost {
       width: 100%;
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #5A7A9A;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
       border-radius: 8px;
       padding: 8px;
       font-size: 12px;
@@ -163,7 +164,7 @@
       transition: all 0.15s;
       font-family: var(--font-sans);
     }
-    .btn-cine-ghost:hover { background: rgba(255,255,255,0.04); color: #8AAAC8; }
+    .btn-cine-ghost:hover { background: var(--surface-1); color: var(--text-primary); }
 
     /* Métricas sidebar */
     .cine-metric-row {
@@ -444,39 +445,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
-      cursor: default;
-      transition: transform 0.2s ease;
-      position: relative;
-    }
-    .seat:hover { transform: translateY(-3px); }
-
-    .seat-back {
-      width: 54px;
-      height: 46px;
-      border-radius: 9px 9px 4px 4px;
-      background: #365670;
-      border: 1.5px solid rgba(255,255,255,0.07);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       gap: 1px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      font-weight: 700;
-      color: #3A5A7A;
-      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      cursor: default;
       position: relative;
+      overflow: visible;
     }
-    .seat-cushion {
-      width: 58px;
-      height: 12px;
-      border-radius: 4px 4px 8px 8px;
-      background: #000000;
-      border: 1.5px solid rgba(255,255,255,0.05);
-      transition: all 0.35s ease;
-    }
+    .seat:hover .seat-svg { transform: translateY(-3px); }
+
+    /* SVG de butaca — animaciones y filtros por estado */
+    .seat-svg { transition: transform 0.2s ease, filter 0.3s ease; overflow: visible; }
+
     .seat-frame-label {
       font-size: 8px;
       color: #1E3A5A;
@@ -484,44 +462,13 @@
       margin-top: 2px;
       letter-spacing: 0.04em;
     }
-    .seat-ref-bit {
-      font-size: 8px;
-      font-family: var(--font-mono);
-      line-height: 1;
-      margin-top: 1px;
-    }
-    .seat-ref-bit-on  { color: #5090D0; }
-    .seat-ref-bit-off { color: #2A4060; }
 
-    /* Estados de butaca */
-    .seat-empty .seat-back    { background: #0E1E2E; color: #1E3A5A; border-color: rgba(255,255,255,0.03); }
-    .seat-empty .seat-cushion { background: #0E1E2E; border-color: rgba(255,255,255,0.02); }
-    .seat-empty .seat-back::after { content: '✕'; font-size: 11px; color: #1E3A5A; font-family: sans-serif; }
+    .seat-fault   { animation: seat-enter 0.35s ease; }
+    .seat-evicted { animation: seat-enter 0.35s ease; }
 
-    .seat-used .seat-back    { background: #1A3A6A; color: #80B8FF; border-color: rgba(99,153,255,0.3); }
-    .seat-used .seat-cushion { background: #152D58; border-color: rgba(99,153,255,0.2); }
-
-    .seat-fault .seat-back {
-      background: #5C1A1A;
-      color: #FF8080;
-      border-color: rgba(255,107,107,0.5);
-      box-shadow: 0 0 18px rgba(255,80,80,0.4);
-      animation: seat-shake 0.4s ease, seat-glow-red 0.6s ease forwards;
-    }
-    .seat-fault .seat-cushion { background: #4A1515; border-color: rgba(255,107,107,0.3); }
-
-    .seat-evicted .seat-back {
-      background: #5C3800;
-      color: #FFB060;
-      border-color: rgba(239,159,39,0.5);
-      box-shadow: 0 0 14px rgba(239,159,39,0.3);
-      animation: seat-evict 0.5s ease;
-    }
-    .seat-evicted .seat-cushion { background: #4A2D00; border-color: rgba(239,159,39,0.25); }
-
-    .seat-hit .seat-back {
-      animation: seat-hit-glow 0.6s ease;
-    }
+    .seat-fault   .seat-svg { animation: seat-shake 0.4s ease; filter: drop-shadow(0 0 10px rgba(255,80,80,0.65)); }
+    .seat-evicted .seat-svg { animation: seat-evict 0.5s ease;  filter: drop-shadow(0 0 9px  rgba(239,159,39,0.55)); }
+    .seat-hit     .seat-svg { animation: seat-hit-glow 0.5s ease; filter: drop-shadow(0 0 9px rgba(99,198,99,0.55)); }
 
     /* Puntero del acomodador */
     .usher-pointer {
@@ -802,10 +749,9 @@
     .end-close:hover { background: rgba(255,255,255,0.12); }
 
     /* ══ Animaciones de butacas ══ */
-    @keyframes seat-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-    @keyframes seat-glow-red { 0% { } 50% { box-shadow: 0 0 24px rgba(255,80,80,0.6); } 100% { box-shadow: 0 0 18px rgba(255,80,80,0.35); } }
-    @keyframes seat-evict { 0% { transform: scale(1); } 25% { transform: scale(1.12); } 65% { transform: scale(0.93); } 100% { transform: scale(1); } }
-    @keyframes seat-hit-glow { 0% { } 40% { box-shadow: 0 0 20px rgba(99,198,99,0.5); border-color: rgba(99,198,99,0.6); } 100% { } }
+    @keyframes seat-shake    { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    @keyframes seat-evict    { 0%{transform:scale(1)} 25%{transform:scale(1.1) rotate(-2deg)} 65%{transform:scale(0.95)} 100%{transform:scale(1)} }
+    @keyframes seat-hit-glow { 0%,100%{filter:drop-shadow(0 0 4px rgba(99,198,99,0.3))} 50%{filter:drop-shadow(0 0 16px rgba(99,198,99,0.7))} }
 
     /* ══ Comparación ══ */
     #seccion-comparacion {
@@ -861,17 +807,18 @@
 
     /* ══ Métricas finales (bajo la sala) ══ */
     .metrics-dark {
-      background: #000000;
-      border: 1px solid rgba(255,255,255,0.07);
+      background: var(--surface-0);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 16px 18px;
+      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
     }
     .metrics-dark-title {
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #b1cfde;
+      color: var(--text-muted);
       margin-bottom: 12px;
     }
     .metrics-dark-grid {
@@ -880,22 +827,22 @@
       gap: 8px;
     }
     .mcard {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
+      background: var(--surface-1);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 12px;
     }
-    .mcard-lbl { font-size: 9px; color: #2A4A6A; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .mcard-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: #b1cfde; }
-    .mcard-val.fault { color: #FF6B6B; }
-    .mcard-val.good  { color: #7BC67E; }
+    .mcard-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .mcard-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .mcard-val.fault { color: #DC2626; }
+    .mcard-val.good  { color: #16A34A; }
 
     /* ══ Botón comparar ══ */
     .btn-compare {
       width: 100%;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #5A7A9A;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
       border-radius: 10px;
       padding: 10px;
       font-size: 12px;
@@ -907,7 +854,7 @@
       transition: all 0.15s;
       font-family: var(--font-sans);
     }
-    .btn-compare:hover { background: rgba(61,104,123,0.1); border-color: rgba(61,104,123,0.25); color: #b1cfde; }
+    .btn-compare:hover { background: var(--color-blue-50); border-color: var(--color-blue-500); color: var(--color-blue-700); }
 
     /* placeholder text */
     .cinema-placeholder { color: #1A3A5A; font-size: 12px; font-style: italic; text-align: center; padding: 20px 0; }
@@ -1031,33 +978,20 @@
       right: -6px; bottom: 2px;
     }
 
-    /* ══ Fix: iconos claros sobre fondo oscuro ══ */
-    .ctrl-section-label svg { stroke: #b1cfde !important; }
-    .algo-card-icon svg { stroke: #4A7AAA; }
-    .algo-card.active .algo-card-icon svg { stroke: #b1cfde; }
-    .algo-card:hover .algo-card-icon svg { stroke: #90C0FF; }
+    /* ══ Fix: iconos sobre fondo claro ══ */
+    .ctrl-section-label svg { stroke: var(--text-muted) !important; }
+    .algo-card-icon svg { stroke: var(--text-muted); }
+    .algo-card.active .algo-card-icon svg { stroke: #fff; }
+    .algo-card:hover .algo-card-icon svg { stroke: var(--color-blue-700); }
     .queue-label svg { stroke: #3A5A7A; }
     .seats-label svg { stroke: #3A5A7A; }
-    .btn-cine-ghost svg { stroke: #b1cfde !important; }
-    .btn-cine-ghost:hover svg { stroke: #b1cfde !important; }
-    .btn-compare svg { stroke: #5A7A9A; }
-    .btn-compare:hover svg { stroke: #b1cfde; }
+    .btn-cine-ghost svg { stroke: var(--text-muted) !important; }
+    .btn-cine-ghost:hover svg { stroke: var(--text-primary) !important; }
+    .btn-compare svg { stroke: var(--text-muted); }
+    .btn-compare:hover svg { stroke: var(--color-blue-700); }
 
-    /* ══ Persona dentro de butaca ══ */
-    .seat-page-num {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1;
-      color: inherit;
-    }
-    .seat-person-svg { pointer-events: none; flex-shrink: 0; }
-    .seat-used     .seat-person-svg { stroke: #b1cfde; }
-    .seat-fault    .seat-person-svg { stroke: #FF8080; animation: person-enter 0.4s ease; }
-    .seat-evicted  .seat-person-svg { stroke: #FFB060; animation: person-wiggle 0.5s ease; }
-    .seat-hit      .seat-person-svg { stroke: #7BC67E; animation: person-wiggle 0.4s ease; }
-    @keyframes person-enter  { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes person-wiggle { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+    /* ══ Animación de entrada de butaca ══ */
+    @keyframes person-enter { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
     /* ══ Persona dentro de burbuja de fila ══ */
     .person-bubble { flex-direction: column; gap: 1px; }
@@ -1070,20 +1004,15 @@
        AMBIENTACIÓN CINEMATIC
     ══════════════════════════════════════════════════════ */
 
-    /* Rayo del proyector desde la pantalla */
-    .cinema-interior { position: relative; }
-    .cinema-interior::before {
-      content: '';
+    /* Cinema hall background illustration */
+    .cinema-stage { overflow: hidden; }
+    .cinema-hall-bg {
       position: absolute;
-      top: 0; left: calc(50% - 110px);
-      width: 220px; height: 55%;
-      background: linear-gradient(180deg, rgba(55,138,221,0.055) 0%, transparent 100%);
-      pointer-events: none;
-      z-index: 0;
-      clip-path: polygon(28% 0%, 72% 0%, 100% 100%, 0% 100%);
+      inset: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
     }
-    .cinema-stage  { position: relative; z-index: 1; }
-    .cinema-sidebar{ position: relative; z-index: 1; }
+    .cinema-stage > :not(.cinema-hall-bg) { position: relative; z-index: 1; }
+    .cinema-sidebar { position: relative; z-index: 1; }
 
     /* Spotlight en butacas activas */
     .seat { overflow: visible; }
@@ -1221,26 +1150,19 @@
 
     /* Butacas pequeñas */
     @media (max-width: 520px) {
-      .seat-back     { width: 44px; height: 40px; }
-      .seat-cushion  { width: 48px; }
-      .seat-page-num { font-size: 11px; }
-      .seat-person-svg { width: 13px; height: 13px; }
-      .seat-row      { gap: 6px; }
-      #seats-grid    { gap: 8px; }
+      .seat-svg  { width: 44px !important; height: 57px !important; }
+      .seat-row  { gap: 5px; }
+      #seats-grid{ gap: 7px; }
       .person-bubble      { width: 26px; height: 26px; }
       .person-bubble-next { width: 32px; height: 32px; }
     }
 
     /* Layout columna única muy estrecha */
     @media (max-width: 420px) {
-      .cinema-sidebar {
-        grid-template-columns: 1fr 1fr;
-      }
+      .cinema-sidebar { grid-template-columns: 1fr 1fr; }
       .cinema-sidebar .current-ref-box { grid-column: 1 / -1; }
       .marquee-title { font-size: 20px; }
-      .seat-back  { width: 38px; height: 35px; }
-      .seat-cushion { width: 42px; }
-      .seat-person-svg { width: 11px; height: 11px; }
+      .seat-svg  { width: 38px !important; height: 49px !important; }
     }
 
     /* Contenedor general en móvil */
@@ -1346,7 +1268,7 @@
               <div class="algo-card-sub">Segunda oportunidad</div>
             </div>
           </div>
-          <div id="algo-desc" style="margin-top:10px; font-size:11px; color:#3A5A7A; line-height:1.5; font-style:italic;">
+          <div id="algo-desc" style="margin-top:10px; font-size:11px; color:var(--text-muted); line-height:1.5; font-style:italic;">
             Expulsa la página que lleva más tiempo en memoria (la primera que entró).
           </div>
         </div>
@@ -1415,18 +1337,18 @@
         </div>
 
         <!-- ── Playback controls ── -->
-        <div class="playback-bar" id="playback-bar" style="display:none;">
-          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso">
+        <div class="playback-bar" id="playback-bar">
+          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso" disabled>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
           </button>
-          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior">
+          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior" disabled>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
           </button>
           <span id="pb-counter" class="pb-counter">— / —</span>
-          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente">
+          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente" disabled>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
           </button>
-          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último">
+          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último" disabled>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
           </button>
           <div class="pb-sep"></div>
@@ -1457,6 +1379,105 @@
 
           <!-- Zona izquierda: pantalla + cola + asientos -->
           <div class="cinema-stage">
+
+            <!-- ── Ilustración de sala de cine ── -->
+            <svg class="cinema-hall-bg" xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 500 380" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs>
+                <linearGradient id="ch-floor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0C1D2E" stop-opacity="0.55"/>
+                  <stop offset="100%" stop-color="#040A12" stop-opacity="0.9"/>
+                </linearGradient>
+                <linearGradient id="ch-wL" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"  stop-color="#0B1C2E" stop-opacity="0.94"/>
+                  <stop offset="82%" stop-color="#0A1825" stop-opacity="0.06"/>
+                  <stop offset="100%" stop-color="#0A1825" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="ch-wR" x1="1" y1="0" x2="0" y2="0">
+                  <stop offset="0%"  stop-color="#0B1C2E" stop-opacity="0.94"/>
+                  <stop offset="82%" stop-color="#0A1825" stop-opacity="0.06"/>
+                  <stop offset="100%" stop-color="#0A1825" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="ch-proj" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"  stop-color="#378ADD" stop-opacity="0.08"/>
+                  <stop offset="100%" stop-color="#378ADD" stop-opacity="0"/>
+                </linearGradient>
+                <radialGradient id="ch-sc" cx="50%" cy="25%" r="55%">
+                  <stop offset="0%"  stop-color="#FFD060" stop-opacity="0.40"/>
+                  <stop offset="100%" stop-color="#FFD060" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              <!-- Base oscura -->
+              <rect width="500" height="380" fill="#050C16"/>
+
+              <!-- Piso con perspectiva -->
+              <polygon points="0,380 500,380 418,198 82,198" fill="url(#ch-floor)"/>
+              <!-- Pasillo central -->
+              <polygon points="218,198 282,198 315,380 185,380" fill="#030810" opacity="0.7"/>
+              <line x1="219" y1="198" x2="186" y2="380" stroke="#16283E" stroke-width="0.8" opacity="0.3"/>
+              <line x1="281" y1="198" x2="314" y2="380" stroke="#16283E" stroke-width="0.8" opacity="0.3"/>
+              <!-- Líneas de perspectiva del piso -->
+              <line x1="0"   y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.6" opacity="0.25"/>
+              <line x1="125" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.5" opacity="0.18"/>
+              <line x1="375" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.5" opacity="0.18"/>
+              <line x1="500" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.6" opacity="0.25"/>
+
+              <!-- Pared izquierda -->
+              <polygon points="0,0 148,0 84,380 0,380" fill="url(#ch-wL)"/>
+              <!-- Molduras verticales izq -->
+              <line x1="26"  y1="0"  x2="14"  y2="380" stroke="#163050" stroke-width="1.3" opacity="0.55"/>
+              <line x1="62"  y1="0"  x2="48"  y2="380" stroke="#163050" stroke-width="0.7" opacity="0.3"/>
+              <line x1="102" y1="0"  x2="84"  y2="380" stroke="#163050" stroke-width="0.5" opacity="0.18"/>
+              <!-- Paneles izq -->
+              <rect x="6"  y="26" width="34" height="78" rx="3" fill="none" stroke="#1B3358" stroke-width="0.9" opacity="0.45"/>
+              <rect x="6"  y="118" width="28" height="72" rx="3" fill="none" stroke="#1B3358" stroke-width="0.8" opacity="0.36"/>
+              <rect x="6"  y="205" width="22" height="65" rx="3" fill="none" stroke="#1B3358" stroke-width="0.7" opacity="0.25"/>
+              <!-- Aplique izq 1 -->
+              <rect x="9"  y="61" width="22" height="3.5" rx="1.75" fill="#2A4A6A" opacity="0.7"/>
+              <rect x="19" y="46" width="3"  height="16"  rx="1.5"  fill="#2A4A6A" opacity="0.7"/>
+              <circle cx="20.5" cy="44" r="5.5" fill="#FFD060" opacity="0.85"/>
+              <ellipse cx="20.5" cy="44" rx="26" ry="19" fill="url(#ch-sc)"/>
+              <!-- Aplique izq 2 -->
+              <rect x="7"  y="172" width="18" height="3"  rx="1.5" fill="#2A4A6A" opacity="0.62"/>
+              <rect x="15" y="159" width="2.5" height="14" rx="1.25" fill="#2A4A6A" opacity="0.62"/>
+              <circle cx="16.5" cy="157" r="4.5" fill="#FFD060" opacity="0.75"/>
+              <ellipse cx="16.5" cy="157" rx="20" ry="15" fill="url(#ch-sc)" opacity="0.85"/>
+
+              <!-- Pared derecha -->
+              <polygon points="500,0 352,0 416,380 500,380" fill="url(#ch-wR)"/>
+              <!-- Molduras verticales der -->
+              <line x1="474" y1="0"  x2="486" y2="380" stroke="#163050" stroke-width="1.3" opacity="0.55"/>
+              <line x1="438" y1="0"  x2="452" y2="380" stroke="#163050" stroke-width="0.7" opacity="0.3"/>
+              <line x1="398" y1="0"  x2="416" y2="380" stroke="#163050" stroke-width="0.5" opacity="0.18"/>
+              <!-- Paneles der -->
+              <rect x="460" y="26" width="34" height="78" rx="3" fill="none" stroke="#1B3358" stroke-width="0.9" opacity="0.45"/>
+              <rect x="466" y="118" width="28" height="72" rx="3" fill="none" stroke="#1B3358" stroke-width="0.8" opacity="0.36"/>
+              <rect x="472" y="205" width="22" height="65" rx="3" fill="none" stroke="#1B3358" stroke-width="0.7" opacity="0.25"/>
+              <!-- Aplique der 1 -->
+              <rect x="469" y="61" width="22" height="3.5" rx="1.75" fill="#2A4A6A" opacity="0.7"/>
+              <rect x="478" y="46" width="3"  height="16"  rx="1.5"  fill="#2A4A6A" opacity="0.7"/>
+              <circle cx="479.5" cy="44" r="5.5" fill="#FFD060" opacity="0.85"/>
+              <ellipse cx="479.5" cy="44" rx="26" ry="19" fill="url(#ch-sc)"/>
+              <!-- Aplique der 2 -->
+              <rect x="475" y="172" width="18" height="3"  rx="1.5" fill="#2A4A6A" opacity="0.62"/>
+              <rect x="483" y="159" width="2.5" height="14" rx="1.25" fill="#2A4A6A" opacity="0.62"/>
+              <circle cx="484" cy="157" r="4.5" fill="#FFD060" opacity="0.75"/>
+              <ellipse cx="484" cy="157" rx="20" ry="15" fill="url(#ch-sc)" opacity="0.85"/>
+
+              <!-- Haz del proyector -->
+              <polygon points="228,0 272,0 462,380 38,380" fill="url(#ch-proj)"/>
+
+              <!-- Techo + luces de techo -->
+              <rect width="500" height="16" fill="#040910"/>
+              <rect y="14" width="500" height="2" fill="#163050" opacity="0.55"/>
+              <circle cx="125" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
+              <circle cx="250" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
+              <circle cx="375" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
+              <ellipse cx="125" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
+              <ellipse cx="250" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
+              <ellipse cx="375" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
+            </svg>
 
             <!-- Pantalla de proyección -->
             <div class="cinema-screen">
