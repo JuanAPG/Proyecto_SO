@@ -3,383 +3,444 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OSim — Paginación de Memoria</title>
+  <title>OSim — MemoryCinema</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
   <style>
-    /* -------------------------------------------------------
-       Chips de la cadena de referencias
-       ------------------------------------------------------- */
+    /* ═══════════════════════════════════════════════════════
+       CHIPS DE CADENA
+    ═══════════════════════════════════════════════════════ */
     .ref-chip {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
-      border-radius: 7px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
       font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
-      border: 1px solid var(--border-strong);
-      background: var(--surface-2);
-      color: var(--text-secondary);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #6A8AAA;
       transition: all 0.15s ease;
       user-select: none;
+      position: relative;
     }
-    .ref-chip:hover { border-color: var(--color-blue-500); color: var(--color-blue-700); transform: scale(1.1); }
-    .ref-chip-active  { background: var(--color-blue-700); color: #fff; border-color: var(--color-blue-700); transform: scale(1.2); box-shadow: 0 2px 8px rgba(24,95,165,0.35); }
-    .ref-chip-fault   { background: var(--color-fault-bg); color: var(--color-fault-dark); border-color: rgba(226,75,74,0.4); }
-    .ref-chip-hit     { background: var(--color-running-bg); color: #27500A; border-color: #C0DD97; }
+    .ref-chip:hover { border-color: rgba(99,153,255,0.5); color: #C8DFFF; transform: scale(1.1); }
+    .ref-chip-active  {
+      background: rgba(24,95,165,0.6) !important;
+      color: #fff !important;
+      border-color: rgba(99,153,255,0.6) !important;
+      transform: scale(1.2) !important;
+      box-shadow: 0 0 12px rgba(55,138,221,0.4) !important;
+    }
+    .ref-chip-fault   { background: rgba(226,75,74,0.2) !important; color: #FF8080 !important; border-color: rgba(255,107,107,0.3) !important; }
+    .ref-chip-hit     { background: rgba(99,198,99,0.15) !important; color: #7BC67E !important; border-color: rgba(99,198,99,0.3) !important; }
 
-    /* -------------------------------------------------------
-       Layout dos columnas
-       ------------------------------------------------------- */
+    /* ═══════════════════════════════════════════════════════
+       LAYOUT PRINCIPAL
+    ═══════════════════════════════════════════════════════ */
     .two-col {
       display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 16px;
+      grid-template-columns: 290px 1fr;
+      gap: 20px;
       align-items: start;
     }
-    @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
-    /* -------------------------------------------------------
-       Botones de step
-       ------------------------------------------------------- */
-    .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* -------------------------------------------------------
-       Descripción de algoritmo
-       ------------------------------------------------------- */
-    #algo-desc {
-      font-size: 11.5px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-top: 10px;
-      padding: 8px 10px;
-      background: var(--surface-2);
-      border-radius: var(--radius-sm);
-      min-height: 36px;
+    /* ═══════════════════════════════════════════════════════
+       CONTROLES IZQUIERDA — tarjeta oscura
+    ═══════════════════════════════════════════════════════ */
+    .ctrl-panel {
+      background: #0A1825;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
     }
-
-    /* -------------------------------------------------------
-       Barra de progreso del auto-play
-       ------------------------------------------------------- */
-    .progress-track {
-      height: 4px;
-      background: var(--surface-2);
-      border-radius: 99px;
-      overflow: hidden;
+    .ctrl-section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3A6A9A;
       margin-bottom: 10px;
     }
-    .progress-fill {
-      height: 100%;
-      background: var(--color-blue-500);
-      border-radius: 99px;
-      width: 0%;
-      transition: width 0.35s ease;
-    }
-
-    /* -------------------------------------------------------
-       Botón auto-play
-       ------------------------------------------------------- */
-    .btn-auto-playing {
-      background: var(--color-fault) !important;
-      border-color: var(--color-fault) !important;
-      color: #fff !important;
-    }
-
-    /* -------------------------------------------------------
-       Badge de página expulsada
-       ------------------------------------------------------- */
-    .badge-expulsada {
-      font-size: 11px;
-      color: #633806;
-      background: var(--color-waiting-bg);
-      border: 0.5px solid rgba(239,159,39,0.5);
-      border-radius: 5px;
-      padding: 3px 8px;
-    }
-
-    /* -------------------------------------------------------
-       Panel de bits de referencia (CLOCK / SC)
-       ------------------------------------------------------- */
-    #ref-bits-panel {
-      display: none;
-      margin-top: 12px;
-    }
-    .ref-bits-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 6px;
-    }
-    .ref-bits-row {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .ref-bit-cell {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 38px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      padding: 4px 2px;
+    .ctrl-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #C8DFFF;
       font-family: var(--font-mono);
-      transition: all 0.2s ease;
-    }
-    .ref-bit-idx  { font-size: 9px; color: var(--text-muted); }
-    .ref-bit-val  { font-size: 14px; font-weight: 600; line-height: 1.2; }
-    .ref-bit-arrow { font-size: 10px; color: var(--color-blue-700); }
-    .ref-bit-on   { background: var(--color-blue-50); border-color: var(--color-blue-200); color: var(--color-blue-900); }
-    .ref-bit-off  { background: var(--surface-2); color: var(--text-muted); }
-    .ref-bit-ptr  { border-color: var(--color-blue-700) !important; box-shadow: 0 0 0 2px rgba(24,95,165,0.2); }
-
-    /* -------------------------------------------------------
-       Sección de comparación de algoritmos
-       ------------------------------------------------------- */
-    #seccion-comparacion { display: none; margin-top: 24px; }
-
-    .comp-row {
-      display: grid;
-      grid-template-columns: 120px 1fr 180px 80px;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-      background: var(--surface-0);
-      margin-bottom: 8px;
-      transition: all 0.2s ease;
-    }
-    .comp-row:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-    .comp-best  { border-color: #C0DD97 !important; background: var(--color-running-bg) !important; }
-    .comp-worst { border-color: rgba(226,75,74,0.3); background: var(--color-fault-bg); }
-
-    .comp-nombre {
       font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-family: var(--font-mono);
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s;
     }
-    .comp-bar-wrap {
-      height: 10px;
-      background: var(--surface-2);
-      border-radius: 99px;
-      overflow: hidden;
+    .ctrl-input:focus { border-color: rgba(55,138,221,0.5); }
+    .ctrl-input::placeholder { color: #2A4A6A; }
+    .ctrl-label {
+      font-size: 11px;
+      color: #5A7A9A;
+      margin-bottom: 5px;
+      display: block;
     }
-    .comp-bar {
-      height: 100%;
-      border-radius: 99px;
-      background: var(--color-blue-500);
-      transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .comp-bar-best  { background: var(--color-running); }
-    .comp-bar-worst { background: var(--color-fault); }
+    .ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-    .comp-stats {
-      display: flex;
-      gap: 8px;
-      font-size: 12px;
-      font-family: var(--font-mono);
-      flex-wrap: wrap;
+    /* Algoritmo botones */
+    .algo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
     }
-    .comp-faults { color: var(--color-fault-dark); font-weight: 500; }
-    .comp-hits   { color: var(--color-running); }
-    .comp-rate   { color: var(--text-muted); }
-
-    .comp-badge-wrap { display: flex; justify-content: flex-end; }
-    .comp-badge {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 99px;
+    .algo-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 8px 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      position: relative;
+    }
+    .algo-card:hover { background: rgba(55,138,221,0.12); border-color: rgba(55,138,221,0.3); }
+    .algo-card.active {
+      background: rgba(55,138,221,0.2);
+      border-color: rgba(55,138,221,0.55);
+      box-shadow: 0 0 14px rgba(55,138,221,0.15);
+    }
+    .algo-card-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .algo-card-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #C8DFFF;
+      font-family: var(--font-mono);
       letter-spacing: 0.04em;
     }
-    .comp-badge-best  { background: #27500A; color: #fff; }
-    .comp-badge-worst { background: var(--color-fault-dark); color: #fff; }
-
-    @media (max-width: 640px) {
-      .comp-row { grid-template-columns: 90px 1fr; grid-template-rows: auto auto; }
-      .comp-stats { display: none; }
+    .algo-card-sub {
+      font-size: 9px;
+      color: #4A6A8A;
+      margin-top: 2px;
     }
+    .algo-card.active .algo-card-name { color: #7FBAFF; }
+    .algo-card:last-child { grid-column: span 2; }
 
-    /* -------------------------------------------------------
-       CINEMA THEATER — Sala de Cine
-       ------------------------------------------------------- */
-    .cine-sala {
-      background: #0D1B2A;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.06);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
-    }
-
-    .cine-controls-bar {
-      background: #0A1520;
-      padding: 10px 14px;
+    /* Botones de acción */
+    .btn-cine-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #185FA5, #0D4580);
+      border: 1px solid rgba(99,153,255,0.3);
+      color: #fff;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.2s;
+      font-family: var(--font-sans);
     }
-    .cine-controls-bar .progress-track { margin-bottom: 0; flex: 1; }
-    #controles-steps { align-items: center; gap: 6px; flex-wrap: wrap; }
+    .btn-cine-primary:hover { background: linear-gradient(135deg, #1E6FBF, #0F50A0); box-shadow: 0 4px 16px rgba(24,95,165,0.35); }
+    .btn-cine-ghost {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #5A7A9A;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
+    }
+    .btn-cine-ghost:hover { background: rgba(255,255,255,0.04); color: #8AAAC8; }
 
-    .cine-btn-nav {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: #B0C4D8;
+    /* Métricas sidebar */
+    .cine-metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .cine-metric-row:last-child { border-bottom: none; }
+    .cine-metric-lbl { font-size: 11px; color: #4A6A8A; }
+    .cine-metric-val { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: #8AAAC8; }
+    .cine-metric-val.fault { color: #FF6B6B; }
+    .cine-metric-val.good  { color: #7BC67E; }
+
+    /* Vel slider */
+    .vel-row { display: flex; align-items: center; gap: 8px; }
+    .vel-label { font-size: 10px; color: #3A5A7A; white-space: nowrap; }
+    input[type=range].vel-slider {
+      flex: 1;
+      accent-color: #185FA5;
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MEMORY CINEMA — ZONA DERECHA
+    ═══════════════════════════════════════════════════════ */
+    .memory-cinema {
+      background: #080F18;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    /* ── Marquesina ── */
+    .marquee-bar {
+      background: #030810;
+      padding: 12px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,200,50,0.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .marquee-bar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, #FFD700 0px, #FFD700 8px, transparent 8px, transparent 16px);
+      opacity: 0.5;
+    }
+    .marquee-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: repeating-linear-gradient(90deg, #FFD700 0px, #FFD700 4px, transparent 4px, transparent 10px);
+      opacity: 0.2;
+    }
+    .marquee-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 0.15em;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255,215,0,0.4), 0 0 40px rgba(255,215,0,0.15);
+      line-height: 1;
+    }
+    .marquee-title span { color: #fff; }
+    .marquee-lights {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .marquee-bulb {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #FFD700;
+      box-shadow: 0 0 6px #FFD700;
+      animation: bulb-blink 1.4s ease-in-out infinite;
+    }
+    .marquee-bulb:nth-child(2) { animation-delay: 0.2s; }
+    .marquee-bulb:nth-child(3) { animation-delay: 0.4s; }
+    .marquee-bulb:nth-child(4) { animation-delay: 0.6s; }
+    .marquee-bulb:nth-child(5) { animation-delay: 0.8s; }
+    @keyframes bulb-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    /* ── Narrador ── */
+    .narrator-bar {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 9px 20px;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .narrator-icon { font-size: 16px; flex-shrink: 0; }
+    #narrator-text {
+      font-size: 12px;
+      color: #C8DFFF;
+      font-style: italic;
+      line-height: 1.4;
+      transition: opacity 0.3s;
+    }
+    .narrator-fault { color: #FF8080 !important; }
+    .narrator-hit   { color: #7BC67E !important; }
+
+    /* ── Controles de reproducción ── */
+    .playback-bar {
+      background: #040C15;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pb-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #8AAAC8;
       border-radius: 6px;
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: all 0.15s;
       flex-shrink: 0;
-    }
-    .cine-btn-nav:hover:not(:disabled) {
-      background: rgba(24,95,165,0.35);
-      border-color: rgba(24,95,165,0.5);
-      color: #fff;
-    }
-    .cine-btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    .cine-btn-play {
-      background: var(--color-blue-700);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: #fff;
-      border-radius: 6px;
-      padding: 5px 12px;
       font-size: 12px;
-      cursor: pointer;
-      display: flex; align-items: center;
-      transition: background 0.15s;
+    }
+    .pb-btn:hover:not(:disabled) { background: rgba(24,95,165,0.3); border-color: rgba(24,95,165,0.5); color: #fff; }
+    .pb-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .pb-play {
+      background: #185FA5;
+      border-color: rgba(99,153,255,0.4);
+      color: #fff;
+      width: 36px; height: 30px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 600;
+      gap: 4px;
       white-space: nowrap;
     }
-    .cine-btn-play:hover { background: #0D4580; }
-    .cine-btn-play.btn-auto-playing {
-      background: var(--color-fault) !important;
-      border-color: var(--color-fault) !important;
-    }
-
-    .cine-step-counter {
+    .pb-play:hover:not(:disabled) { background: #1E6FBF; }
+    .pb-play.playing { background: #A32D2D !important; border-color: rgba(226,75,74,0.4) !important; }
+    .pb-counter {
       font-family: var(--font-mono);
       font-size: 11px;
-      color: #7090B0;
-      min-width: 48px;
+      color: #4A6A8A;
+      min-width: 52px;
       text-align: center;
     }
-    .cine-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+    .pb-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
+    .pb-progress { flex: 1; height: 3px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+    .pb-progress-fill { height: 100%; background: #185FA5; border-radius: 99px; width: 0%; transition: width 0.3s ease; }
 
-    /* Interior */
-    .cine-interior {
-      padding: 14px 14px 10px;
+    /* ── Interior del cine ── */
+    .cinema-interior {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 0;
+      min-height: 420px;
+    }
+
+    /* Zona izquierda: pantalla + sala */
+    .cinema-stage {
+      padding: 16px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* Pantalla de proyección */
+    .cinema-screen {
+      background: linear-gradient(180deg, #0A1828, #071220);
+      border-radius: 10px 10px 2px 2px;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 3px solid rgba(55,138,221,0.25);
+      padding: 10px 14px 8px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cinema-screen::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 60%; height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(55,138,221,0.6), transparent);
+    }
+    .screen-glow {
+      position: absolute;
+      top: -30px; left: 50%;
+      transform: translateX(-50%);
+      width: 220px; height: 80px;
+      background: radial-gradient(ellipse, rgba(24,95,165,0.35) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .screen-algo-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.1em;
+      color: #E0EFFF;
+      text-shadow: 0 0 20px rgba(99,153,255,0.5);
+      line-height: 1;
+    }
+    .screen-algo-tagline {
+      font-size: 10px;
+      color: #3A5A7A;
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    /* Fila de espera (personas) */
+    .queue-zone {
+      background: rgba(0,0,0,0.25);
+      border-radius: 8px;
+      padding: 7px 10px;
+    }
+    .queue-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2A4A6A;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #queue-strip {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      min-height: 32px;
+      scrollbar-width: none;
+    }
+    #queue-strip::-webkit-scrollbar { display: none; }
+
+    /* Zona de asientos */
+    .seats-zone {
+      flex: 1;
+    }
+    .seats-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2A4A6A;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #seats-grid {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-
-    /* Screen */
-    .cine-pantalla {
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #0A1520;
-      border: 1px solid rgba(255,255,255,0.08);
-      text-align: center;
-      padding: 12px 12px 10px;
-    }
-    .cine-screen-glow {
-      position: absolute;
-      top: -20px; left: 50%;
-      transform: translateX(-50%);
-      width: 200px; height: 60px;
-      background: radial-gradient(ellipse, rgba(24,95,165,0.5) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .cine-screen-body { position: relative; z-index: 1; }
-    .cine-algo-badge {
-      display: inline-block;
-      font-family: var(--font-mono);
-      font-size: 20px;
-      font-weight: 700;
-      color: #E0EFFF;
-      letter-spacing: 0.08em;
-      text-shadow: 0 0 20px rgba(99,153,255,0.6);
-    }
-    .cine-algo-desc-screen {
-      font-size: 11px;
-      color: #7090B0;
-      margin: 4px 0 0;
-      font-style: italic;
-    }
-
-    /* Now row */
-    .cine-now-row {
+    .seat-row {
       display: flex;
-      align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
-    }
-    .cine-now-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      padding: 4px 10px;
-    }
-    .cine-now-label {
-      font-size: 10px;
-      color: #5A7A9A;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .cine-now-num {
-      font-family: var(--font-mono);
-      font-size: 20px;
-      font-weight: 700;
-      color: #C8DFFF;
-    }
-    .cine-now-num.fault { color: #FF6B6B; text-shadow: 0 0 10px rgba(255,107,107,0.4); }
-    .cine-now-num.good  { color: #7BC67E; text-shadow: 0 0 10px rgba(123,198,126,0.35); }
-
-    /* Queue / entrada */
-    .cine-entrada-wrap {
-      background: rgba(0,0,0,0.2);
-      border-radius: 8px;
-      padding: 8px 10px;
-    }
-    .cine-entrada-label {
-      font-size: 10px;
-      color: #5A7A9A;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .cine-cola { display: flex; flex-wrap: wrap; gap: 4px; min-height: 34px; }
-    .cine-placeholder-text { color: #3A5A7A; font-size: 12px; font-style: italic; }
-
-    /* Seats area */
-    .cine-asientos-area {
-      background: rgba(0,0,0,0.18);
-      border-radius: 10px;
-      padding: 16px 12px 12px;
-      min-height: 110px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-end;
       justify-content: center;
     }
+    /* Pasillo central */
+    .seat-row.has-aisle .seat-aisle { width: 20px; flex-shrink: 0; }
 
-    /* Individual seat */
-    .cine-asiento {
+    /* Butaca individual */
+    .seat {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -388,153 +449,607 @@
       transition: transform 0.2s ease;
       position: relative;
     }
-    .cine-asiento:hover { transform: translateY(-2px); }
+    .seat:hover { transform: translateY(-3px); }
 
-    .cine-back {
-      width: 56px; height: 50px;
-      border-radius: 8px 8px 4px 4px;
-      background: #1E3040;
-      border: 1.5px solid rgba(255,255,255,0.08);
+    .seat-back {
+      width: 54px;
+      height: 46px;
+      border-radius: 9px 9px 4px 4px;
+      background: #1A2E42;
+      border: 1.5px solid rgba(255,255,255,0.07);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1px;
       font-family: var(--font-mono);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
-      color: #7090B0;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: visible;
-    }
-    .cine-cushion {
-      width: 60px; height: 14px;
-      border-radius: 4px 4px 8px 8px;
-      background: #1E3040;
-      border: 1.5px solid rgba(255,255,255,0.06);
-      transition: all 0.3s ease;
-    }
-    .cine-pg-num {
-      font-size: 9px;
       color: #3A5A7A;
+      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+    .seat-cushion {
+      width: 58px;
+      height: 12px;
+      border-radius: 4px 4px 8px 8px;
+      background: #162638;
+      border: 1.5px solid rgba(255,255,255,0.05);
+      transition: all 0.35s ease;
+    }
+    .seat-frame-label {
+      font-size: 8px;
+      color: #1E3A5A;
       font-family: var(--font-mono);
       margin-top: 2px;
-    }
-    .cine-ref-bit {
-      font-size: 9px;
-      color: #5A7A9A;
-      font-family: var(--font-mono);
-      line-height: 1;
-    }
-    .cine-ref-bit-on { color: #60A0E0; }
-    .cine-ref-bit-off { color: #3A5A7A; }
-
-    /* Seat states */
-    .cine-est-empty .cine-back    { background:#141E2A; color:#2A4A6A; border-color:rgba(255,255,255,0.04); }
-    .cine-est-empty .cine-cushion { background:#141E2A; border-color:rgba(255,255,255,0.03); }
-
-    .cine-est-used .cine-back    { background:#1A3A6A; color:#80B8FF; border-color:rgba(99,153,255,0.3); }
-    .cine-est-used .cine-cushion { background:#152D58; border-color:rgba(99,153,255,0.2); }
-
-    .cine-est-fault .cine-back {
-      background:#5C1A1A; color:#FF8080; border-color:rgba(255,107,107,0.5);
-      box-shadow:0 0 14px rgba(255,80,80,0.35);
-      animation: cine-fault-shake 0.35s ease;
-    }
-    .cine-est-fault .cine-cushion { background:#4A1515; border-color:rgba(255,107,107,0.3); }
-
-    .cine-est-evicted .cine-back {
-      background:#5C3A0A; color:#FFB060; border-color:rgba(239,159,39,0.5);
-      box-shadow:0 0 12px rgba(239,159,39,0.28);
-      animation: cine-evict-flash 0.4s ease;
-    }
-    .cine-est-evicted .cine-cushion { background:#4A2E08; border-color:rgba(239,159,39,0.3); }
-
-    /* Usher pointer (Clock/SC) */
-    .cine-usher-aqui {
-      position: absolute;
-      top: -16px; left: 50%;
-      transform: translateX(-50%);
-      font-size: 9px;
-      font-weight: 700;
-      background: var(--color-blue-700);
-      color: #fff;
-      border-radius: 4px;
-      padding: 1px 5px;
-      white-space: nowrap;
-      font-family: var(--font-mono);
-      z-index: 2;
       letter-spacing: 0.04em;
     }
-    .cine-usher-aqui::after {
-      content: "";
+    .seat-ref-bit {
+      font-size: 8px;
+      font-family: var(--font-mono);
+      line-height: 1;
+      margin-top: 1px;
+    }
+    .seat-ref-bit-on  { color: #5090D0; }
+    .seat-ref-bit-off { color: #2A4060; }
+
+    /* Estados de butaca */
+    .seat-empty .seat-back    { background: #0E1E2E; color: #1E3A5A; border-color: rgba(255,255,255,0.03); }
+    .seat-empty .seat-cushion { background: #0E1E2E; border-color: rgba(255,255,255,0.02); }
+    .seat-empty .seat-back::after { content: '✕'; font-size: 11px; color: #1E3A5A; font-family: sans-serif; }
+
+    .seat-used .seat-back    { background: #1A3A6A; color: #80B8FF; border-color: rgba(99,153,255,0.3); }
+    .seat-used .seat-cushion { background: #152D58; border-color: rgba(99,153,255,0.2); }
+
+    .seat-fault .seat-back {
+      background: #5C1A1A;
+      color: #FF8080;
+      border-color: rgba(255,107,107,0.5);
+      box-shadow: 0 0 18px rgba(255,80,80,0.4);
+      animation: seat-shake 0.4s ease, seat-glow-red 0.6s ease forwards;
+    }
+    .seat-fault .seat-cushion { background: #4A1515; border-color: rgba(255,107,107,0.3); }
+
+    .seat-evicted .seat-back {
+      background: #5C3800;
+      color: #FFB060;
+      border-color: rgba(239,159,39,0.5);
+      box-shadow: 0 0 14px rgba(239,159,39,0.3);
+      animation: seat-evict 0.5s ease;
+    }
+    .seat-evicted .seat-cushion { background: #4A2D00; border-color: rgba(239,159,39,0.25); }
+
+    .seat-hit .seat-back {
+      animation: seat-hit-glow 0.6s ease;
+    }
+
+    /* Puntero del acomodador */
+    .usher-pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      font-weight: 700;
+      background: #185FA5;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 5px;
+      white-space: nowrap;
+      font-family: var(--font-mono);
+      z-index: 5;
+      letter-spacing: 0.04em;
+      animation: pointer-bounce 0.8s ease infinite alternate;
+    }
+    .usher-pointer::after {
+      content: '';
       position: absolute;
       bottom: -4px; left: 50%;
       transform: translateX(-50%);
       border: 4px solid transparent;
-      border-top-color: var(--color-blue-700);
+      border-top-color: #185FA5;
+    }
+    @keyframes pointer-bounce { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(-2px); } }
+
+    /* ── Zona derecha: acomodador + stats ── */
+    .cinema-sidebar {
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: rgba(0,0,0,0.2);
     }
 
-    /* Counter bar */
-    .cine-barra-inf {
+    /* Acomodador CSS */
+    .usher-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .usher-name {
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2A4A6A;
+    }
+    .usher-figure {
+      position: relative;
+      width: 48px;
+    }
+    .usher-head {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #C8A882;
+      border: 2px solid #B89870;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+    /* Hat */
+    .usher-head::before {
+      content: '';
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px; height: 8px;
+      background: #1A2E42;
+      border-radius: 4px 4px 0 0;
+    }
+    .usher-body {
+      width: 32px;
+      height: 28px;
+      border-radius: 6px 6px 4px 4px;
+      background: #1A3A6A;
+      border: 1.5px solid rgba(99,153,255,0.2);
+      margin: 0 auto;
+      margin-top: -2px;
+      position: relative;
+    }
+    /* Linterna */
+    .usher-flashlight {
+      position: absolute;
+      right: -8px;
+      top: 6px;
+      width: 10px;
+      height: 6px;
+      background: #FFE566;
+      border-radius: 3px;
+      box-shadow: 0 0 8px #FFE566, 0 0 16px rgba(255,229,102,0.5);
+    }
+    /* Accesorios según algoritmo */
+    .usher-accessory {
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      font-size: 14px;
+    }
+    .usher-desc {
+      font-size: 9px;
+      color: #3A5A7A;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    /* Animaciones del acomodador */
+    .usher-fifo .usher-figure  { }
+    .usher-lru  .usher-head::after { content: '🕶️'; position: absolute; top: 5px; left: 50%; transform: translateX(-50%); font-size: 8px; }
+    .usher-opt  .usher-figure::after { content: '📜'; position: absolute; right: -4px; bottom: 4px; font-size: 14px; animation: scroll-float 2s ease infinite; }
+    .usher-clock .usher-flashlight { animation: flashlight-rotate 2s linear infinite; transform-origin: left center; }
+    .usher-sc .usher-figure::after { content: '✋'; position: absolute; left: -8px; top: 2px; font-size: 14px; animation: hand-wave 1.5s ease infinite; }
+
+    @keyframes scroll-float { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+    @keyframes flashlight-rotate { 0% { transform: rotate(-20deg); } 50% { transform: rotate(20deg); } 100% { transform: rotate(-20deg); } }
+    @keyframes hand-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-20deg); } }
+
+    /* Separador lateral */
+    .sidebar-sep { height: 1px; background: rgba(255,255,255,0.05); }
+
+    /* Contadores en sidebar */
+    .sidebar-counter { text-align: center; }
+    .sidebar-cnt-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      line-height: 1;
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sidebar-cnt-num.fault-color { color: #FF6B6B; text-shadow: 0 0 12px rgba(255,80,80,0.35); }
+    .sidebar-cnt-num.hit-color   { color: #7BC67E; text-shadow: 0 0 12px rgba(99,198,99,0.3); }
+    .sidebar-cnt-lbl { font-size: 9px; color: #3A5A7A; text-transform: uppercase; letter-spacing: 0.1em; }
+    .sidebar-cnt-sub { font-size: 8px; color: #2A3A4A; line-height: 1.3; margin-top: 2px; }
+
+    .cnt-bump { animation: num-bump 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes num-bump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+    /* Referencia actual en sidebar */
+    .current-ref-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .current-ref-lbl { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: #2A4A6A; margin-bottom: 3px; }
+    .current-ref-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px;
+      color: #C8DFFF;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .current-ref-num.fault { color: #FF6B6B; text-shadow: 0 0 10px rgba(255,80,80,0.4); }
+    .current-ref-num.hit   { color: #7BC67E; text-shadow: 0 0 10px rgba(99,198,99,0.35); }
+    #current-ref-badge {
+      margin-top: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Barra inferior del cine ── */
+    .cinema-footer {
+      background: #030810;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 10px 16px;
+    }
+    .film-strip-label {
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #2A4060;
+      margin-bottom: 6px;
+    }
+    #film-strip {
+      display: flex;
+      gap: 3px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 4px 0;
+      scrollbar-width: none;
+    }
+    #film-strip::-webkit-scrollbar { display: none; }
+
+    /* Bits de referencia (Clock/SC) dentro del cine */
+    #refbits-area {
+      display: none;
+      padding: 6px 16px 0;
+    }
+    .refbits-row { display: flex; gap: 5px; flex-wrap: wrap; }
+    .refbit-cell {
+      width: 36px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 3px 2px;
+      text-align: center;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+    .refbit-idx { font-size: 8px; color: #2A4060; }
+    .refbit-val { font-size: 13px; font-weight: 700; }
+    .refbit-on  { background: rgba(24,95,165,0.25); border-color: rgba(55,138,221,0.4); }
+    .refbit-on .refbit-val { color: #60A0E0; }
+    .refbit-off { background: rgba(255,255,255,0.02); }
+    .refbit-off .refbit-val { color: #2A4060; }
+    .refbit-ptr { border-color: #185FA5 !important; box-shadow: 0 0 0 2px rgba(24,95,165,0.35); }
+
+    /* ── Flash de fallo ── */
+    .cinema-fault-flash {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,50,50,0.06);
+      pointer-events: none;
+      opacity: 0;
+      border-radius: 16px;
+    }
+    .cinema-fault-flash.active { animation: flash-red 0.4s ease forwards; }
+    @keyframes flash-red { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+
+    /* ── Pantalla de fin ── */
+    #cinema-end-screen {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(3,8,16,0.92);
+      border-radius: 16px;
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 32px;
+      text-align: center;
+    }
+    .end-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 0.15em;
+      color: #FFD700;
+      text-shadow: 0 0 24px rgba(255,215,0,0.4);
+    }
+    .end-subtitle { font-size: 12px; color: #5A7A9A; }
+    .end-stats { display: flex; gap: 24px; }
+    .end-stat { text-align: center; }
+    .end-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #C8DFFF; line-height: 1; }
+    .end-stat-val.fault { color: #FF6B6B; }
+    .end-stat-val.good  { color: #7BC67E; }
+    .end-stat-lbl { font-size: 10px; color: #3A5A7A; }
+    .end-rating { font-size: 24px; margin-top: 4px; }
+    .end-close { cursor: pointer; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #8AAAC8; border-radius: 8px; padding: 8px 20px; font-size: 12px; font-family: var(--font-sans); transition: all 0.15s; }
+    .end-close:hover { background: rgba(255,255,255,0.12); }
+
+    /* ══ Animaciones de butacas ══ */
+    @keyframes seat-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    @keyframes seat-glow-red { 0% { } 50% { box-shadow: 0 0 24px rgba(255,80,80,0.6); } 100% { box-shadow: 0 0 18px rgba(255,80,80,0.35); } }
+    @keyframes seat-evict { 0% { transform: scale(1); } 25% { transform: scale(1.12); } 65% { transform: scale(0.93); } 100% { transform: scale(1); } }
+    @keyframes seat-hit-glow { 0% { } 40% { box-shadow: 0 0 20px rgba(99,198,99,0.5); border-color: rgba(99,198,99,0.6); } 100% { } }
+
+    /* ══ Comparación ══ */
+    #seccion-comparacion {
+      display: none;
+      margin-top: 20px;
+    }
+    .comp-card {
+      background: #0A1825;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .comp-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .comp-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #4A6A8A;
+    }
+    .comp-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 160px 70px;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 6px;
+      transition: all 0.2s;
+    }
+    .comp-row:hover { background: rgba(255,255,255,0.04); }
+    .comp-best  { border-color: rgba(99,198,99,0.3) !important; background: rgba(99,198,99,0.05) !important; }
+    .comp-worst { border-color: rgba(226,75,74,0.2); background: rgba(226,75,74,0.04); }
+    .comp-nombre { font-size: 12px; font-weight: 700; color: #8AAAC8; font-family: var(--font-mono); }
+    .comp-bar-wrap { height: 8px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+    .comp-bar { height: 100%; border-radius: 99px; background: #185FA5; transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+    .comp-bar-best  { background: #7BC67E; }
+    .comp-bar-worst { background: #FF6B6B; }
+    .comp-stats { display: flex; gap: 8px; font-size: 11px; font-family: var(--font-mono); flex-wrap: wrap; }
+    .comp-faults { color: #FF8080; font-weight: 600; }
+    .comp-hits   { color: #7BC67E; }
+    .comp-rate   { color: #3A5A7A; }
+    .comp-badge  { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.04em; }
+    .comp-badge-best  { background: rgba(99,198,99,0.2); color: #7BC67E; border: 1px solid rgba(99,198,99,0.3); }
+    .comp-badge-worst { background: rgba(226,75,74,0.2); color: #FF6B6B; border: 1px solid rgba(226,75,74,0.3); }
+
+    /* ══ Métricas finales (bajo la sala) ══ */
+    .metrics-dark {
+      background: #0A1825;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .metrics-dark-title {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3A6A9A;
+      margin-bottom: 12px;
+    }
+    .metrics-dark-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
       gap: 8px;
-      padding: 6px 2px 0;
-      border-top: 1px solid rgba(255,255,255,0.05);
     }
-    .cine-cont { display: flex; align-items: center; gap: 5px; }
-    .cine-cont-icono { display:flex; align-items:center; }
-    .cine-cont-num { font-family:var(--font-mono); font-size:18px; font-weight:700; }
-    .cine-cont-fault .cine-cont-num { color:#FF6B6B; }
-    .cine-cont-hit   .cine-cont-num { color:#7BC67E; }
-    .cine-cont-lbl { font-size:10px; color:#5A7A9A; text-transform:uppercase; letter-spacing:0.05em; }
-    .cine-barra-sep { width:1px; height:20px; background:rgba(255,255,255,0.08); }
-
-    /* Dark-mode overrides for ref-chip inside cine */
-    .cine-cola .ref-chip {
-      background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.12); color:#8AAAC8;
+    .mcard {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
     }
-    .cine-cola .ref-chip:hover { border-color:rgba(99,153,255,0.5); color:#C8DFFF; }
-    .cine-cola .ref-chip-active  { background:rgba(24,95,165,0.55); color:#E0EFFF; border-color:rgba(99,153,255,0.5); box-shadow:none; }
-    .cine-cola .ref-chip-fault   { background:rgba(226,75,74,0.2); color:#FF8080; border-color:rgba(255,107,107,0.3); }
-    .cine-cola .ref-chip-hit     { background:rgba(123,198,126,0.15); color:#7BC67E; border-color:rgba(123,198,126,0.3); }
+    .mcard-lbl { font-size: 9px; color: #2A4A6A; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .mcard-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: #6A9ACC; }
+    .mcard-val.fault { color: #FF6B6B; }
+    .mcard-val.good  { color: #7BC67E; }
 
-    /* Badge overrides inside cinema */
-    .cine-now-row .badge-fault   { background:rgba(226,75,74,0.2); color:#FF8080; border-color:rgba(255,107,107,0.3); }
-    .cine-now-row .badge-running { background:rgba(123,198,126,0.15); color:#7BC67E; border-color:rgba(123,198,126,0.3); }
-    .cine-now-row .badge-expulsada { background:rgba(239,159,39,0.15); color:#FFB060; border-color:rgba(239,159,39,0.3); }
-
-    /* Ref-bits panel inside cine — dark mode */
-    #ref-bits-panel .ref-bits-title { color:#5A7A9A; }
-    #ref-bits-panel .ref-bit-cell   { border-color:rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#B0C8E0; }
-    #ref-bits-panel .ref-bit-idx    { color:#3A5A7A; }
-    #ref-bits-panel .ref-bit-val    { color:#B0C8E0; }
-    #ref-bits-panel .ref-bit-on     { background:rgba(24,95,165,0.3); border-color:rgba(24,95,165,0.5); }
-    #ref-bits-panel .ref-bit-off    { background:rgba(255,255,255,0.03); }
-    #ref-bits-panel .ref-bit-ptr    { box-shadow:0 0 0 2px rgba(24,95,165,0.4); }
-    #ref-bits-panel .ref-bit-arrow  { color:#5090D0; }
-
-    @keyframes cine-fault-shake {
-      0%,100% { transform:translateX(0); }
-      20% { transform:translateX(-4px); }
-      40% { transform:translateX(4px); }
-      60% { transform:translateX(-2px); }
-      80% { transform:translateX(2px); }
+    /* ══ Botón comparar ══ */
+    .btn-compare {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #5A7A9A;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
     }
-    @keyframes cine-evict-flash {
-      0%   { transform:scale(1); }
-      30%  { transform:scale(1.1); }
-      65%  { transform:scale(0.95); }
-      100% { transform:scale(1); }
+    .btn-compare:hover { background: rgba(55,138,221,0.1); border-color: rgba(55,138,221,0.25); color: #7FBAFF; }
+
+    /* placeholder text */
+    .cinema-placeholder { color: #1A3A5A; font-size: 12px; font-style: italic; text-align: center; padding: 20px 0; }
+
+    /* step btn disabled */
+    .pb-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+    /* ══ Tira de película — fotogramas con perforaciones ══ */
+    #film-strip {
+      display: flex;
+      gap: 2px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 4px 0;
+      scrollbar-width: none;
+      background: #020609;
     }
+    #film-strip::-webkit-scrollbar { display: none; }
+
+    .film-frame {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.15s;
+      background: #080F18;
+    }
+    .film-frame:hover { transform: scaleY(1.06); }
+    .film-holes {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 2px 3px;
+    }
+    .film-hole {
+      width: 5px; height: 5px;
+      border-radius: 1px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(0,0,0,0.6);
+    }
+    .film-frame-body {
+      width: 28px; height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #3A5A7A;
+      background: #0A1520;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: all 0.15s;
+    }
+    .film-frame-active .film-frame-body {
+      background: rgba(24,95,165,0.75);
+      color: #E0EFFF;
+      box-shadow: 0 0 10px rgba(55,138,221,0.55);
+    }
+    .film-frame-active .film-hole { background: rgba(99,153,255,0.4); }
+    .film-frame-fault .film-frame-body { background: rgba(226,75,74,0.22); color: #FF8080; }
+    .film-frame-hit   .film-frame-body { background: rgba(99,198,99,0.15); color: #7BC67E; }
+
+    /* ══ Personas en fila de espera ══ */
+    .person-bubble {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(24,95,165,0.18);
+      border: 1.5px solid rgba(55,138,221,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: #4A6A9A;
+      flex-shrink: 0;
+      cursor: default;
+      transition: opacity 0.3s;
+    }
+    .person-bubble-next {
+      width: 36px; height: 36px;
+      font-size: 14px;
+      background: rgba(24,95,165,0.45);
+      border-color: rgba(99,153,255,0.65);
+      color: #C8DFFF;
+      box-shadow: 0 0 12px rgba(55,138,221,0.35);
+      animation: person-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes person-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(55,138,221,0.3); }
+      50%       { box-shadow: 0 0 22px rgba(55,138,221,0.6); }
+    }
+
+    /* ══ Entrada de butaca desde abajo ══ */
+    @keyframes seat-enter {
+      from { transform: translateY(12px); opacity: 0.4; }
+      to   { transform: translateY(0);   opacity: 1;   }
+    }
+    .seat-fault   { animation: seat-enter 0.35s ease; }
+    .seat-evicted { animation: seat-enter 0.35s ease; }
+
+    /* ══ Acomodador activo ══ */
+    .usher-figure.usher-active .usher-head {
+      box-shadow: 0 0 0 2px rgba(55,138,221,0.5), 0 0 14px rgba(55,138,221,0.3);
+    }
+
+    /* ══ Usher accessory SVG overrides (remove emoji) ══ */
+    .usher-lru  .usher-head::after { content: none; }
+    .usher-opt  .usher-figure::after { content: none; }
+    .usher-sc   .usher-figure::after { content: none; }
+
+    .usher-glasses-svg {
+      position: absolute;
+      top: 5px; left: 50%;
+      transform: translateX(-50%);
+    }
+    .usher-accessory-svg {
+      position: absolute;
+      right: -6px; bottom: 2px;
+    }
+
+    /* ══ Fix: iconos claros sobre fondo oscuro ══ */
+    .ctrl-section-label svg { stroke: #3A6A9A !important; }
+    .algo-card-icon svg { stroke: #4A7AAA; }
+    .algo-card.active .algo-card-icon svg { stroke: #7FBAFF; }
+    .algo-card:hover .algo-card-icon svg { stroke: #90C0FF; }
+    .queue-label svg { stroke: #3A5A7A; }
+    .seats-label svg { stroke: #3A5A7A; }
+    .btn-cine-ghost svg { stroke: #5A7A9A !important; }
+    .btn-cine-ghost:hover svg { stroke: #8AAAC8 !important; }
+    .btn-compare svg { stroke: #5A7A9A; }
+    .btn-compare:hover svg { stroke: #7FBAFF; }
+
+    /* ══ Persona dentro de butaca ══ */
+    .seat-page-num {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      color: inherit;
+    }
+    .seat-person-svg { pointer-events: none; flex-shrink: 0; }
+    .seat-used     .seat-person-svg { stroke: #4A80C0; }
+    .seat-fault    .seat-person-svg { stroke: #FF8080; animation: person-enter 0.4s ease; }
+    .seat-evicted  .seat-person-svg { stroke: #FFB060; animation: person-wiggle 0.5s ease; }
+    .seat-hit      .seat-person-svg { stroke: #7BC67E; animation: person-wiggle 0.4s ease; }
+    @keyframes person-enter  { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes person-wiggle { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+    /* ══ Persona dentro de burbuja de fila ══ */
+    .person-bubble { flex-direction: column; gap: 1px; }
+    .person-bubble-icon { pointer-events: none; flex-shrink: 0; stroke: #4A7AAA; }
+    .person-bubble-next .person-bubble-icon { stroke: #80B8FF; }
+    .person-bubble-num { font-family: var(--font-mono); font-size: 9px; font-weight: 700; line-height: 1; color: inherit; }
+    .person-bubble-next .person-bubble-num { font-size: 11px; }
   </style>
 </head>
 <body>
 
-<!-- ============================================================
+<!-- ════════════════════════════════════════════════════════
      NAVBAR
-     ============================================================ -->
+════════════════════════════════════════════════════════ -->
 <nav class="navbar">
   <a href="index.html" class="navbar-logo">OS<span>im</span></a>
   <a href="index.html"      class="navbar-item">Procesos</a>
@@ -543,234 +1058,302 @@
   <a href="metricas.html"   class="navbar-item">Métricas</a>
 </nav>
 
-<!-- ============================================================
-     CONTENIDO PRINCIPAL
-     ============================================================ -->
+<!-- ════════════════════════════════════════════════════════
+     CONTENIDO
+════════════════════════════════════════════════════════ -->
 <div class="page-container">
-
-  <h1 class="page-title">Simulador de Paginación de Memoria</h1>
-  <p class="page-subtitle">
-    Visualiza paso a paso cómo FIFO, LRU, OPT, Clock y Segunda Oportunidad
-    reemplazan páginas en los marcos de memoria.
-  </p>
 
   <div class="two-col">
 
-    <!-- ====================================================
-         COLUMNA IZQUIERDA — Configuración
-         ==================================================== -->
+    <!-- ══════════════════════════════
+         PANEL IZQUIERDO — Controles
+    ══════════════════════════════ -->
     <div style="display:flex; flex-direction:column; gap:16px;">
 
-      <!-- Configuración de memoria -->
-      <div class="card">
-        <div class="card-title">Configuración de Memoria</div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-
-          <div class="form-group">
-            <label class="form-label" for="inp-frames">Número de marcos</label>
-            <input id="inp-frames" type="number" class="form-input"
-                   min="1" max="16" value="3" placeholder="Ej. 3" />
+      <!-- Configuración -->
+      <div class="ctrl-panel">
+        <div>
+          <div class="ctrl-section-label">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Configuración de Memoria
           </div>
-
-          <div class="form-group">
-            <label class="form-label" for="inp-pagesize">Tamaño de página (KB)</label>
-            <input id="inp-pagesize" type="number" class="form-input"
-                   min="1" value="4" placeholder="Ej. 4" />
+          <div class="ctrl-row" style="margin-bottom:10px;">
+            <div>
+              <label class="ctrl-label" for="inp-frames">Marcos</label>
+              <input id="inp-frames" type="number" class="ctrl-input" min="1" max="16" value="3" />
+            </div>
+            <div>
+              <label class="ctrl-label" for="inp-pagesize">Página (KB)</label>
+              <input id="inp-pagesize" type="number" class="ctrl-input" min="1" value="4" />
+            </div>
           </div>
+          <label class="ctrl-label" for="inp-memoria">Memoria total (KB)</label>
+          <input id="inp-memoria" type="number" class="ctrl-input" min="1" value="64" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label" for="inp-memoria">Tamaño de memoria total (KB)</label>
-            <input id="inp-memoria" type="number" class="form-input"
-                   min="1" value="64" placeholder="Ej. 64" />
+        <div>
+          <div class="ctrl-section-label">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            Cadena de Referencias
           </div>
-
+          <label class="ctrl-label" for="inp-referencias">Números separados por espacios</label>
+          <input id="inp-referencias" type="text" class="ctrl-input"
+                 placeholder="Ej: 7 0 1 2 0 3 0 4 2 3"
+                 style="font-family:var(--font-mono);" />
           <input type="file" id="file-input-memoria" accept=".txt"
                  style="display:none;" onchange="onArchivoMemoriaSeleccionado(event)" />
-
-          <button class="btn btn-ghost btn-sm" style="margin-top:4px;"
-                  onclick="cargarArchivoMemoria()">
+          <button class="btn-cine-ghost" style="margin-top:8px; font-size:11px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="cargarArchivoMemoria()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             Cargar desde archivo
           </button>
-
-        </div>
-      </div>
-
-      <!-- Cadena de referencias -->
-      <div class="card">
-        <div class="card-title">Cadena de Referencias</div>
-        <div class="form-group">
-          <label class="form-label" for="inp-referencias">Páginas separadas por espacio</label>
-          <input id="inp-referencias" type="text" class="form-input"
-                 placeholder="Ej. 7 0 1 2 0 3 0 4 2 3"
-                 style="font-family:var(--font-mono);" />
-        </div>
-        <p class="text-muted text-small mt-8">
-          Ingresa números enteros &ge; 0 separados por espacios.
-        </p>
-      </div>
-
-      <!-- Selector de algoritmo -->
-      <div class="card">
-        <div class="card-title">Algoritmo de Reemplazo</div>
-
-        <div class="algo-selector">
-          <button class="algo-btn active" data-algo="fifo"
-                  onclick="seleccionarAlgoritmo('fifo')">FIFO</button>
-          <button class="algo-btn" data-algo="lru"
-                  onclick="seleccionarAlgoritmo('lru')">LRU</button>
-          <button class="algo-btn" data-algo="opt"
-                  onclick="seleccionarAlgoritmo('opt')">OPT</button>
-          <button class="algo-btn" data-algo="clock"
-                  onclick="seleccionarAlgoritmo('clock')">Clock</button>
-          <button class="algo-btn" data-algo="sc"
-                  onclick="seleccionarAlgoritmo('sc')">2da Oport.</button>
         </div>
 
-        <div id="algo-desc">
-          Expulsa la página que lleva más tiempo en memoria (la primera que entró).
+        <div>
+          <div class="ctrl-section-label">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            Algoritmo de Reemplazo
+          </div>
+          <div class="algo-grid">
+            <div class="algo-card active" data-algo="fifo" onclick="seleccionarAlgoritmo('fifo')">
+              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+              <div class="algo-card-name">FIFO</div>
+              <div class="algo-card-sub">Primero en entrar</div>
+            </div>
+            <div class="algo-card" data-algo="lru" onclick="seleccionarAlgoritmo('lru')">
+              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              <div class="algo-card-name">LRU</div>
+              <div class="algo-card-sub">Menos reciente</div>
+            </div>
+            <div class="algo-card" data-algo="opt" onclick="seleccionarAlgoritmo('opt')">
+              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+              <div class="algo-card-name">OPT</div>
+              <div class="algo-card-sub">Óptimo / Belady</div>
+            </div>
+            <div class="algo-card" data-algo="clock" onclick="seleccionarAlgoritmo('clock')">
+              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>
+              <div class="algo-card-name">Clock</div>
+              <div class="algo-card-sub">Bit de referencia</div>
+            </div>
+            <div class="algo-card" data-algo="sc" onclick="seleccionarAlgoritmo('sc')">
+              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span>
+              <div class="algo-card-name">2da Oport.</div>
+              <div class="algo-card-sub">Segunda oportunidad</div>
+            </div>
+          </div>
+          <div id="algo-desc" style="margin-top:10px; font-size:11px; color:#3A5A7A; line-height:1.5; font-style:italic;">
+            Expulsa la página que lleva más tiempo en memoria (la primera que entró).
+          </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
-          <button class="btn btn-primary" style="width:100%;" onclick="iniciarSimulacion()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                 fill="currentColor" style="vertical-align:middle;margin-right:5px">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-cine-primary" onclick="iniciarSimulacion()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Simular
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="resetearSimulacion()">
+          <button class="btn-cine-ghost" style="display:flex; align-items:center; justify-content:center; gap:6px;" onclick="resetearSimulacion()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
             Reiniciar
           </button>
         </div>
       </div>
 
       <!-- Botón comparar -->
-      <div class="card" style="padding-top:12px; padding-bottom:12px;">
-        <button class="btn btn-ghost" style="width:100%;" onclick="mostrarComparacion()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-               stroke-linejoin="round" style="vertical-align:middle;margin-right:5px">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-            <line x1="2" y1="20" x2="22" y2="20"/>
-          </svg>
+      <div class="ctrl-panel" style="padding:14px;">
+        <button class="btn-compare" onclick="mostrarComparacion()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
           Comparar los 5 algoritmos
         </button>
       </div>
 
-    </div><!-- /columna izquierda -->
+    </div><!-- /panel izquierdo -->
 
-    <!-- ====================================================
-         COLUMNA DERECHA — Teatro de Cine
-         ==================================================== -->
+    <!-- ══════════════════════════════
+         MEMORY CINEMA — Zona derecha
+    ══════════════════════════════ -->
     <div style="display:flex; flex-direction:column; gap:16px;">
 
-      <!-- ─── SALA DE CINE ─────────────────────────────────── -->
-      <div class="cine-sala">
+      <div class="memory-cinema" id="memory-cinema">
+        <!-- Flash overlay -->
+        <div class="cinema-fault-flash" id="fault-flash"></div>
 
-        <!-- Barra de controles (sobre el teatro) -->
-        <div class="cine-controls-bar">
-          <div class="progress-track" style="margin-bottom:0; flex:1;">
-            <div class="progress-fill" id="progress-bar"></div>
+        <!-- End screen overlay -->
+        <div id="cinema-end-screen">
+          <div class="end-title">FIN DE LA FUNCIÓN</div>
+          <div class="end-subtitle" id="end-subtitle">Simulación completada</div>
+          <div class="end-stats" id="end-stats"></div>
+          <div class="end-rating" id="end-rating"></div>
+          <button class="end-close" onclick="cerrarEndScreen()">Ver resultados</button>
+        </div>
+
+        <!-- ── Marquesina ── -->
+        <div class="marquee-bar">
+          <div>
+            <div class="marquee-title">Memory<span>Cinema</span></div>
           </div>
-
-          <div id="controles-steps"
-               style="display:none; align-items:center; gap:6px; flex-wrap:wrap;">
-            <button id="btn-first" class="cine-btn-nav step-btn" onclick="primerPaso()" title="Primer paso">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
-            </button>
-            <button id="btn-prev" class="cine-btn-nav step-btn" onclick="anteriorPaso()" title="Anterior">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
-            </button>
-            <span id="step-counter" class="cine-step-counter">—</span>
-            <button id="btn-next" class="cine-btn-nav step-btn" onclick="siguientePaso()" title="Siguiente">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
-            </button>
-            <button id="btn-last" class="cine-btn-nav step-btn" onclick="ultimoPaso()" title="Último paso">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
-            </button>
-            <div class="cine-sep"></div>
-            <button id="btn-auto" class="cine-btn-play" onclick="simularTodo()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Simular todo
-            </button>
+          <div class="marquee-lights">
+            <div class="marquee-bulb"></div>
+            <div class="marquee-bulb"></div>
+            <div class="marquee-bulb"></div>
+            <div class="marquee-bulb"></div>
+            <div class="marquee-bulb"></div>
           </div>
         </div>
 
-        <!-- Interior oscuro del teatro -->
-        <div class="cine-interior">
+        <!-- ── Narrador ── -->
+        <div class="narrator-bar">
+          <span class="narrator-icon" id="narrator-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7090B0" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span id="narrator-text">Configura la memoria y presiona Simular para comenzar la función.</span>
+        </div>
 
-          <!-- PANTALLA en la parte superior -->
-          <div class="cine-pantalla">
-            <div class="cine-screen-glow"></div>
-            <div class="cine-screen-body">
-              <div class="cine-algo-badge" id="cine-algo-badge">FIFO</div>
-              <p class="cine-algo-desc-screen" id="cine-algo-desc-screen">
-                El acomodador saca al que lleva más tiempo sentado
-              </p>
-            </div>
+        <!-- ── Playback controls ── -->
+        <div class="playback-bar" id="playback-bar" style="display:none;">
+          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
+          </button>
+          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
+          </button>
+          <span id="pb-counter" class="pb-counter">— / —</span>
+          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
+          </button>
+          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
+          </button>
+          <div class="pb-sep"></div>
+          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()">
+            <svg id="pb-play-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="pb-play-label">Play</span>
+          </button>
+          <div class="pb-sep"></div>
+          <div class="vel-row" style="flex:1;">
+            <span class="vel-label">Lento</span>
+            <input type="range" class="vel-slider" id="vel-slider" min="200" max="2000" step="100" value="700"
+                   title="Velocidad de reproducción" />
+            <span class="vel-label">Rápido</span>
           </div>
-
-          <!-- Indicador de referencia actual -->
-          <div class="cine-now-row">
-            <div class="cine-now-chip">
-              <span class="cine-now-label">Referencia</span>
-              <span class="cine-now-num" id="ref-actual">—</span>
-            </div>
-            <div id="fault-badge"></div>
-            <div id="pagina-expulsada"></div>
+          <div class="pb-progress">
+            <div class="pb-progress-fill" id="pb-progress-fill"></div>
           </div>
+        </div>
 
-          <!-- Cola de personas (cadena de referencias) -->
-          <div class="cine-entrada-wrap">
-            <div class="cine-entrada-label">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Cola de acceso — clic para saltar al paso
+        <!-- ── Ref bits area (Clock/SC) ── -->
+        <div id="refbits-area">
+          <div style="font-size:9px; color:#2A4060; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:5px;">Bits de referencia</div>
+          <div class="refbits-row" id="refbits-row"></div>
+        </div>
+
+        <!-- ── Interior: sala + sidebar ── -->
+        <div class="cinema-interior">
+
+          <!-- Zona izquierda: pantalla + cola + asientos -->
+          <div class="cinema-stage">
+
+            <!-- Pantalla de proyección -->
+            <div class="cinema-screen">
+              <div class="screen-glow"></div>
+              <div style="position:relative; z-index:1;">
+                <div class="screen-algo-name" id="screen-algo-name">FIFO</div>
+                <div class="screen-algo-tagline" id="screen-algo-tagline">El acomodador saca al que lleva más tiempo sentado</div>
+              </div>
             </div>
-            <div id="cadena-visual" class="cine-cola">
-              <p class="cine-placeholder-text">Aún no hay simulación.</p>
+
+            <!-- Fila de espera -->
+            <div class="queue-zone">
+              <div class="queue-label">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                Fila de espera — personas esperando entrar
+              </div>
+              <div id="queue-strip">
+                <div class="cinema-placeholder">Aún no hay simulación.</div>
+              </div>
             </div>
+
+            <!-- Asientos -->
+            <div class="seats-zone">
+              <div class="seats-label">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="10" rx="2"/><path d="M6 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
+                Sala — marcos de memoria
+              </div>
+              <div id="seats-grid">
+                <div class="cinema-placeholder">Configura y presiona Simular.</div>
+              </div>
+            </div>
+
+          </div><!-- /cinema-stage -->
+
+          <!-- Sidebar: acomodador + contadores -->
+          <div class="cinema-sidebar">
+
+            <!-- Acomodador -->
+            <div class="usher-zone">
+              <div class="usher-name">El acomodador</div>
+              <div class="usher-figure" id="usher-figure">
+                <div class="usher-head" id="usher-head"></div>
+                <div class="usher-body">
+                  <div class="usher-flashlight" id="usher-flashlight"></div>
+                </div>
+              </div>
+              <div class="usher-desc" id="usher-desc">FIFO<br>el guardián del tiempo</div>
+            </div>
+
+            <div class="sidebar-sep"></div>
+
+            <!-- Referencia actual -->
+            <div class="current-ref-box">
+              <div class="current-ref-lbl">Referencia</div>
+              <div class="current-ref-num" id="current-ref-num">—</div>
+              <div id="current-ref-badge"></div>
+            </div>
+
+            <div class="sidebar-sep"></div>
+
+            <!-- Contador fallos -->
+            <div class="sidebar-counter">
+              <div class="sidebar-cnt-num fault-color" id="cnt-faults">0</div>
+              <div class="sidebar-cnt-lbl">Fallos</div>
+              <div class="sidebar-cnt-sub">veces que el<br>acomodador actuó</div>
+            </div>
+
+            <div class="sidebar-sep"></div>
+
+            <!-- Contador hits -->
+            <div class="sidebar-counter">
+              <div class="sidebar-cnt-num hit-color" id="cnt-hits">0</div>
+              <div class="sidebar-cnt-lbl">Hits</div>
+              <div class="sidebar-cnt-sub">páginas que ya<br>estaban adentro</div>
+            </div>
+
+          </div><!-- /cinema-sidebar -->
+
+        </div><!-- /cinema-interior -->
+
+        <!-- ── Tira de película (footer) ── -->
+        <div class="cinema-footer">
+          <div class="film-strip-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            Tira de referencia — clic para saltar al paso
           </div>
-
-          <!-- ASIENTOS del teatro -->
-          <div id="cine-area-asientos" class="cine-asientos-area">
-            <p class="cine-placeholder-text">Configura y presiona Simular.</p>
+          <div id="film-strip">
+            <div class="cinema-placeholder" style="padding:4px 0;">Sin referencias.</div>
           </div>
+        </div>
 
-          <!-- Panel bits de referencia (Clock / SC) -->
-          <div id="ref-bits-panel"></div>
+      </div><!-- /memory-cinema -->
 
-          <!-- Barra inferior: contadores -->
-          <div class="cine-barra-inf">
-            <div class="cine-cont cine-cont-fault">
-              <span class="cine-cont-icono" id="cine-fault-icon">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="#FF6B6B"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </span>
-              <span class="cine-cont-num" id="cine-faults">0</span>
-              <span class="cine-cont-lbl">fallos</span>
-            </div>
-            <div class="cine-barra-sep"></div>
-            <div class="cine-cont cine-cont-hit">
-              <span class="cine-cont-icono">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7BC67E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-              <span class="cine-cont-num" id="cine-hits">0</span>
-              <span class="cine-cont-lbl">hits</span>
-            </div>
-            <div style="flex:1"></div>
-            <div id="fault-badge-hidden" style="display:none"></div>
-            <div id="pagina-expulsada-hidden" style="display:none"></div>
-          </div>
-
-        </div><!-- /cine-interior -->
-      </div><!-- /cine-sala -->
-
-      <!-- Métricas -->
-      <div class="card">
-        <div class="card-title">Métricas</div>
-        <div id="metricas-paginacion" class="metrics-grid">
-          <p style="color:var(--text-muted); font-size:13px;">Sin datos aún.</p>
+      <!-- Métricas finales -->
+      <div class="metrics-dark" id="metricas-wrap">
+        <div class="metrics-dark-title">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+          Métricas de la simulación
+        </div>
+        <div class="metrics-dark-grid" id="metricas-paginacion">
+          <div class="mcard"><div class="mcard-lbl">Page Faults</div><div class="mcard-val">—</div></div>
+          <div class="mcard"><div class="mcard-lbl">Page Hits</div><div class="mcard-val">—</div></div>
+          <div class="mcard"><div class="mcard-lbl">Tasa fallos</div><div class="mcard-val">—</div></div>
+          <div class="mcard"><div class="mcard-lbl">Marcos usados</div><div class="mcard-val">—</div></div>
         </div>
       </div>
 
@@ -778,35 +1361,25 @@
 
   </div><!-- /two-col -->
 
-  <!-- ========================================================
-       SECCIÓN DE COMPARACIÓN — se muestra al hacer clic
-       ======================================================== -->
+  <!-- ════════════════════════════════════════════════════════
+       COMPARACIÓN
+  ════════════════════════════════════════════════════════ -->
   <div id="seccion-comparacion">
-    <div class="card" style="margin-top:0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:0;">
-          Comparación de Algoritmos —
-          <span style="font-weight:400; color:var(--text-secondary); font-size:13px;">
-            misma cadena, mismos marcos
-          </span>
-        </div>
-        <button class="btn btn-ghost btn-sm"
-                onclick="document.getElementById('seccion-comparacion').style.display='none'">
-          Cerrar
-        </button>
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-title">Comparación de los 5 algoritmos — misma cadena, mismos marcos</div>
+        <button class="btn-cine-ghost" style="width:auto; padding:6px 14px; font-size:11px;"
+                onclick="document.getElementById('seccion-comparacion').style.display='none'">Cerrar</button>
       </div>
-      <!-- Tarjetas metrics-grid: una por algoritmo (Fase 7) -->
-      <div id="comparacion-grid" class="metrics-grid" style="margin-bottom:16px;"></div>
-      <!-- Barras comparativas detalladas -->
       <div id="comparacion-tabla"></div>
     </div>
   </div>
 
 </div><!-- /page-container -->
 
-<!-- ============================================================
+<!-- ════════════════════════════════════════════════════════
      SCRIPTS
-     ============================================================ -->
+════════════════════════════════════════════════════════ -->
 <script src="js/ui.js"></script>
 <script src="js/paginacion.js"></script>
 
