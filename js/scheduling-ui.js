@@ -151,7 +151,7 @@ function dibujarGantt() {
   const alturaProceso = Math.min(38, altoGrafico / procesos.length);
   const espacioFila   = alturaProceso + 6;
 
-  const colores = ["#185FA5","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
+  const colores = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
 
   // ── Dibujar todo en un canvas fuera de pantalla ──────────
   const off    = document.createElement("canvas");
@@ -164,7 +164,7 @@ function dibujarGantt() {
   offCtx.fillRect(0, 0, ancho, alto);
 
   // Ejes
-  offCtx.strokeStyle = "#042C53";
+  offCtx.strokeStyle = "#000000";
   offCtx.lineWidth   = 1.5;
   offCtx.beginPath();
   offCtx.moveTo(margenIzq, margenArriba);
@@ -181,7 +181,7 @@ function dibujarGantt() {
     const x = margenIzq + (t / makespan) * anchoGrafico;
     // línea guía vertical (sutil)
     offCtx.save();
-    offCtx.strokeStyle = "rgba(4,44,83,0.07)";
+    offCtx.strokeStyle = "rgba(0,0,0,0.07)";
     offCtx.lineWidth = 1;
     offCtx.beginPath();
     offCtx.moveTo(x, margenArriba);
@@ -197,7 +197,7 @@ function dibujarGantt() {
     const color = colores[idx % colores.length];
 
     // Etiqueta PID (izquierda)
-    offCtx.fillStyle = "#0D1B2A";
+    offCtx.fillStyle = "#000000";
     offCtx.font = "bold 11px 'IBM Plex Mono', monospace";
     offCtx.textAlign = "right";
     offCtx.fillText(`P${p.pid}`, margenIzq - 8, y + alturaProceso / 2 + 4);
@@ -211,7 +211,7 @@ function dibujarGantt() {
     grad.addColorStop(1, color);
 
     // Sombra del bloque
-    offCtx.shadowColor = "rgba(4,44,83,0.18)";
+    offCtx.shadowColor = "rgba(0,0,0,0.18)";
     offCtx.shadowBlur  = 4;
     offCtx.shadowOffsetY = 2;
 
@@ -224,7 +224,7 @@ function dibujarGantt() {
     offCtx.shadowOffsetY = 0;
 
     // Borde
-    offCtx.strokeStyle = "rgba(4,44,83,0.25)";
+    offCtx.strokeStyle = "rgba(0,0,0,0.25)";
     offCtx.lineWidth = 1;
     _roundRect(offCtx, xBloque, y, anchoBloque, alturaProceso, 4);
     offCtx.stroke();
@@ -238,7 +238,7 @@ function dibujarGantt() {
     }
 
     // Tiempo inicio / fin
-    offCtx.fillStyle = "#4A5E72";
+    offCtx.fillStyle = "#365670";
     offCtx.font = "9px 'IBM Plex Mono', monospace";
     offCtx.textAlign = "center";
     offCtx.fillText(p.startTime,  xBloque,               y - 6);

@@ -445,7 +445,7 @@ function mostrarToast(mensaje, tipo = "info", duracion = 3000) {
     border-radius: 8px;
     font-size: 13px;
     font-family: var(--font-sans);
-    box-shadow: 0 4px 12px rgba(4,44,83,0.12);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     animation: toastIn 0.2s ease;
     max-width: 300px;
   `;
