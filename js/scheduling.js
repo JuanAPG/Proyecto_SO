@@ -1,125 +1,103 @@
 /* ============================================================
    OSim — Algoritmos de Scheduling de CPU
    Archivo: scheduling.js
-   Descripción: Implementación de 8 algoritmos de scheduling
    ============================================================ */
 
 /**
- * ESTRUCTURA DE DATOS DE RESULTADO
- * Cada algoritmo retorna un objeto con:
- * {
- *   algoritmo: "FCFS",
- *   procesos: [{pid, arrivalTime, burstTime, priority, pages, state, startTime, finishTime}],
- *   timeline: [{ time, action, proceso }],
- *   metricas: { avgWaiting, avgTurnaround, avgResponse, cpuUtilization, makespan }
- * }
+ * Resultado de cada algoritmo:
+ * { algoritmo, procesos, segments:[{pid,start,end}], contextSwitches, metricas }
  */
 
 /* ----------------------------------------------------------
-   UTILIDADES GENERALES
+   UTILIDADES
    ---------------------------------------------------------- */
 
-/**
- * Calcula métricas para una lista de procesos ejecutados
- * @param {Array} procesos - Array con {pid, arrivalTime, burstTime, startTime, finishTime}
- * @returns {Object} Métricas calculadas
- */
 function calcularMetricas(procesos) {
-  if (!procesos || procesos.length === 0) {
-    return {
-      avgWaiting: 0,
-      avgTurnaround: 0,
-      avgResponse: 0,
-      cpuUtilization: 0,
-      makespan: 0,
-    };
-  }
+  if (!procesos || procesos.length === 0)
+    return { avgWaiting: 0, avgTurnaround: 0, avgResponse: 0, cpuUtilization: 0, makespan: 0 };
 
-  let totalWaiting = 0;
-  let totalTurnaround = 0;
-  let totalResponse = 0;
-  let makespan = 0;
-
+  let totalWaiting = 0, totalTurnaround = 0, totalResponse = 0, makespan = 0;
   procesos.forEach((p) => {
-    const responseTime = p.startTime - p.arrivalTime;
-    const turnaroundTime = p.finishTime - p.arrivalTime;
-    const waitingTime = turnaroundTime - p.burstTime;
-
-    totalResponse += responseTime;
-    totalTurnaround += turnaroundTime;
-    totalWaiting += waitingTime;
-
+    totalResponse   += p.startTime - p.arrivalTime;
+    totalTurnaround += p.finishTime - p.arrivalTime;
+    totalWaiting    += (p.finishTime - p.arrivalTime) - p.burstTime;
     makespan = Math.max(makespan, p.finishTime);
   });
-
-  const count = procesos.length;
-  const totalBurst = procesos.reduce((sum, p) => sum + p.burstTime, 0);
-  const cpuUtil = makespan > 0 ? ((totalBurst / makespan) * 100).toFixed(2) : 0;
-
+  const count     = procesos.length;
+  const totalBurst = procesos.reduce((s, p) => s + p.burstTime, 0);
+  const cpuUtil   = makespan > 0 ? ((totalBurst / makespan) * 100).toFixed(2) : 0;
   return {
-    avgWaiting: (totalWaiting / count).toFixed(2),
-    avgTurnaround: (totalTurnaround / count).toFixed(2),
-    avgResponse: (totalResponse / count).toFixed(2),
+    avgWaiting:     (totalWaiting    / count).toFixed(2),
+    avgTurnaround:  (totalTurnaround / count).toFixed(2),
+    avgResponse:    (totalResponse   / count).toFixed(2),
     cpuUtilization: `${cpuUtil}%`,
-    makespan: makespan,
+    makespan,
   };
 }
 
-/**
- * Ordena procesos por arrival time
- */
 function ordenarPorArrival(procesos) {
   return [...procesos].sort((a, b) => a.arrivalTime - b.arrivalTime);
+}
+
+/* Cuenta cambios de contexto en la lista de segmentos cronológicos */
+function contarCambiosContexto(segments) {
+  let cambios = 0;
+  for (let i = 1; i < segments.length; i++)
+    if (segments[i].pid !== segments[i - 1].pid) cambios++;
+  return cambios;
+}
+
+/* Fusiona timeline raw [{pid, time}] en segmentos contiguos */
+function _mergeRawTimeline(raw) {
+  if (!raw.length) return [];
+  const segs = [];
+  let cur = { pid: raw[0].pid, start: raw[0].time, end: raw[0].time + 1 };
+  for (let i = 1; i < raw.length; i++) {
+    if (raw[i].pid === cur.pid && raw[i].time === cur.end) {
+      cur.end++;
+    } else {
+      segs.push(cur);
+      cur = { pid: raw[i].pid, start: raw[i].time, end: raw[i].time + 1 };
+    }
+  }
+  segs.push(cur);
+  return segs;
+}
+
+/* Genera segmentos para algoritmos no-preemptivos (un bloque por proceso) */
+function _segmentosNP(resultado) {
+  return [...resultado]
+    .sort((a, b) => a.startTime - b.startTime)
+    .map(p => ({ pid: p.pid, start: p.startTime, end: p.finishTime }));
 }
 
 /* ----------------------------------------------------------
    1. FCFS — First Come First Served (NON-PREEMPTIVE)
    ---------------------------------------------------------- */
-
-/**
- * FCFS: El primer proceso en llegar es el primero en ejecutarse
- * @param {Array} procesos - Lista de procesos
- * @returns {Object} Resultado de ejecución
- */
 function algoritmo_FCFS(procesos) {
   const copia = ordenarPorArrival(procesos);
   const resultado = [];
   let tiempoActual = 0;
 
   copia.forEach((p) => {
-    // El proceso espera a que sea su turno
-    const startTime = Math.max(tiempoActual, p.arrivalTime);
+    const startTime  = Math.max(tiempoActual, p.arrivalTime);
     const finishTime = startTime + p.burstTime;
-
-    resultado.push({
-      ...p,
-      startTime,
-      finishTime,
-      responseTime: startTime - p.arrivalTime,
-      waitingTime: startTime - p.arrivalTime,
-      turnaroundTime: finishTime - p.arrivalTime,
-    });
-
+    resultado.push({ ...p, startTime, finishTime,
+      responseTime:   startTime - p.arrivalTime,
+      waitingTime:    startTime - p.arrivalTime,
+      turnaroundTime: finishTime - p.arrivalTime });
     tiempoActual = finishTime;
   });
 
-  return {
-    algoritmo: "FCFS",
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  const segments = _segmentosNP(resultado);
+  return { algoritmo: "FCFS", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
    2. SJF — Shortest Job First (NON-PREEMPTIVE)
    ---------------------------------------------------------- */
-
-/**
- * SJF: Se ejecutan primero los procesos con menor burst time
- * Si hay empate, se usa FCFS (arrival time)
- * @param {Array} procesos
- * @returns {Object} Resultado
- */
 function algoritmo_SJF(procesos) {
   const listos = [];
   const resultado = [];
@@ -127,64 +105,34 @@ function algoritmo_SJF(procesos) {
   let procesosRestantes = [...procesos];
 
   while (procesosRestantes.length > 0 || listos.length > 0) {
-    // Agregar procesos que han llegado a la cola
     procesosRestantes = procesosRestantes.filter((p) => {
-      if (p.arrivalTime <= tiempoActual) {
-        listos.push(p);
-        return false;
-      }
+      if (p.arrivalTime <= tiempoActual) { listos.push(p); return false; }
       return true;
     });
+    if (listos.length === 0) { tiempoActual = procesosRestantes[0].arrivalTime; continue; }
 
-    if (listos.length === 0) {
-      // Sin procesos listos, avanza al siguiente arrival
-      if (procesosRestantes.length > 0) {
-        tiempoActual = procesosRestantes[0].arrivalTime;
-      }
-      continue;
-    }
+    listos.sort((a, b) => a.burstTime !== b.burstTime
+      ? a.burstTime - b.burstTime : a.arrivalTime - b.arrivalTime);
 
-    // Seleccionar el proceso con menor burst time
-    listos.sort((a, b) => {
-      if (a.burstTime !== b.burstTime) {
-        return a.burstTime - b.burstTime;
-      }
-      return a.arrivalTime - b.arrivalTime; // Desempate por arrival
-    });
-
-    const proceso = listos.shift();
-    const startTime = tiempoActual;
-    const finishTime = startTime + proceso.burstTime;
-
-    resultado.push({
-      ...proceso,
-      startTime,
-      finishTime,
-      responseTime: startTime - proceso.arrivalTime,
-      waitingTime: startTime - proceso.arrivalTime,
-      turnaroundTime: finishTime - proceso.arrivalTime,
-    });
-
+    const p = listos.shift();
+    const startTime  = tiempoActual;
+    const finishTime = startTime + p.burstTime;
+    resultado.push({ ...p, startTime, finishTime,
+      responseTime:   startTime - p.arrivalTime,
+      waitingTime:    startTime - p.arrivalTime,
+      turnaroundTime: finishTime - p.arrivalTime });
     tiempoActual = finishTime;
   }
 
-  return {
-    algoritmo: "SJF",
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  const segments = _segmentosNP(resultado);
+  return { algoritmo: "SJF", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
    3. HRRN — Highest Response Ratio Next (NON-PREEMPTIVE)
    ---------------------------------------------------------- */
-
-/**
- * HRRN: Se ejecuta el proceso con mayor Response Ratio
- * RR = (Waiting Time + Burst Time) / Burst Time
- * @param {Array} procesos
- * @returns {Object} Resultado
- */
 function algoritmo_HRRN(procesos) {
   const listos = [];
   const resultado = [];
@@ -192,389 +140,377 @@ function algoritmo_HRRN(procesos) {
   let procesosRestantes = [...procesos];
 
   while (procesosRestantes.length > 0 || listos.length > 0) {
-    // Agregar procesos que han llegado
     procesosRestantes = procesosRestantes.filter((p) => {
-      if (p.arrivalTime <= tiempoActual) {
-        listos.push(p);
-        return false;
-      }
+      if (p.arrivalTime <= tiempoActual) { listos.push(p); return false; }
       return true;
     });
+    if (listos.length === 0) { tiempoActual = procesosRestantes[0].arrivalTime; continue; }
 
-    if (listos.length === 0) {
-      if (procesosRestantes.length > 0) {
-        tiempoActual = procesosRestantes[0].arrivalTime;
-      }
-      continue;
-    }
-
-    // Calcular Response Ratio y seleccionar el máximo
-    let mejorProceso = listos[0];
-    let mejorRR =
-      (tiempoActual - mejorProceso.arrivalTime + mejorProceso.burstTime) /
-      mejorProceso.burstTime;
-
+    let mejor = listos[0];
+    let mejorRR = (tiempoActual - mejor.arrivalTime + mejor.burstTime) / mejor.burstTime;
     for (let i = 1; i < listos.length; i++) {
-      const rr =
-        (tiempoActual - listos[i].arrivalTime + listos[i].burstTime) /
-        listos[i].burstTime;
-      if (rr > mejorRR) {
-        mejorRR = rr;
-        mejorProceso = listos[i];
-      }
+      const rr = (tiempoActual - listos[i].arrivalTime + listos[i].burstTime) / listos[i].burstTime;
+      if (rr > mejorRR) { mejorRR = rr; mejor = listos[i]; }
     }
+    listos.splice(listos.indexOf(mejor), 1);
 
-    // Remover de listos
-    listos.splice(listos.indexOf(mejorProceso), 1);
-
-    const startTime = tiempoActual;
-    const finishTime = startTime + mejorProceso.burstTime;
-
-    resultado.push({
-      ...mejorProceso,
-      startTime,
-      finishTime,
-      responseTime: startTime - mejorProceso.arrivalTime,
-      waitingTime: startTime - mejorProceso.arrivalTime,
-      turnaroundTime: finishTime - mejorProceso.arrivalTime,
-    });
-
+    const startTime  = tiempoActual;
+    const finishTime = startTime + mejor.burstTime;
+    resultado.push({ ...mejor, startTime, finishTime,
+      responseTime:   startTime - mejor.arrivalTime,
+      waitingTime:    startTime - mejor.arrivalTime,
+      turnaroundTime: finishTime - mejor.arrivalTime });
     tiempoActual = finishTime;
   }
 
-  return {
-    algoritmo: "HRRN",
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  const segments = _segmentosNP(resultado);
+  return { algoritmo: "HRRN", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
    4. ROUND ROBIN (PREEMPTIVE)
    ---------------------------------------------------------- */
-
-/**
- * RR: Cada proceso recibe un quantum fijo
- * @param {Array} procesos - Lista de procesos
- * @param {number} quantum - Tiempo máximo por ejecución
- * @returns {Object} Resultado
- */
 function algoritmo_RoundRobin(procesos, quantum = 2) {
   const cola = [];
   const resultado = [];
+  const segments  = [];
   let tiempoActual = 0;
   let procesosRestantes = [...procesos];
-  const procesosEnEjecucion = {}; // Mapeo para recordar startTime en primera ejecución
+  const primeraVez = {};
 
   while (procesosRestantes.length > 0 || cola.length > 0) {
-    // Agregar procesos que han llegado
     procesosRestantes = procesosRestantes.filter((p) => {
       if (p.arrivalTime <= tiempoActual) {
         cola.push({ ...p, tiempoRestante: p.burstTime });
-        if (!procesosEnEjecucion[p.pid]) {
-          procesosEnEjecucion[p.pid] = { startTime: tiempoActual };
-        }
+        if (!primeraVez[p.pid]) primeraVez[p.pid] = tiempoActual;
         return false;
       }
       return true;
     });
 
-    if (cola.length === 0) {
-      if (procesosRestantes.length > 0) {
-        tiempoActual = procesosRestantes[0].arrivalTime;
-      }
-      continue;
-    }
+    if (cola.length === 0) { tiempoActual = procesosRestantes[0].arrivalTime; continue; }
 
-    // Ejecutar el primer proceso en la cola
-    const proceso = cola.shift();
+    const proceso         = cola.shift();
     const tiempoEjecucion = Math.min(quantum, proceso.tiempoRestante);
+    const segStart        = tiempoActual;
 
-    tiempoActual += tiempoEjecucion;
+    tiempoActual           += tiempoEjecucion;
     proceso.tiempoRestante -= tiempoEjecucion;
+    segments.push({ pid: proceso.pid, start: segStart, end: tiempoActual });
 
-    // Si aún tiene tiempo restante, vuelve al final de la cola
+    // Admitir llegadas durante el quantum
+    procesosRestantes = procesosRestantes.filter((p) => {
+      if (p.arrivalTime <= tiempoActual) {
+        cola.push({ ...p, tiempoRestante: p.burstTime });
+        if (!primeraVez[p.pid]) primeraVez[p.pid] = tiempoActual;
+        return false;
+      }
+      return true;
+    });
+
     if (proceso.tiempoRestante > 0) {
       cola.push(proceso);
     } else {
-      // Proceso terminado
-      const startTime = procesosEnEjecucion[proceso.pid].startTime;
-      resultado.push({
-        ...proceso,
-        startTime,
-        finishTime: tiempoActual,
-        responseTime: startTime - proceso.arrivalTime,
-        waitingTime: tiempoActual - proceso.burstTime - proceso.arrivalTime,
-        turnaroundTime: tiempoActual - proceso.arrivalTime,
-      });
+      const startTime = primeraVez[proceso.pid];
+      resultado.push({ ...proceso, startTime, finishTime: tiempoActual,
+        responseTime:   startTime - proceso.arrivalTime,
+        waitingTime:    tiempoActual - proceso.burstTime - proceso.arrivalTime,
+        turnaroundTime: tiempoActual - proceso.arrivalTime });
     }
   }
 
-  return {
-    algoritmo: "Round Robin",
-    quantum,
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  return { algoritmo: "Round Robin", quantum, procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
    5. SRTF — Shortest Remaining Time First (PREEMPTIVE)
    ---------------------------------------------------------- */
-
-/**
- * SRTF: En cada unidad de tiempo, ejecuta el proceso con menor tiempo restante
- * @param {Array} procesos
- * @returns {Object} Resultado
- */
 function algoritmo_SRTF(procesos) {
   const cola = [];
   const resultado = [];
+  const rawTimeline = [];
   let tiempoActual = 0;
   let procesosRestantes = [...procesos];
-  const procesosInfo = {}; // {pid: {startTime, tiempoRestante}}
+  const info = {};
 
-  for (let tiempoTotal = 0; tiempoTotal <= 10000; tiempoTotal++) {
-    // Agregar procesos que llegan en este momento
+  for (let guard = 0; guard <= 100000; guard++) {
     procesosRestantes = procesosRestantes.filter((p) => {
       if (p.arrivalTime === tiempoActual) {
-        procesosInfo[p.pid] = {
-          startTime: null,
-          tiempoRestante: p.burstTime,
-          burstOriginal: p.burstTime,
-          arrivalTime: p.arrivalTime,
-        };
+        info[p.pid] = { startTime: null, tiempoRestante: p.burstTime, arrivalTime: p.arrivalTime };
         cola.push(p.pid);
         return false;
       }
       return true;
     });
 
-    if (cola.length === 0 && procesosRestantes.length === 0) {
-      break;
-    }
+    if (cola.length === 0 && procesosRestantes.length === 0) break;
+    if (cola.length === 0) { tiempoActual = procesosRestantes[0].arrivalTime; continue; }
 
-    if (cola.length === 0) {
-      tiempoActual = procesosRestantes[0].arrivalTime;
-      continue;
-    }
-
-    // Seleccionar proceso con menor tiempo restante
-    let pidEjecucion = cola[0];
-    let menorTiempo = procesosInfo[pidEjecucion].tiempoRestante;
-
+    let pid = cola[0], menor = info[cola[0]].tiempoRestante;
     for (let i = 1; i < cola.length; i++) {
-      if (procesosInfo[cola[i]].tiempoRestante < menorTiempo) {
-        menorTiempo = procesosInfo[cola[i]].tiempoRestante;
-        pidEjecucion = cola[i];
-      }
+      if (info[cola[i]].tiempoRestante < menor) { menor = info[cola[i]].tiempoRestante; pid = cola[i]; }
     }
 
-    // Registrar inicio si es la primera vez
-    if (procesosInfo[pidEjecucion].startTime === null) {
-      procesosInfo[pidEjecucion].startTime = tiempoActual;
-    }
-
-    // Ejecutar 1 unidad de tiempo
-    procesosInfo[pidEjecucion].tiempoRestante--;
+    if (info[pid].startTime === null) info[pid].startTime = tiempoActual;
+    rawTimeline.push({ pid, time: tiempoActual });
+    info[pid].tiempoRestante--;
     tiempoActual++;
 
-    // Si terminó, remover de cola
-    if (procesosInfo[pidEjecucion].tiempoRestante === 0) {
-      cola.splice(cola.indexOf(pidEjecucion), 1);
-
-      const p = procesos.find((x) => x.pid === pidEjecucion);
-      const info = procesosInfo[pidEjecucion];
-
-      resultado.push({
-        ...p,
-        startTime: info.startTime,
-        finishTime: tiempoActual,
-        responseTime: info.startTime - p.arrivalTime,
-        waitingTime: tiempoActual - p.burstTime - p.arrivalTime,
-        turnaroundTime: tiempoActual - p.arrivalTime,
-      });
+    if (info[pid].tiempoRestante === 0) {
+      cola.splice(cola.indexOf(pid), 1);
+      const p = procesos.find((x) => x.pid === pid);
+      resultado.push({ ...p, startTime: info[pid].startTime, finishTime: tiempoActual,
+        responseTime:   info[pid].startTime - p.arrivalTime,
+        waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
+        turnaroundTime: tiempoActual - p.arrivalTime });
     }
 
-    // Agregar procesos que llegan ahora (después de ejecutar)
-    for (let j = 0; j < procesosRestantes.length; j++) {
+    for (let j = procesosRestantes.length - 1; j >= 0; j--) {
       if (procesosRestantes[j].arrivalTime <= tiempoActual) {
-        const p = procesosRestantes[j];
-        procesosInfo[p.pid] = {
-          startTime: null,
-          tiempoRestante: p.burstTime,
-          burstOriginal: p.burstTime,
-          arrivalTime: p.arrivalTime,
-        };
+        const p = procesosRestantes.splice(j, 1)[0];
+        info[p.pid] = { startTime: null, tiempoRestante: p.burstTime, arrivalTime: p.arrivalTime };
         cola.push(p.pid);
-        procesosRestantes.splice(j, 1);
-        j--;
       }
     }
-
-    // Seguridad: salir si todos los procesos han terminado
-    if (cola.length === 0 && procesosRestantes.length === 0) {
-      break;
-    }
+    if (cola.length === 0 && procesosRestantes.length === 0) break;
   }
 
-  // Ordenar resultado por PID para consistencia
   resultado.sort((a, b) => a.pid - b.pid);
-
-  return {
-    algoritmo: "SRTF",
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  const segments = _mergeRawTimeline(rawTimeline);
+  return { algoritmo: "SRTF", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
-   6. PRIORITY (PREEMPTIVE)
+   6. PRIORITY PREEMPTIVE
    ---------------------------------------------------------- */
-
-/**
- * Priority Preemptive: Se ejecuta siempre el proceso con mayor prioridad (menor número)
- * @param {Array} procesos
- * @returns {Object} Resultado
- */
 function algoritmo_PriorityPreemptive(procesos) {
   const cola = [];
   const resultado = [];
+  const rawTimeline = [];
   let tiempoActual = 0;
   let procesosRestantes = [...procesos];
-  const procesosInfo = {};
+  const info = {};
 
-  for (let tiempo = 0; tiempo <= 10000; tiempo++) {
-    // Agregar procesos que llegan
+  for (let guard = 0; guard <= 100000; guard++) {
     procesosRestantes = procesosRestantes.filter((p) => {
       if (p.arrivalTime <= tiempoActual) {
-        procesosInfo[p.pid] = {
-          startTime: null,
-          tiempoRestante: p.burstTime,
-          priority: p.priority,
-          arrivalTime: p.arrivalTime,
-        };
+        info[p.pid] = { startTime: null, tiempoRestante: p.burstTime,
+          priority: p.priority, arrivalTime: p.arrivalTime };
         cola.push(p.pid);
         return false;
       }
       return true;
     });
 
-    if (cola.length === 0 && procesosRestantes.length === 0) {
-      break;
-    }
+    if (cola.length === 0 && procesosRestantes.length === 0) break;
+    if (cola.length === 0) { tiempoActual = procesosRestantes[0].arrivalTime; continue; }
 
-    if (cola.length === 0) {
-      tiempoActual = procesosRestantes[0].arrivalTime;
-      continue;
-    }
+    cola.sort((a, b) => info[a].priority - info[b].priority);
+    const pid = cola[0];
+    if (info[pid].startTime === null) info[pid].startTime = tiempoActual;
 
-    // Ordenar por prioridad (menor número = mayor prioridad)
-    cola.sort((a, b) => {
-      const prioA = procesosInfo[a].priority;
-      const prioB = procesosInfo[b].priority;
-      return prioA - prioB;
-    });
-
-    const pidEjecucion = cola[0];
-
-    if (procesosInfo[pidEjecucion].startTime === null) {
-      procesosInfo[pidEjecucion].startTime = tiempoActual;
-    }
-
-    procesosInfo[pidEjecucion].tiempoRestante--;
+    rawTimeline.push({ pid, time: tiempoActual });
+    info[pid].tiempoRestante--;
     tiempoActual++;
 
-    if (procesosInfo[pidEjecucion].tiempoRestante === 0) {
+    if (info[pid].tiempoRestante === 0) {
       cola.shift();
-
-      const p = procesos.find((x) => x.pid === pidEjecucion);
-      const info = procesosInfo[pidEjecucion];
-
-      resultado.push({
-        ...p,
-        startTime: info.startTime,
-        finishTime: tiempoActual,
-        responseTime: info.startTime - p.arrivalTime,
-        waitingTime: tiempoActual - p.burstTime - p.arrivalTime,
-        turnaroundTime: tiempoActual - p.arrivalTime,
-      });
+      const p = procesos.find((x) => x.pid === pid);
+      resultado.push({ ...p, startTime: info[pid].startTime, finishTime: tiempoActual,
+        responseTime:   info[pid].startTime - p.arrivalTime,
+        waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
+        turnaroundTime: tiempoActual - p.arrivalTime });
     }
   }
 
   resultado.sort((a, b) => a.pid - b.pid);
-
-  return {
-    algoritmo: "Priority (Preemptive)",
-    procesos: resultado,
-    metricas: calcularMetricas(resultado),
-  };
+  const segments = _mergeRawTimeline(rawTimeline);
+  return { algoritmo: "Priority (Preemptive)", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
-   7. MULTILEVEL QUEUE (placeholder)
+   7. MULTILEVEL QUEUE
+   Tres colas fijas por prioridad del proceso:
+     Q0 (priority ≤ 1): RR quantum=2  — mayor prioridad
+     Q1 (priority = 2): RR quantum=4
+     Q2 (priority ≥ 3): FCFS
+   Una cola de mayor prioridad siempre preempta a una menor.
+   Procesos NO bajan de cola (MLQ clásico).
    ---------------------------------------------------------- */
+function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
+  const getQueue  = (p) => p.priority <= 1 ? 0 : p.priority <= 2 ? 1 : 2;
+  const quantums  = [quantumQ0, quantumQ1, Infinity];
 
-function algoritmo_MultilevelQueue(procesos) {
-  // Por ahora retorna FCFS
-  const resultado = algoritmo_FCFS(procesos);
-  resultado.algoritmo = "Multilevel Queue (Under Development)";
-  return resultado;
+  const info = {};
+  procesos.forEach(p => { info[p.pid] = { ...p, tiempoRestante: p.burstTime, firstStart: null }; });
+
+  let pendientes   = [...procesos].sort((a, b) => a.arrivalTime - b.arrivalTime);
+  const queues     = [[], [], []];
+  const resultado  = [];
+  const rawTimeline = [];
+  let tiempoActual = 0;
+  let exec = null; // { pid, queueIdx, quantumUsed }
+
+  for (let guard = 0; guard <= 100000; guard++) {
+    // Admitir procesos llegados
+    pendientes = pendientes.filter(p => {
+      if (p.arrivalTime <= tiempoActual) { queues[getQueue(p)].push(p.pid); return false; }
+      return true;
+    });
+
+    // Cola más prioritaria con procesos
+    let nextQ = -1;
+    for (let i = 0; i < 3; i++) { if (queues[i].length > 0) { nextQ = i; break; } }
+
+    // Preempción: si hay cola con más prioridad que la actual
+    if (exec && nextQ !== -1 && nextQ < exec.queueIdx) {
+      queues[exec.queueIdx].unshift(exec.pid);
+      exec = null;
+    }
+
+    if (!exec) {
+      if (nextQ === -1) {
+        if (pendientes.length === 0) break;
+        tiempoActual = pendientes[0].arrivalTime;
+        continue;
+      }
+      exec = { pid: queues[nextQ].shift(), queueIdx: nextQ, quantumUsed: 0 };
+    }
+
+    const p = info[exec.pid];
+    if (p.firstStart === null) p.firstStart = tiempoActual;
+
+    rawTimeline.push({ pid: exec.pid, time: tiempoActual });
+    tiempoActual++;
+    p.tiempoRestante--;
+    exec.quantumUsed++;
+
+    if (p.tiempoRestante === 0) {
+      resultado.push({ pid: p.pid, arrivalTime: p.arrivalTime, burstTime: p.burstTime,
+        priority: p.priority, pages: p.pages,
+        startTime: p.firstStart, finishTime: tiempoActual,
+        responseTime:   p.firstStart - p.arrivalTime,
+        waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
+        turnaroundTime: tiempoActual - p.arrivalTime });
+      exec = null;
+    } else if (exec.quantumUsed >= quantums[exec.queueIdx]) {
+      queues[exec.queueIdx].push(exec.pid); // vuelve a su misma cola
+      exec = null;
+    }
+
+    if (resultado.length === procesos.length) break;
+  }
+
+  const segments = _mergeRawTimeline(rawTimeline);
+  return { algoritmo: "Multilevel Queue", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
-   8. MULTILEVEL FEEDBACK QUEUE (placeholder)
+   8. MULTILEVEL FEEDBACK QUEUE
+   Tres colas con degradación por quantum agotado:
+     Q0: RR quantum=2  (todos los procesos entran aquí)
+     Q1: RR quantum=4
+     Q2: FCFS
+   Si un proceso agota su quantum, baja a la siguiente cola.
+   Nuevas llegadas van a Q0 y preemptan procesos en Q1/Q2.
    ---------------------------------------------------------- */
-
 function algoritmo_MultilevelFeedbackQueue(procesos) {
-  // Por ahora retorna FCFS
-  const resultado = algoritmo_FCFS(procesos);
-  resultado.algoritmo = "Multilevel Feedback Queue (Under Development)";
-  return resultado;
+  const quantums = [2, 4, Infinity];
+
+  const info = {};
+  procesos.forEach(p => {
+    info[p.pid] = { ...p, tiempoRestante: p.burstTime, queue: 0, firstStart: null };
+  });
+
+  let pendientes   = [...procesos].sort((a, b) => a.arrivalTime - b.arrivalTime);
+  const queues     = [[], [], []];
+  const resultado  = [];
+  const rawTimeline = [];
+  let tiempoActual = 0;
+  let exec = null; // { pid, quantumUsed }
+
+  for (let guard = 0; guard <= 100000; guard++) {
+    // Nuevas llegadas van a Q0
+    pendientes = pendientes.filter(p => {
+      if (p.arrivalTime <= tiempoActual) { queues[0].push(p.pid); return false; }
+      return true;
+    });
+
+    let nextQ = -1;
+    for (let i = 0; i < 3; i++) { if (queues[i].length > 0) { nextQ = i; break; } }
+
+    // Preempción: Q0 con proceso nuevo preempta a Q1/Q2
+    if (exec && nextQ !== -1 && nextQ < info[exec.pid].queue) {
+      queues[info[exec.pid].queue].unshift(exec.pid);
+      exec = null;
+    }
+
+    if (!exec) {
+      if (nextQ === -1) {
+        if (pendientes.length === 0) break;
+        tiempoActual = pendientes[0].arrivalTime;
+        continue;
+      }
+      exec = { pid: queues[nextQ].shift(), quantumUsed: 0 };
+    }
+
+    const p = info[exec.pid];
+    if (p.firstStart === null) p.firstStart = tiempoActual;
+
+    rawTimeline.push({ pid: exec.pid, time: tiempoActual });
+    tiempoActual++;
+    p.tiempoRestante--;
+    exec.quantumUsed++;
+
+    if (p.tiempoRestante === 0) {
+      resultado.push({ pid: p.pid, arrivalTime: p.arrivalTime, burstTime: p.burstTime,
+        priority: p.priority, pages: p.pages,
+        startTime: p.firstStart, finishTime: tiempoActual,
+        responseTime:   p.firstStart - p.arrivalTime,
+        waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
+        turnaroundTime: tiempoActual - p.arrivalTime });
+      exec = null;
+    } else if (exec.quantumUsed >= quantums[p.queue]) {
+      // Degradar a la siguiente cola
+      const nextQueue = Math.min(p.queue + 1, 2);
+      p.queue = nextQueue;
+      queues[nextQueue].push(exec.pid);
+      exec = null;
+    }
+
+    if (resultado.length === procesos.length) break;
+  }
+
+  const segments = _mergeRawTimeline(rawTimeline);
+  return { algoritmo: "Multilevel Feedback Queue", procesos: resultado, segments,
+    contextSwitches: contarCambiosContexto(segments),
+    metricas: calcularMetricas(resultado) };
 }
 
 /* ----------------------------------------------------------
-   FUNCTION ROUTER — Ejecutar algoritmo según nombre
+   ROUTER
    ---------------------------------------------------------- */
-
-/**
- * Ejecuta el algoritmo indicado
- * @param {string} nombreAlgo - FCFS, SJF, HRRN, RR, SRTF, Priority, MLQ, MLFQ
- * @param {Array} procesos
- * @param {number} quantum - Para Round Robin
- * @returns {Object} Resultado de ejecución
- */
 function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2) {
-  if (!procesos || procesos.length === 0) {
-    alert("Agrega procesos primero");
-    return null;
-  }
-
+  if (!procesos || procesos.length === 0) { alert("Agrega procesos primero"); return null; }
   switch (nombreAlgo.toLowerCase()) {
-    case "fcfs":
-      return algoritmo_FCFS(procesos);
-    case "sjf":
-      return algoritmo_SJF(procesos);
-    case "hrrn":
-      return algoritmo_HRRN(procesos);
-    case "rr":
-      return algoritmo_RoundRobin(procesos, quantum);
-    case "srtf":
-      return algoritmo_SRTF(procesos);
-    case "priority":
-      return algoritmo_PriorityPreemptive(procesos);
-    case "mlq":
-      return algoritmo_MultilevelQueue(procesos);
-    case "mlfq":
-      return algoritmo_MultilevelFeedbackQueue(procesos);
-    default:
-      alert(`Algoritmo no reconocido: ${nombreAlgo}`);
-      return null;
+    case "fcfs":     return algoritmo_FCFS(procesos);
+    case "sjf":      return algoritmo_SJF(procesos);
+    case "hrrn":     return algoritmo_HRRN(procesos);
+    case "rr":       return algoritmo_RoundRobin(procesos, quantum);
+    case "srtf":     return algoritmo_SRTF(procesos);
+    case "priority": return algoritmo_PriorityPreemptive(procesos);
+    case "mlq":      return algoritmo_MultilevelQueue(procesos);
+    case "mlfq":     return algoritmo_MultilevelFeedbackQueue(procesos);
+    default: alert(`Algoritmo no reconocido: ${nombreAlgo}`); return null;
   }
 }
-
-/* ----------------------------------------------------------
-   EXPORT para uso global
-   ---------------------------------------------------------- */
-// Para Node.js / CommonJS (si lo necesitas)
-// module.exports = { ejecutarAlgoritmo, calcularMetricas };
