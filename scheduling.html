@@ -120,7 +120,7 @@
 
     .input-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
       align-items: flex-end;
     }
@@ -160,7 +160,8 @@
     .input-actions {
       display: flex;
       gap: 8px;
-      grid-column: -2 / -1;
+      grid-column: 1 / -1;   /* fila completa debajo de los campos */
+      padding-top: 4px;
     }
 
     /* ============================================================
@@ -275,14 +276,13 @@
       z-index: 1;
     }
 
-    /* Animación de entrada para bloques HTML */
-    @keyframes ganttBlockReveal {
-      from { transform: scaleX(0); opacity: 0; }
-      to   { transform: scaleX(1); opacity: 1; }
+    /* Animación de entrada para el contenedor del Gantt */
+    @keyframes ganttFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .gantt-block-enter {
-      transform-origin: left center;
-      animation: ganttBlockReveal 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    #ganttChart.gantt-loaded {
+      animation: ganttFadeIn 0.3s ease forwards;
     }
 
     /* Botón editar */

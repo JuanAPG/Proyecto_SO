@@ -143,8 +143,8 @@ function dibujarGantt() {
         const left  = ((seg.start / makespan) * 100).toFixed(3);
         const width = (((seg.end - seg.start) / makespan) * 100).toFixed(3);
         const label = parseFloat(width) > 4 ? `P${pid}` : "";
-        return `<div class="gantt-block gantt-block-enter"
-          style="left:${left}%;width:${width}%;background:${color};animation-delay:${i * 40}ms"
+        return `<div class="gantt-block"
+          style="left:${left}%;width:${width}%;background:${color};color:#fff;font-weight:700;font-size:11px;"
           title="P${pid}: t${seg.start} → t${seg.end}">${label}</div>`;
       }).join("");
 
@@ -167,6 +167,9 @@ function dibujarGantt() {
   </div>`;
 
   ganttChart.innerHTML = rowsHTML + axisHTML;
+  ganttChart.classList.remove("gantt-loaded");
+  void ganttChart.offsetWidth; // reflow para reiniciar animación
+  ganttChart.classList.add("gantt-loaded");
 }
 
 /* ----------------------------------------------------------
