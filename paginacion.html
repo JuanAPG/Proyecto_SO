@@ -993,12 +993,42 @@
     .person-bubble-num { font-family: var(--font-mono); font-size: 9px; font-weight: 700; line-height: 1; color: inherit; }
     .person-bubble-next .person-bubble-num { font-size: 11px; }
 
+    /* ══ Animación de entrada de página al asiento ══ */
+    .page-walker {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      will-change: transform, opacity;
+    }
+    .page-walker svg { filter: drop-shadow(0 0 4px rgba(255,120,120,0.7)); }
+    .page-walker-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #FF8080;
+      text-shadow: 0 0 6px rgba(255,80,80,0.6);
+      line-height: 1;
+    }
+    @keyframes walker-appear {
+      from { opacity: 0; transform: scale(0.5) translateY(-8px); }
+      to   { opacity: 1; transform: scale(1)   translateY(0); }
+    }
+    @keyframes walker-vanish {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(0.6) translateY(4px); }
+    }
+
     /* ══════════════════════════════════════════════════════
        AMBIENTACIÓN CINEMATIC
     ══════════════════════════════════════════════════════ */
 
     /* Cinema hall background illustration */
     .cinema-stage { overflow: hidden; }
+    .cinema-stage.walker-active { overflow: visible; }
     .cinema-hall-bg {
       position: absolute;
       inset: 0; width: 100%; height: 100%;

@@ -693,6 +693,292 @@
       th, td { padding: 8px 10px; font-size: 11px; }
       .state-machine { overflow-x: auto; }
     }
+
+    /* ============================================================
+       LA TAQUILLA DEL CINE — Cinema Scheduling Simulator
+       ============================================================ */
+    .cs-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
+      display: none;
+    }
+
+    .cs-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .cs-panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cs-algo-badge {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      background: var(--color-blue-50);
+      color: var(--color-blue-700);
+      border: 1px solid var(--color-blue-200);
+      border-radius: 100px;
+      padding: 2px 10px;
+    }
+
+    /* ── Controles ── */
+    .cs-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cs-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      font-family: var(--font-base);
+    }
+    .cs-btn:hover:not(:disabled) { background: var(--color-blue-50); border-color: var(--color-blue-500); color: var(--color-blue-700); }
+    .cs-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    #cs-play-btn { background: var(--color-blue-700); border-color: var(--color-blue-700); color: #fff; }
+    #cs-play-btn:hover:not(:disabled) { background: #185FA5; }
+    #cs-play-btn.cs-playing { background: #DC2626; border-color: #EF4444; color: #fff; }
+    #cs-play-btn.cs-playing:hover { background: #B91C1C; }
+    .cs-clock-wrap {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 4px;
+    }
+    #cs-clock {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-blue-700);
+      min-width: 24px;
+    }
+    .cs-speed-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    input[type=range].cs-speed-slider {
+      width: 80px;
+      accent-color: var(--color-blue-700);
+      cursor: pointer;
+    }
+
+    /* ── Escenario principal ── */
+    .cs-stage {
+      display: grid;
+      grid-template-columns: 110px 1fr 160px 120px;
+      gap: 12px;
+      align-items: start;
+      margin-top: 4px;
+    }
+    @media (max-width: 860px) {
+      .cs-stage { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 540px) {
+      .cs-stage { grid-template-columns: 1fr; }
+    }
+
+    .cs-zone {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      min-height: 80px;
+    }
+    .cs-zone-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cs-zone-label svg { opacity: 0.6; }
+
+    /* Zona CPU — destacada */
+    .cs-zone-cpu {
+      background: linear-gradient(135deg, #f0f6ff 0%, var(--surface-0) 100%);
+      border-color: var(--color-blue-200);
+      border-width: 1.5px;
+    }
+    .cs-zone-cpu .cs-zone-label { color: var(--color-blue-700); }
+
+    /* ── Tarjeta de cliente ── */
+    .cs-customer {
+      background: var(--surface-0);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.2s;
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .cs-customer:last-child { margin-bottom: 0; }
+    .cs-customer:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .cs-running {
+      border-color: var(--accent, var(--color-blue-500));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, var(--color-blue-500)) 20%, transparent),
+                  0 4px 16px rgba(0,0,0,0.1);
+      animation: cs-running-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes cs-running-pulse {
+      0%,100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #3d687b) 20%, transparent); }
+      50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent, #3d687b) 10%, transparent); }
+    }
+
+    .cs-avatar {
+      width: 34px; height: 34px;
+      background: color-mix(in srgb, var(--accent, #3d687b) 12%, var(--surface-1));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cs-running .cs-avatar {
+      width: 44px; height: 44px;
+      background: color-mix(in srgb, var(--accent, #3d687b) 16%, var(--surface-1));
+    }
+    .cs-running .cs-avatar svg { width: 26px; height: 26px; }
+
+    .cs-pid {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .cs-running .cs-pid { font-size: 14px; }
+
+    /* Barra de burst time */
+    .cs-burst-bar {
+      width: 100%;
+      height: 5px;
+      background: var(--surface-2, #eee);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .cs-burst-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    /* Barra de quantum (RR) */
+    .cs-quantum-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(239,159,39,0.15);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .cs-quantum-fill {
+      height: 100%;
+      background: #EF9F27;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .cs-remaining {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .cs-running .cs-remaining { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+    .cs-subtitle {
+      font-size: 9px;
+      color: var(--text-muted);
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .cs-cpu-idle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 12px 0;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    /* Chips de completados */
+    .cs-done-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+      border: 1.5px solid;
+      margin: 2px;
+    }
+
+    .cs-more {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 4px 0;
+    }
+
+    /* ── Animaciones ── */
+    @keyframes cs-pop-in {
+      from { opacity: 0; transform: scale(0.7) translateY(-6px); }
+      to   { opacity: 1; transform: scale(1)   translateY(0); }
+    }
+    @keyframes cs-dispatch {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    @keyframes cs-preempt {
+      0%   { transform: translateX(0); }
+      30%  { transform: translateX(-8px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes cs-done-anim {
+      0%   { transform: scale(1);    opacity: 1; }
+      50%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.9);  opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -907,6 +1193,110 @@
       <div class="psc-grid" id="processStateGrid"></div>
     </section>
 
+    <!-- ============================================================
+         PANEL 5: La Taquilla del Cine — Simulación Visual
+         ============================================================ -->
+    <section class="cs-panel" id="cs-panel">
+
+      <div class="cs-panel-header">
+        <div class="cs-panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               style="vertical-align:middle">
+            <path d="M2 8h20M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2M2 8v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8M6 2v4M18 2v4"/>
+          </svg>
+          La Taquilla del Cine
+          <span class="cs-algo-badge" id="cs-algo-label">FCFS</span>
+        </div>
+
+        <div class="cs-controls">
+          <button class="cs-btn" id="cs-play-btn" onclick="toggleCinemaPlay()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Iniciar
+          </button>
+          <button class="cs-btn" id="cs-step-btn" onclick="stepCinema()" disabled title="Avanzar un tick">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            Paso
+          </button>
+          <button class="cs-btn" onclick="initCinemaScheduling()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+            </svg>
+            Reiniciar
+          </button>
+          <div class="cs-clock-wrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            t =&nbsp;<span id="cs-clock">0</span>
+          </div>
+          <div class="cs-speed-wrap">
+            Lento
+            <input type="range" class="cs-speed-slider" min="200" max="2000" step="100" value="700"
+                   oninput="setCinemaSpeed(this.value)" title="Velocidad de simulación" />
+            Rápido
+          </div>
+        </div>
+      </div>
+
+      <!-- Escenario -->
+      <div class="cs-stage">
+
+        <!-- Zona 1: Por llegar -->
+        <div class="cs-zone">
+          <div class="cs-zone-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+            </svg>
+            Por llegar
+          </div>
+          <div id="cs-arriving"></div>
+        </div>
+
+        <!-- Zona 2: Fila de espera (Ready Queue) -->
+        <div class="cs-zone">
+          <div class="cs-zone-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <circle cx="3" cy="6" r="1.5" fill="currentColor"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/>
+            </svg>
+            Fila de Espera (Ready Queue)
+          </div>
+          <div id="cs-queue-items" style="display:flex; flex-wrap:wrap; gap:6px; align-items:flex-start;"></div>
+        </div>
+
+        <!-- Zona 3: CPU -->
+        <div class="cs-zone cs-zone-cpu">
+          <div class="cs-zone-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <rect x="9" y="9" width="6" height="6"/>
+              <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+              <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+              <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+              <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+            </svg>
+            CPU
+          </div>
+          <div id="cs-cpu-slot"></div>
+        </div>
+
+        <!-- Zona 4: Completados -->
+        <div class="cs-zone">
+          <div class="cs-zone-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Completados
+          </div>
+          <div id="cs-done-list" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
 </div>
@@ -918,6 +1308,7 @@
 <script src="js/procesos.js"></script>
 <script src="js/scheduling.js"></script>
 <script src="js/scheduling-ui.js"></script>
+<script src="js/cinema-scheduling.js"></script>
 
 </body>
 </html>
