@@ -584,25 +584,41 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
+    /* ── 1024 px: sidebar encima, paneles apilados ── */
     @media (max-width: 1024px) {
       .scheduling-container {
         grid-template-columns: 1fr;
+        gap: 16px;
       }
       .scheduling-sidebar {
         position: static;
         max-height: none;
       }
+      .algo-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      .algo-category { margin-top: 0; padding-top: 0; border-top: none; }
+      .algo-category-title { display: none; }
       .input-grid {
         grid-template-columns: repeat(3, 1fr);
       }
       .execution-panel {
         grid-template-columns: 1fr;
       }
+      .metrics-panel {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .metrics-title { grid-column: 1 / -1; }
     }
 
+    /* ── 768 px: 2 columnas en inputs ── */
     @media (max-width: 768px) {
       .scheduling-container {
-        padding: 16px;
+        padding: 14px;
+        gap: 14px;
       }
       .input-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -611,9 +627,71 @@
         grid-column: 1 / -1;
       }
       .algo-list {
-        display: grid;
         grid-template-columns: 1fr 1fr;
       }
+      .scheduling-sidebar {
+        padding: 16px;
+      }
+      .input-panel,
+      .processes-panel,
+      .execution-panel,
+      .states-panel {
+        padding: 16px;
+      }
+      .psc-grid { gap: 8px; }
+      .psc-card { min-width: 120px; padding: 10px 12px; }
+    }
+
+    /* ── 640 px: columna única, elementos compactos ── */
+    @media (max-width: 640px) {
+      .scheduling-container {
+        padding: 10px;
+        gap: 10px;
+      }
+      .input-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .algo-list {
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+      .algo-item {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+      .panel-title { font-size: 13px; }
+      .sidebar-title { font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; }
+      .gantt-header { flex-wrap: wrap; gap: 8px; }
+      .gantt-controls { flex-wrap: wrap; }
+      .metrics-panel {
+        grid-template-columns: 1fr 1fr;
+      }
+      .metric-row { padding: 8px; }
+      .metric-label { font-size: 11px; }
+      .metric-value { font-size: 13px; }
+      .queue-visualization {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+      }
+      .quantum-control { flex-wrap: wrap; }
+    }
+
+    /* ── 480 px: todo en columna única ── */
+    @media (max-width: 480px) {
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+      .algo-list {
+        grid-template-columns: 1fr;
+      }
+      .metrics-panel {
+        grid-template-columns: 1fr;
+      }
+      .gantt-controls .btn-edit { font-size: 10px; padding: 3px 6px; }
+      th, td { padding: 8px 10px; font-size: 11px; }
+      .state-machine { overflow-x: auto; }
     }
   </style>
 </head>

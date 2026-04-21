@@ -1796,44 +1796,98 @@ table.ref-table {
 }
 
 /* ============================================================
-       RESPONSIVE
+       RESPONSIVE — MÉTRICAS
        ============================================================ */
-@media (max-width: 1100px) {
 
+/* ── 1100 px ── */
+@media (max-width: 1100px) {
   .kpi-row,
   .kpi-row-4 {
     grid-template-columns: repeat(3, 1fr);
   }
-
   .charts-grid {
     grid-template-columns: 1fr;
   }
 }
 
+/* ── 860 px ── */
 @media (max-width: 860px) {
   .metrics-page {
     padding: 16px;
     gap: 16px;
   }
-
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page-title { font-size: 22px; }
+  .header-actions { width: 100%; justify-content: flex-start; }
   .kpi-row,
   .kpi-row-4 {
     grid-template-columns: repeat(2, 1fr);
   }
-
   .process-states-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+  .card { padding: 16px; }
+  .chart-card { padding: 16px; }
+  .module-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .module-tabs::-webkit-scrollbar { display: none; }
+  .section-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .section-tabs::-webkit-scrollbar { display: none; }
 }
 
-@media (max-width: 540px) {
-
+/* ── 640 px ── */
+@media (max-width: 640px) {
+  .metrics-page {
+    padding: 10px;
+    gap: 12px;
+  }
+  .page-title { font-size: 20px; }
+  .page-subtitle { font-size: 12px; }
+  .module-tab { padding: 10px 14px; font-size: 12px; }
+  .section-tab { padding: 8px 12px; font-size: 11px; }
   .kpi-row,
   .kpi-row-4 {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
-
+  .kpi-card { padding: 14px 12px; }
+  .kpi-value { font-size: 22px; }
+  .card { padding: 14px; }
+  .card-header { flex-direction: column; align-items: flex-start; }
+  .chart-card { padding: 14px; }
+  .comp-table-wrap { overflow-x: auto; }
+  .table-wrapper { font-size: 12px; }
+  .metrics-table th,
+  .metrics-table td { padding: 9px 10px; font-size: 11px; }
   .process-states-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ── 480 px ── */
+@media (max-width: 480px) {
+  .kpi-row,
+  .kpi-row-4 {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .kpi-card { padding: 12px 10px; }
+  .kpi-value { font-size: 20px; }
+  .kpi-label { font-size: 10px; }
+  .module-tab { padding: 8px 12px; font-size: 11px; }
+  .process-states-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .comp-algo-selector { gap: 6px; }
+  .btn.btn-sm { padding: 7px 12px; font-size: 11px; }
+  .header-actions { flex-wrap: wrap; }
 }
