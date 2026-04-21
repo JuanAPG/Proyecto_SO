@@ -262,8 +262,8 @@
       overflow-x: auto;
     }
     #ganttChart .gantt-pid { width: 48px; font-weight: 700; font-size: 12px; color: var(--text-primary); }
-    #ganttChart .gantt-track { height: 36px; min-width: 320px; }
-    #ganttChart .gantt-block { height: calc(100% - 4px); top: 2px; color: #fff; font-size: 11px; font-weight: 700; font-family: var(--font-mono); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.18); }
+    #ganttChart .gantt-track { height: 36px; min-width: 320px; position: relative; }
+    #ganttChart .gantt-block { position: absolute; height: calc(100% - 4px); top: 2px; color: #fff; font-size: 11px; font-weight: 700; font-family: var(--font-mono); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; overflow: hidden; }
     #ganttChart .gantt-row { margin-bottom: 4px; }
 
     /* Marcador de cambio de contexto */
@@ -284,6 +284,92 @@
     #ganttChart.gantt-loaded {
       animation: ganttFadeIn 0.3s ease forwards;
     }
+
+    /* ============================================================
+       ANIMACIÓN GANTT
+       ============================================================ */
+
+    /* Cover que oculta la parte no ejecutada del Gantt */
+    .gantt-anim-cover {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 0; right: 0;
+      background: var(--surface-1);
+      opacity: 0.92;
+      z-index: 5;
+      pointer-events: none;
+      transition: left 1.35s linear;
+      border-left: 2px solid #e24b4a;
+    }
+
+    /* Cursor rojo que avanza con la cobertura */
+    .gantt-anim-cursor {
+      position: absolute;
+      top: -4px; bottom: 0;
+      left: 0%;
+      width: 0;
+      border-left: 2px solid #e24b4a;
+      z-index: 10;
+      pointer-events: none;
+      transition: left 1.35s linear;
+      box-shadow: 0 0 8px rgba(226,75,74,0.45);
+    }
+    .gantt-anim-cursor::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -5px;
+      width: 10px; height: 10px;
+      background: #e24b4a;
+      border-radius: 50%;
+    }
+
+    /* Badge de tiempo actual sobre el Gantt */
+    .gantt-time-badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--color-blue-700);
+      background: var(--color-blue-50);
+      border: 1px solid var(--color-blue-200);
+      border-radius: var(--radius-md);
+      padding: 2px 8px;
+      margin-left: 8px;
+      min-width: 48px;
+      display: inline-block;
+      text-align: center;
+      transition: color 0.2s;
+    }
+
+    /* Nodos activos en el diagrama de estados */
+    .smd-node {
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+    .smd-node.smd-active {
+      transform: scale(1.12);
+      z-index: 2;
+      position: relative;
+    }
+    .smd-new.smd-active      { box-shadow: 0 0 0 3px #aaa, 0 0 10px rgba(0,0,0,0.15); }
+    .smd-ready.smd-active    { box-shadow: 0 0 0 3px var(--color-blue-500), 0 0 12px rgba(24,95,165,0.3); background: var(--color-blue-100) !important; }
+    .smd-running.smd-active  { box-shadow: 0 0 0 3px #6aaa1a, 0 0 14px rgba(106,170,26,0.4); background: #c6e98b !important; }
+    .smd-waiting.smd-active  { box-shadow: 0 0 0 3px #f59e0b, 0 0 12px rgba(245,158,11,0.3); }
+    .smd-terminated.smd-active { box-shadow: 0 0 0 3px #888, 0 0 10px rgba(0,0,0,0.12); }
+
+    /* Botón Animar */
+    .btn-animate {
+      background: var(--color-blue-700);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-animate:hover { background: var(--color-blue-500); transform: translateY(-1px); }
+    .btn-animate.playing { background: #c0392b; }
+    .btn-animate.playing:hover { background: #a93226; }
 
     /* Botón editar */
     .btn-edit {
@@ -575,8 +661,10 @@
       padding: 12px 16px;
       min-width: 140px;
       display: flex; flex-direction: column; gap: 8px;
+      transition: border-color 0.3s ease, border-width 0.3s ease;
     }
     .psc-pid { font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); }
+    .psc-state-badge { line-height: 1; }
     .psc-metrics { display: flex; gap: 8px; flex-wrap: wrap; }
     .psc-metric { font-size: 11px; color: var(--text-secondary); }
     .psc-metric strong { color: var(--text-primary); }
@@ -584,41 +672,25 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
-    /* ── 1024 px: sidebar encima, paneles apilados ── */
     @media (max-width: 1024px) {
       .scheduling-container {
         grid-template-columns: 1fr;
-        gap: 16px;
       }
       .scheduling-sidebar {
         position: static;
         max-height: none;
       }
-      .algo-list {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-      }
-      .algo-category { margin-top: 0; padding-top: 0; border-top: none; }
-      .algo-category-title { display: none; }
       .input-grid {
         grid-template-columns: repeat(3, 1fr);
       }
       .execution-panel {
         grid-template-columns: 1fr;
       }
-      .metrics-panel {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .metrics-title { grid-column: 1 / -1; }
     }
 
-    /* ── 768 px: 2 columnas en inputs ── */
     @media (max-width: 768px) {
       .scheduling-container {
-        padding: 14px;
-        gap: 14px;
+        padding: 16px;
       }
       .input-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -627,71 +699,9 @@
         grid-column: 1 / -1;
       }
       .algo-list {
+        display: grid;
         grid-template-columns: 1fr 1fr;
       }
-      .scheduling-sidebar {
-        padding: 16px;
-      }
-      .input-panel,
-      .processes-panel,
-      .execution-panel,
-      .states-panel {
-        padding: 16px;
-      }
-      .psc-grid { gap: 8px; }
-      .psc-card { min-width: 120px; padding: 10px 12px; }
-    }
-
-    /* ── 640 px: columna única, elementos compactos ── */
-    @media (max-width: 640px) {
-      .scheduling-container {
-        padding: 10px;
-        gap: 10px;
-      }
-      .input-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-      .algo-list {
-        grid-template-columns: 1fr 1fr;
-        gap: 5px;
-      }
-      .algo-item {
-        padding: 8px 10px;
-        font-size: 12px;
-      }
-      .panel-title { font-size: 13px; }
-      .sidebar-title { font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; }
-      .gantt-header { flex-wrap: wrap; gap: 8px; }
-      .gantt-controls { flex-wrap: wrap; }
-      .metrics-panel {
-        grid-template-columns: 1fr 1fr;
-      }
-      .metric-row { padding: 8px; }
-      .metric-label { font-size: 11px; }
-      .metric-value { font-size: 13px; }
-      .queue-visualization {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 12px;
-      }
-      .quantum-control { flex-wrap: wrap; }
-    }
-
-    /* ── 480 px: todo en columna única ── */
-    @media (max-width: 480px) {
-      .input-grid {
-        grid-template-columns: 1fr;
-      }
-      .algo-list {
-        grid-template-columns: 1fr;
-      }
-      .metrics-panel {
-        grid-template-columns: 1fr;
-      }
-      .gantt-controls .btn-edit { font-size: 10px; padding: 3px 6px; }
-      th, td { padding: 8px 10px; font-size: 11px; }
-      .state-machine { overflow-x: auto; }
     }
 
     /* ============================================================
@@ -1122,8 +1132,10 @@
       <div class="gantt-container">
         <div class="gantt-header">
           <div class="gantt-title" id="ganttTitle">Diagrama de Gantt — FCFS</div>
-          <div class="gantt-controls">
+          <div class="gantt-controls" style="align-items:center;">
             <button class="btn-run" id="btnExecute"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>Ejecutar</button>
+            <button class="btn-animate" id="btnAnimate" style="display:none;">▶ Animar</button>
+            <span class="gantt-time-badge" id="ganttTimeLabel" style="display:none;">t = 0</span>
             <button class="btn-clear" id="btnReset">↺ Limpiar</button>
           </div>
         </div>
@@ -1172,20 +1184,20 @@
       <!-- Diagrama estático de estados -->
       <div class="state-machine">
         <div class="smd-top">
-          <div class="smd-node smd-new">New</div>
+          <div class="smd-node smd-new"        id="smdNew">New</div>
           <div class="smd-arr">→</div>
-          <div class="smd-node smd-ready">Ready</div>
+          <div class="smd-node smd-ready"      id="smdReady">Ready</div>
           <div class="smd-arr">→</div>
           <div class="smd-running-group">
-            <div class="smd-node smd-running">Running</div>
+            <div class="smd-node smd-running"  id="smdRunning">Running</div>
             <div class="smd-branch">
               <div class="smd-branch-arr">↕</div>
-              <div class="smd-node smd-waiting">Waiting</div>
+              <div class="smd-node smd-waiting" id="smdWaiting">Waiting</div>
               <div class="smd-back-label">↩ → Ready</div>
             </div>
           </div>
           <div class="smd-arr" style="line-height:34px">→</div>
-          <div class="smd-node smd-terminated">Terminated</div>
+          <div class="smd-node smd-terminated" id="smdTerminated">Terminated</div>
         </div>
       </div>
 
