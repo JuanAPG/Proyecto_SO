@@ -15,6 +15,9 @@ let _animTimer  = null;
 let _animTime   = 0;
 let _animSegs   = [];
 let _animSpan   = 0;
+// Referencias DOM cacheadas para la animación (evitan querySelector en cada tick)
+let _animCards  = {}; // pid → .psc-card element
+let _animTdCells = {}; // pid → <td> de estado en tabla
 
 /* ----------------------------------------------------------
    1. INICIALIZACIÓN
@@ -326,20 +329,55 @@ function iniciarAnimacion() {
   _animSpan = resultadoActual.metricas.makespan;
   _animTime = 0;
 
-  // Redibujar gantt limpio como base
+  // Redibujar gantt y asegurarse que el panel de estados es visible
   dibujarGantt();
+  const statesPanel = document.getElementById('statesPanel');
+  if (statesPanel) statesPanel.style.display = 'block';
 
   // Agregar cover + cursor por cada track
   document.querySelectorAll('#ganttChart .gantt-track').forEach(tr => {
     tr.style.overflow = 'hidden';
-
     const cover = document.createElement('div');
     cover.className = 'gantt-anim-cover';
     tr.appendChild(cover);
-
     const cursor = document.createElement('div');
     cursor.className = 'gantt-anim-cursor';
     tr.appendChild(cursor);
+  });
+
+  // ─── Cachear referencias DOM ───────────────────────────────
+  _animCards   = {};
+  _animTdCells = {};
+
+  // Cards: buscar por data-pid en el grid
+  document.querySelectorAll('#processStateGrid .psc-card').forEach(card => {
+    const pid = parseInt(card.getAttribute('data-pid'));
+    if (!isNaN(pid)) _animCards[pid] = card;
+  });
+
+  // Celdas de estado en la tabla (columna 6, índice 5)
+  document.querySelectorAll('#processTableBody tr').forEach(row => {
+    const tds = row.querySelectorAll('td');
+    if (tds.length >= 6) {
+      const pid = parseInt(tds[0].textContent.trim());
+      if (!isNaN(pid)) _animTdCells[pid] = tds[5];
+    }
+  });
+
+  // Resetear todos los badges a "new" explícitamente
+  resultadoActual.procesos.forEach(p => {
+    const card = _animCards[p.pid];
+    if (card) {
+      const badge = card.querySelector('.psc-state-badge');
+      if (badge) badge.innerHTML = badgeEstado('new');
+      card.style.borderColor = '';
+      card.style.borderWidth = '';
+    }
+    const td = _animTdCells[p.pid];
+    if (td) td.innerHTML = badgeEstado('new');
+
+    const orig = procesosGlobales.find(x => x.pid === p.pid);
+    if (orig) orig.state = 'new';
   });
 
   // Mostrar badge de tiempo
@@ -350,7 +388,7 @@ function iniciarAnimacion() {
   const btn = document.getElementById('btnAnimate');
   if (btn) { btn.textContent = '⏹ Detener'; btn.classList.add('playing'); }
 
-  // Primer tick inmediato
+  // Primer tick inmediato, luego cada 1.5 s
   _pasoAnimacion();
   _animTimer = setInterval(_pasoAnimacion, 1500);
 }
@@ -394,24 +432,26 @@ function detenerAnimacion(completado) {
       const orig = procesosGlobales.find(x => x.pid === p.pid);
       if (orig) orig.state = estadoFinal;
 
-      // Actualizar card
-      const card = document.querySelector(`#processStateGrid .psc-card[data-pid="${p.pid}"]`);
+      // Card — usar mapa cacheado primero, fallback a querySelector
+      const card = _animCards[p.pid] ||
+        document.querySelector(`#processStateGrid .psc-card[data-pid="${p.pid}"]`);
       if (card) {
-        const badgeEl = card.querySelector('.psc-state-badge');
-        if (badgeEl) badgeEl.innerHTML = badgeEstado(estadoFinal);
+        const badge = card.querySelector('.psc-state-badge');
+        if (badge) badge.innerHTML = badgeEstado(estadoFinal);
         card.style.borderColor = '';
         card.style.borderWidth = '';
       }
 
-      // Actualizar fila de tabla
-      const rows = document.querySelectorAll('#processTableBody tr');
-      rows.forEach(row => {
-        const firstCell = row.querySelector('td:first-child');
-        if (firstCell && parseInt(firstCell.textContent) === p.pid) {
-          const stateCell = row.querySelector('td:nth-child(6)');
-          if (stateCell) stateCell.innerHTML = badgeEstado(estadoFinal);
-        }
-      });
+      // Celda tabla — usar mapa cacheado primero, fallback a búsqueda
+      const td = _animTdCells[p.pid] || (() => {
+        let found = null;
+        document.querySelectorAll('#processTableBody tr').forEach(row => {
+          const tds = row.querySelectorAll('td');
+          if (tds.length >= 6 && parseInt(tds[0].textContent.trim()) === p.pid) found = tds[5];
+        });
+        return found;
+      })();
+      if (td) td.innerHTML = badgeEstado(estadoFinal);
     });
   }
 
@@ -440,51 +480,51 @@ function _actualizarEstadosAnimacion(t) {
   const procesos = resultadoActual.procesos;
 
   // Iluminar nodos del diagrama de estados
+  const hayNew        = procesos.some(p => p.arrivalTime >= t);
   const hayReady      = procesos.some(p => p.arrivalTime < t && p.finishTime > t && p.pid !== runPid);
   const hayTerminated = procesos.some(p => p.finishTime <= t);
 
-  if (runPid !== null) document.getElementById('smdRunning')?.classList.add('smd-active');
+  if (hayNew)          document.getElementById('smdNew')?.classList.add('smd-active');
   if (hayReady)        document.getElementById('smdReady')?.classList.add('smd-active');
+  if (runPid !== null) document.getElementById('smdRunning')?.classList.add('smd-active');
   if (hayTerminated)   document.getElementById('smdTerminated')?.classList.add('smd-active');
 
-  // Bordes del diagrama de estado superior: todos los New que aún no han llegado
-  const hayNew = procesos.some(p => p.arrivalTime >= t);
-  if (hayNew) document.getElementById('smdNew')?.classList.add('smd-active');
+  // Colores de borde para cada estado
+  const borderColors = {
+    running:    '#6aaa1a',
+    ready:      '#185fa5',
+    terminated: '#bbb',
+    new:        '',
+  };
 
-  // Actualizar cada proceso: card + fila de tabla
+  // Actualizar cada proceso usando referencias cacheadas
   procesos.forEach(p => {
     const estado = _estadoEnTiempo(p, t, runPid);
 
-    // Actualizar procesosGlobales para que la tabla lo refleje
+    // Actualizar estado en procesosGlobales
     const orig = procesosGlobales.find(x => x.pid === p.pid);
     if (orig) orig.state = estado;
 
     // — Card en Diagrama de Estados —
-    const card = document.querySelector(`#processStateGrid .psc-card[data-pid="${p.pid}"]`);
+    const card = _animCards[p.pid]
+      ?? document.querySelector('#processStateGrid [data-pid="' + p.pid + '"]');
     if (card) {
-      const badgeEl = card.querySelector('.psc-state-badge');
-      if (badgeEl) badgeEl.innerHTML = badgeEstado(estado);
-
-      const borderColors = {
-        running:    'var(--color-running)',
-        ready:      'var(--color-blue-500)',
-        terminated: '#bbb',
-        new:        'var(--border)',
-      };
-      card.style.borderColor = borderColors[estado] || '';
-      card.style.borderWidth = estado === 'running' ? '2px' : '';
-      card.style.transition  = 'border-color 0.3s ease, border-width 0.3s ease';
+      const badge = card.querySelector('.psc-state-badge');
+      if (badge) badge.innerHTML = badgeEstado(estado);
+      card.style.borderColor = borderColors[estado] ?? '';
+      card.style.borderWidth = estado === 'running' ? '2px' : '1px';
     }
 
-    // — Celda Estado en la tabla de procesos —
-    const rows = document.querySelectorAll('#processTableBody tr');
-    rows.forEach(row => {
-      const firstCell = row.querySelector('td:first-child');
-      if (firstCell && parseInt(firstCell.textContent) === p.pid) {
-        const stateCell = row.querySelector('td:nth-child(6)');
-        if (stateCell) stateCell.innerHTML = badgeEstado(estado);
-      }
-    });
+    // — Celda Estado en tabla de Procesos Cargados —
+    const td = _animTdCells[p.pid] ?? (() => {
+      let found = null;
+      document.querySelectorAll('#processTableBody tr').forEach(row => {
+        const tds = row.querySelectorAll('td');
+        if (tds.length >= 6 && parseInt(tds[0].textContent.trim()) === p.pid) found = tds[5];
+      });
+      return found;
+    })();
+    if (td) td.innerHTML = badgeEstado(estado);
   });
 }
 
