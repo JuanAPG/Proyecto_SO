@@ -6,6 +6,12 @@
 let resultadoActual = null;
 let algoritmoSeleccionado = "fcfs";
 
+// Estado de la animación
+let _animTimer  = null;
+let _animTime   = 0;
+let _animSegs   = [];
+let _animSpan   = 0;
+
 /* ----------------------------------------------------------
    1. INICIALIZACIÓN
    ---------------------------------------------------------- */
@@ -15,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btnExecute")?.addEventListener("click", ejecutarSimulacion);
+  document.getElementById("btnAnimate")?.addEventListener("click", toggleAnimacion);
   document.getElementById("btnReset")?.addEventListener("click", limpiarGantt);
   document.getElementById("fileInput")?.addEventListener("change", (e) => {
     if (e.target.files[0]) cargarDesdearchivo(e.target.files[0]);
@@ -81,10 +88,19 @@ function ejecutarSimulacion() {
     quantum = parseInt(document.getElementById("quantumValue").value) || 2;
   }
 
+  // Detener animación previa si existe
+  if (_animTimer !== null) detenerAnimacion(false);
+
   resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum);
   if (!resultadoActual) return;
 
   dibujarGantt();
+
+  // Mostrar botón Animar
+  const btnAnim = document.getElementById("btnAnimate");
+  const timeLabel = document.getElementById("ganttTimeLabel");
+  if (btnAnim) { btnAnim.style.display = ""; btnAnim.textContent = "▶ Animar"; btnAnim.classList.remove("playing"); }
+  if (timeLabel) timeLabel.style.display = "none";
   actualizarMetricas();
   actualizarQueueDinámica();
   renderEstadosProcesos();
@@ -275,9 +291,161 @@ function renderEstadosProcesos() {
 }
 
 /* ----------------------------------------------------------
-   8. LIMPIAR GANTT
+   9. ANIMACIÓN GANTT PASO A PASO — 1 unidad de burst = 1.5 s
+   ---------------------------------------------------------- */
+
+function toggleAnimacion() {
+  if (_animTimer !== null) {
+    detenerAnimacion(false);
+  } else {
+    iniciarAnimacion();
+  }
+}
+
+function iniciarAnimacion() {
+  if (!resultadoActual) return;
+
+  _animSegs = resultadoActual.segments ||
+    [...resultadoActual.procesos]
+      .sort((a, b) => a.startTime - b.startTime)
+      .map(p => ({ pid: p.pid, start: p.startTime, end: p.finishTime }));
+  _animSpan = resultadoActual.metricas.makespan;
+  _animTime = 0;
+
+  // Redibujar gantt limpio como base
+  dibujarGantt();
+
+  // Agregar cover + cursor por cada track
+  document.querySelectorAll('#ganttChart .gantt-track').forEach(tr => {
+    tr.style.overflow = 'hidden';
+
+    const cover = document.createElement('div');
+    cover.className = 'gantt-anim-cover';
+    tr.appendChild(cover);
+
+    const cursor = document.createElement('div');
+    cursor.className = 'gantt-anim-cursor';
+    tr.appendChild(cursor);
+  });
+
+  // Mostrar badge de tiempo
+  const timeLabel = document.getElementById('ganttTimeLabel');
+  if (timeLabel) { timeLabel.style.display = ''; timeLabel.textContent = 't = 0'; }
+
+  // Botón en modo stop
+  const btn = document.getElementById('btnAnimate');
+  if (btn) { btn.textContent = '⏹ Detener'; btn.classList.add('playing'); }
+
+  // Primer tick inmediato
+  _pasoAnimacion();
+  _animTimer = setInterval(_pasoAnimacion, 1500);
+}
+
+function _pasoAnimacion() {
+  const pct = (_animTime / _animSpan * 100).toFixed(3);
+
+  // Desplazar covers: revelan lo ya ejecutado moviéndose hacia la derecha
+  document.querySelectorAll('#ganttChart .gantt-anim-cover').forEach(c => {
+    c.style.left = `${pct}%`;
+  });
+  document.querySelectorAll('#ganttChart .gantt-anim-cursor').forEach(c => {
+    c.style.left = `${pct}%`;
+  });
+
+  // Badge de tiempo
+  const timeLabel = document.getElementById('ganttTimeLabel');
+  if (timeLabel) timeLabel.textContent = `t = ${_animTime}`;
+
+  // Diagrama de estados y cards
+  _actualizarEstadosAnimacion(_animTime);
+
+  _animTime++;
+  if (_animTime > _animSpan) {
+    detenerAnimacion(true);
+  }
+}
+
+function detenerAnimacion(completado) {
+  if (_animTimer) { clearInterval(_animTimer); _animTimer = null; }
+
+  const btn = document.getElementById('btnAnimate');
+  if (btn) { btn.textContent = '▶ Animar'; btn.classList.remove('playing'); }
+
+  limpiarActivosEstado();
+
+  if (!completado) {
+    // Restaurar gantt completo sin covers
+    dibujarGantt();
+    const timeLabel = document.getElementById('ganttTimeLabel');
+    if (timeLabel) timeLabel.style.display = 'none';
+  }
+}
+
+function _actualizarEstadosAnimacion(t) {
+  limpiarActivosEstado();
+  if (!resultadoActual) return;
+
+  // Proceso en ejecución en [t-1, t)
+  const runSeg   = _animSegs.find(s => s.start < t && t <= s.end);
+  const runPid   = runSeg ? runSeg.pid : null;
+
+  const procesos = resultadoActual.procesos;
+
+  // Procesos llegados pero aún no terminados y no corriendo → Ready
+  const hayReady = procesos.some(p =>
+    p.arrivalTime < t && p.finishTime > t && p.pid !== runPid
+  );
+
+  // Algún proceso ya terminó
+  const hayTerminated = procesos.some(p => p.finishTime <= t);
+
+  if (runPid !== null) document.getElementById('smdRunning')?.classList.add('smd-active');
+  if (hayReady)        document.getElementById('smdReady')?.classList.add('smd-active');
+  if (hayTerminated)   document.getElementById('smdTerminated')?.classList.add('smd-active');
+
+  // Actualizar borde de cards de proceso según su estado actual
+  const grid = document.getElementById('processStateGrid');
+  if (!grid) return;
+  procesos.forEach(p => {
+    const card = [...grid.querySelectorAll('.psc-card')].find(c =>
+      c.querySelector('.psc-pid')?.textContent === `P${p.pid}`
+    );
+    if (!card) return;
+
+    let borderColor;
+    if (p.finishTime <= t)       borderColor = '#bbb';
+    else if (p.pid === runPid)   borderColor = 'var(--color-running)';
+    else if (p.arrivalTime < t)  borderColor = 'var(--color-blue-500)';
+    else                         borderColor = 'var(--border)';
+
+    card.style.borderColor  = borderColor;
+    card.style.borderWidth  = p.pid === runPid ? '2px' : '';
+    card.style.transition   = 'border-color 0.3s ease';
+  });
+}
+
+function limpiarActivosEstado() {
+  ['smdNew','smdReady','smdRunning','smdWaiting','smdTerminated'].forEach(id => {
+    document.getElementById(id)?.classList.remove('smd-active');
+  });
+  // Resetear bordes de cards
+  document.querySelectorAll('#processStateGrid .psc-card').forEach(c => {
+    c.style.borderColor = '';
+    c.style.borderWidth = '';
+  });
+}
+
+/* ----------------------------------------------------------
+   10. LIMPIAR GANTT
    ---------------------------------------------------------- */
 function limpiarGantt() {
+  if (_animTimer !== null) detenerAnimacion(false);
+
+  const btnAnim  = document.getElementById("btnAnimate");
+  const timeLabel = document.getElementById("ganttTimeLabel");
+  if (btnAnim)   { btnAnim.style.display = "none"; }
+  if (timeLabel) { timeLabel.style.display = "none"; }
+
   const ganttChart = document.getElementById("ganttChart");
   if (ganttChart) ganttChart.innerHTML = "";
 
