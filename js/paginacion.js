@@ -472,6 +472,75 @@ function triggerFaultFlash() {
 }
 
 /* ----------------------------------------------------------
+   ANIMACIÓN: persona entrando al asiento
+   ---------------------------------------------------------- */
+function animarEntradaPersona(marcoIdx, pagina) {
+  const stage = document.querySelector('.cinema-stage');
+  if (!stage) return;
+
+  const allSeats = stage.querySelectorAll('.seat');
+  const targetSeat = allSeats[marcoIdx];
+  if (!targetSeat) return;
+
+  const stageRect = stage.getBoundingClientRect();
+  const seatRect  = targetSeat.getBoundingClientRect();
+
+  // Punto de entrada: parte superior del área de asientos
+  const seatsZone = document.getElementById('seats-grid');
+  const zoneRect  = seatsZone ? seatsZone.getBoundingClientRect() : seatRect;
+
+  const startX = (zoneRect.left - stageRect.left) + zoneRect.width / 2 - 14;
+  const startY = (zoneRect.top  - stageRect.top)  - 28;
+
+  // Centro del asiento destino
+  const endX = (seatRect.left - stageRect.left) + seatRect.width  / 2 - 14;
+  const endY = (seatRect.top  - stageRect.top)  + seatRect.height / 2 - 14;
+
+  // Crear elemento flotante
+  const el = document.createElement('div');
+  el.className = 'page-walker';
+  el.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF8080" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+    </svg>
+    <span class="page-walker-num">${pagina}</span>
+  `;
+  el.style.left    = startX + 'px';
+  el.style.top     = startY + 'px';
+  el.style.opacity = '0';
+  stage.classList.add('walker-active');
+  stage.appendChild(el);
+
+  // Fase 1: aparecer en la entrada
+  el.style.animation = 'walker-appear 0.2s ease forwards';
+
+  // Fase 2: caminar hacia el asiento (bezier con rebote leve al llegar)
+  const dx = endX - startX;
+  const dy = endY - startY;
+  setTimeout(() => {
+    el.style.animation  = 'none';
+    el.style.opacity    = '1';
+    el.style.transition = `transform 0.55s cubic-bezier(0.25, 0.8, 0.35, 1.15),
+                            opacity   0.1s`;
+    // forzar reflow para que la transición arranque
+    void el.offsetWidth;
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(0.85)`;
+  }, 220);
+
+  // Fase 3: fundirse al llegar al asiento
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    el.style.opacity    = '0';
+    el.style.transform  = `translate(${dx}px, ${dy}px) scale(1.15)`;
+    setTimeout(() => {
+      el.remove();
+      if (!stage.querySelector('.page-walker')) stage.classList.remove('walker-active');
+    }, 220);
+  }, 820);
+}
+
+/* ----------------------------------------------------------
    BUMP ANIMACIÓN EN CONTADORES
    ---------------------------------------------------------- */
 function bumpCounter(id) {
@@ -494,6 +563,14 @@ function mostrarPaso(idx) {
   // Construir y renderizar asientos
   marcos = construirMarcos(paso.frames, prev ? prev.frames : null, paso.fault, paso.referencia);
   renderSala(marcos, paso);
+
+  // Animación de entrada: persona caminando al asiento en page fault
+  if (paso.fault) {
+    const marcoDestino = marcos.find(m => m.estado === 'fault' || m.estado === 'evicted');
+    if (marcoDestino) {
+      setTimeout(() => animarEntradaPersona(marcoDestino.indice, marcoDestino.pagina), 60);
+    }
+  }
 
   // Referencia actual en sidebar
   const refNum = document.getElementById("current-ref-num");

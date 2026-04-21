@@ -697,6 +697,144 @@
     .footer-link:hover { color: rgba(255,255,255,0.75); }
 
     /* ============================================================
+       ANIMACIONES PERSISTENTES + SOMBRAS
+       ============================================================ */
+
+    /* Orbes del hero */
+    @keyframes heroOrbA {
+      0%   { transform: translate(0,0) scale(1);    opacity: .50; }
+      33%  { transform: translate(80px,-60px) scale(1.15); opacity: .70; }
+      66%  { transform: translate(-50px,40px) scale(.88);  opacity: .38; }
+      100% { transform: translate(0,0) scale(1);    opacity: .50; }
+    }
+    @keyframes heroOrbB {
+      0%   { transform: translate(0,0);             opacity: .28; }
+      40%  { transform: translate(-70px,55px);      opacity: .50; }
+      80%  { transform: translate(55px,-35px);      opacity: .22; }
+      100% { transform: translate(0,0);             opacity: .28; }
+    }
+    /* Icono de módulo flotando */
+    @keyframes iconFloat {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-7px); }
+    }
+    /* Dot "live" parpadeando */
+    @keyframes liveBlink {
+      0%,100%  { opacity: 1; }
+      45%,55%  { opacity: .18; }
+    }
+    /* Step-number glow */
+    @keyframes stepGlow {
+      0%,100% { box-shadow: 0 0 0 6px var(--color-blue-50); }
+      50%     { box-shadow: 0 0 0 10px rgba(61,104,123,.18), 0 4px 20px rgba(61,104,123,.28); }
+    }
+    /* Mini Gantt block shimmer */
+    @keyframes miniBlockPulse {
+      0%,100% { filter: brightness(1);    opacity: .88; }
+      50%     { filter: brightness(1.22); opacity: 1;   }
+    }
+    /* Stat number heartbeat */
+    @keyframes statBeat {
+      0%,88%,100% { transform: scale(1); }
+      93%         { transform: scale(1.07); }
+    }
+    /* Línea de escaneo sobre module-card */
+    @keyframes cardScan {
+      0%   { left: -45%; opacity: 0; }
+      8%   { opacity: 1; }
+      92%  { opacity: 1; }
+      100% { left: 130%; opacity: 0; }
+    }
+
+    /* ── Hero: primer orbe animado ─────────────────────────── */
+    .hero::before {
+      animation: heroOrbA 14s ease-in-out infinite;
+    }
+    /* ── Hero: segundo orbe (verde suave) ──────────────────── */
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: 12%;
+      width: 340px;
+      height: 340px;
+      background: radial-gradient(circle, rgba(99,153,34,.07) 0%, transparent 70%);
+      pointer-events: none;
+      animation: heroOrbB 18s ease-in-out infinite;
+    }
+
+    /* ── Module icons flotan ────────────────────────────────── */
+    .module-icon {
+      animation: iconFloat 3.4s ease-in-out infinite;
+      will-change: transform;
+    }
+    .module-card:nth-child(2) .module-icon { animation-delay: .9s; }
+    .module-card:nth-child(3) .module-icon { animation-delay: 1.7s; }
+
+    /* ── Scan line sobre cada module-card ──────────────────── */
+    .module-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 38%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(61,104,123,.055), transparent);
+      pointer-events: none;
+      animation: cardScan 7s ease-in-out infinite;
+      z-index: 0;
+    }
+    .module-card:nth-child(2)::after { animation-delay: 2.3s; }
+    .module-card:nth-child(3)::after { animation-delay: 4.6s; }
+
+    /* ── Live dots parpadean ────────────────────────────────── */
+    .panel-live-dot {
+      animation: liveBlink 2.2s ease-in-out infinite;
+    }
+
+    /* ── Step numbers glow ──────────────────────────────────── */
+    .step-number {
+      animation: stepGlow 3.2s ease-in-out infinite;
+    }
+    .step-card:nth-child(2) .step-number { animation-delay: 1.05s; }
+    .step-card:nth-child(3) .step-number { animation-delay: 2.1s; }
+
+    /* ── Mini Gantt blocks shimmer ──────────────────────────── */
+    .mini-block {
+      animation: blockGrow .6s ease both, miniBlockPulse 2.8s ease-in-out 1.2s infinite;
+    }
+
+    /* ── Stat numbers latiendo ──────────────────────────────── */
+    .stat-number {
+      animation: statBeat 4.5s ease-in-out infinite;
+    }
+    .stat-item:nth-child(2) .stat-number { animation-delay: 1.1s; }
+    .stat-item:nth-child(3) .stat-number { animation-delay: 2.2s; }
+    .stat-item:nth-child(4) .stat-number { animation-delay: 3.3s; }
+
+    /* ── Sombras base ───────────────────────────────────────── */
+    .module-card {
+      box-shadow: 0 2px 8px rgba(4,44,83,.07), 0 1px 2px rgba(4,44,83,.04);
+    }
+    .module-card:hover {
+      box-shadow: 0 8px 28px rgba(4,44,83,.14), 0 2px 6px rgba(4,44,83,.08);
+    }
+    .step-card {
+      box-shadow: 0 4px 16px rgba(4,44,83,.08), 0 1px 3px rgba(4,44,83,.05);
+    }
+    .stats-strip {
+      box-shadow: 0 4px 14px rgba(4,44,83,.07);
+    }
+    .stat-icon {
+      box-shadow: 0 2px 8px rgba(61,104,123,.13);
+    }
+    .hero-panel {
+      box-shadow:
+        0 8px 40px rgba(0,0,0,.45),
+        0 2px 8px rgba(0,0,0,.22),
+        inset 0 1px 0 rgba(255,255,255,.09);
+    }
+
+    /* ============================================================
        RESPONSIVE
        ============================================================ */
     @media (max-width: 900px) {
