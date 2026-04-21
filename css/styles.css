@@ -111,6 +111,8 @@ body {
   color: var(--text-primary);
   background: var(--surface-1);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* ----------------------------------------------------------

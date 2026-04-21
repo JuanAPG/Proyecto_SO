@@ -732,9 +732,13 @@
       .scheduling-container {
         padding: 12px;
         gap: 16px;
+        width: 100%;
+        overflow-x: hidden;
       }
       .scheduling-sidebar {
         padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
       }
       .input-panel,
       .processes-panel,
@@ -742,12 +746,24 @@
       .states-panel,
       .cs-panel {
         padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
       }
       .input-grid {
         grid-template-columns: 1fr;
+        width: 100%;
       }
       .algo-list {
         grid-template-columns: 1fr;
+      }
+      .form-input {
+        width: 100%;
+        min-width: 0;
+      }
+      .algo-item {
+        width: 100%;
+        box-sizing: border-box;
       }
       .gantt-header {
         flex-direction: column;
