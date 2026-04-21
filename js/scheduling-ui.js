@@ -112,11 +112,6 @@ function ejecutarSimulacion() {
   actualizarQueueDinámica();
   renderEstadosProcesos();
 
-  // Inicializar simulación visual del cine
-  const csPanel = document.getElementById('cs-panel');
-  if (csPanel) csPanel.style.display = 'block';
-  if (typeof initCinemaScheduling === 'function') initCinemaScheduling();
-
   localStorage.setItem("osim_scheduling", JSON.stringify({
     algoritmo:      resultadoActual.algoritmo,
     avgWaiting:     resultadoActual.metricas.avgWaiting,
@@ -552,10 +547,6 @@ function limpiarGantt() {
 
   const ganttChart = document.getElementById("ganttChart");
   if (ganttChart) ganttChart.innerHTML = "";
-
-  const csPanel = document.getElementById('cs-panel');
-  if (csPanel) csPanel.style.display = 'none';
-  if (typeof resetCinema === 'function') resetCinema(false);
 
   document.getElementById("metricsList").innerHTML = `
     <div class="metric-row"><span class="metric-label">Avg Waiting</span><span class="metric-value">—</span></div>
