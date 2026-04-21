@@ -697,10 +697,91 @@
       }
       .input-actions {
         grid-column: 1 / -1;
+        flex-wrap: wrap;
       }
       .algo-list {
         display: grid;
         grid-template-columns: 1fr 1fr;
+      }
+      .gantt-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .gantt-controls {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .cs-controls {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .cs-speed-wrap {
+        width: 100%;
+        justify-content: center;
+      }
+      .cs-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .queue-visualization {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .scheduling-container {
+        padding: 12px;
+        gap: 16px;
+      }
+      .scheduling-sidebar {
+        padding: 16px;
+      }
+      .input-panel,
+      .processes-panel,
+      .execution-panel,
+      .states-panel,
+      .cs-panel {
+        padding: 16px;
+      }
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+      .algo-list {
+        grid-template-columns: 1fr;
+      }
+      .gantt-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .gantt-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .state-machine {
+        overflow-x: auto;
+        width: 100%;
+      }
+      .smd-top {
+        min-width: 360px;
+      }
+      .psc-grid {
+        gap: 8px;
+      }
+      .psc-card {
+        min-width: 120px;
+      }
+      .metrics-panel {
+        gap: 10px;
+      }
+      input[type=range].cs-speed-slider {
+        width: 100%;
+      }
+      .btn-run,
+      .btn-clear,
+      .btn-upload,
+      .btn-animate {
+        font-size: 11px;
+        padding: 8px 10px;
       }
     }
 
