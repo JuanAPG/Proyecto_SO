@@ -1,0 +1,24 @@
+# ============================================================
+#  paginacion.txt — Ejemplo de configuración para paginacion.html
+#  Uso: botón "Cargar desde archivo" en el panel izquierdo
+# ============================================================
+#
+#  Campos reconocidos (clave = valor, mayúsculas/minúsculas indistinto):
+#    frames      → número de marcos físicos de memoria (1-16)
+#    pagesize    → tamaño de cada página en KB
+#    memoria     → memoria total en KB (frames × pagesize)
+#    referencias → cadena de páginas separadas por espacios
+#
+# ============================================================
+
+frames      = 4
+pagesize    = 4
+memoria     = 16
+referencias = 1 2 3 4 1 2 5 1 2 3 4 5
+
+# ------------------------------------------------------------
+#  Esta cadena (Belady, 1969) es famosa porque con 3 marcos
+#  FIFO produce MÁS fallos que con 2 marcos — la llamada
+#  "Anomalía de Belady". Pruébala con FIFO vs LRU vs OPT
+#  para ver la diferencia claramente.
+# ------------------------------------------------------------
