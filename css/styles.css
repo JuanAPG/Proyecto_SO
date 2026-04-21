@@ -222,6 +222,12 @@ body {
   .navbar-item  { padding: 0 11px; font-size: 12px; height: 50px; }
 }
 
+@media (max-width: 420px) {
+  .navbar { padding: 0 10px; }
+  .navbar-logo { margin-right: 8px; font-size: 14px; }
+  .navbar-item  { padding: 0 7px; font-size: 11px; }
+}
+
 /* ----------------------------------------------------------
    5. LAYOUT Y CONTENEDORES
    ---------------------------------------------------------- */
