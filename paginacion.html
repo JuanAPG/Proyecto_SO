@@ -182,7 +182,7 @@
 
     /* Vel slider */
     .vel-row { display: flex; align-items: center; gap: 8px; }
-    .vel-label { font-size: 10px; color: #3A5A7A; white-space: nowrap; }
+    .vel-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
     input[type=range].vel-slider {
       flex: 1;
       accent-color: #3d687b;
@@ -280,19 +280,11 @@
     .narrator-fault { color: #FF8080 !important; }
     .narrator-hit   { color: #7BC67E !important; }
 
-    /* ── Controles de reproducción ── */
-    .playback-bar {
-      background: #000000;
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
+    /* ── Controles de reproducción (panel claro) ── */
     .pb-btn {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #8AAAC8;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
       border-radius: 6px;
       width: 30px; height: 30px;
       display: flex; align-items: center; justify-content: center;
@@ -301,31 +293,31 @@
       flex-shrink: 0;
       font-size: 12px;
     }
-    .pb-btn:hover:not(:disabled) { background: rgba(61,104,123,0.3); border-color: rgba(61,104,123,0.5); color: #fff; }
-    .pb-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .pb-btn:hover:not(:disabled) { background: var(--color-blue-50); border-color: var(--color-blue-500); color: var(--color-blue-700); }
+    .pb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .pb-play {
-      background: #185FA5;
-      border-color: rgba(99,153,255,0.4);
+      background: var(--color-blue-700);
+      border: 1px solid var(--color-blue-500);
       color: #fff;
-      width: 36px; height: 30px;
-      padding: 0 10px;
+      height: 30px;
+      padding: 0 14px;
       font-size: 11px;
-      font-weight: 600;
-      gap: 4px;
+      font-weight: 700;
+      gap: 5px;
       white-space: nowrap;
+      opacity: 1 !important;
     }
-    .pb-play:hover:not(:disabled) { background: #1E6FBF; }
-    .pb-play.playing { background: #A32D2D !important; border-color: rgba(226,75,74,0.4) !important; }
+    .pb-play:hover:not(:disabled) { background: #185FA5; box-shadow: 0 2px 10px rgba(61,104,123,0.3); }
+    .pb-play.playing { background: #DC2626 !important; border-color: #EF4444 !important; box-shadow: none !important; }
     .pb-counter {
       font-family: var(--font-mono);
       font-size: 11px;
-      color: #4A6A8A;
+      color: var(--text-muted);
       min-width: 52px;
       text-align: center;
     }
-    .pb-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
-    .pb-progress { flex: 1; height: 3px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
-    .pb-progress-fill { height: 100%; background: #3d687b; border-radius: 99px; width: 0%; transition: width 0.3s ease; }
+    .pb-progress { width: 100%; height: 4px; background: var(--surface-1); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+    .pb-progress-fill { height: 100%; background: var(--color-blue-700); border-radius: 99px; width: 0%; transition: width 0.3s ease; }
 
     /* ── Interior del cine ── */
     .cinema-interior {
@@ -342,6 +334,7 @@
       flex-direction: column;
       gap: 12px;
       border-right: 1px solid rgba(255,255,255,0.04);
+      position: relative;
     }
 
     /* Pantalla de proyección */
@@ -1285,6 +1278,41 @@
         </div>
       </div>
 
+      <!-- Controles de reproducción -->
+      <div class="ctrl-panel" id="playback-bar" style="padding:12px 14px; gap:10px;">
+        <div class="ctrl-section-label" style="margin-bottom:0;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Reproducción
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
+          </button>
+          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
+          </button>
+          <span id="pb-counter" class="pb-counter">— / —</span>
+          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
+          </button>
+          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
+          </button>
+          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()" style="flex:1; min-width:60px;">
+            <svg id="pb-play-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="pb-play-label">Play</span>
+          </button>
+        </div>
+        <div class="vel-row">
+          <span class="vel-label">Lento</span>
+          <input type="range" class="vel-slider" id="vel-slider" min="200" max="2000" step="100" value="700" title="Velocidad" />
+          <span class="vel-label">Rápido</span>
+        </div>
+        <div class="pb-progress">
+          <div class="pb-progress-fill" id="pb-progress-fill"></div>
+        </div>
+      </div>
+
       <!-- Botón comparar -->
       <div class="ctrl-panel" style="padding:14px;">
         <button class="btn-compare" onclick="mostrarComparacion()">
@@ -1336,37 +1364,6 @@
           <span id="narrator-text">Configura la memoria y presiona Simular para comenzar la función.</span>
         </div>
 
-        <!-- ── Playback controls ── -->
-        <div class="playback-bar" id="playback-bar">
-          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
-          </button>
-          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
-          </button>
-          <span id="pb-counter" class="pb-counter">— / —</span>
-          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
-          </button>
-          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
-          </button>
-          <div class="pb-sep"></div>
-          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()">
-            <svg id="pb-play-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span id="pb-play-label">Play</span>
-          </button>
-          <div class="pb-sep"></div>
-          <div class="vel-row" style="flex:1;">
-            <span class="vel-label">Lento</span>
-            <input type="range" class="vel-slider" id="vel-slider" min="200" max="2000" step="100" value="700"
-                   title="Velocidad de reproducción" />
-            <span class="vel-label">Rápido</span>
-          </div>
-          <div class="pb-progress">
-            <div class="pb-progress-fill" id="pb-progress-fill"></div>
-          </div>
-        </div>
 
         <!-- ── Ref bits area (Clock/SC) ── -->
         <div id="refbits-area">
