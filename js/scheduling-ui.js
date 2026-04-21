@@ -1,19 +1,14 @@
 /* ============================================================
    OSim — Controlador UI para Scheduling
    Archivo: scheduling-ui.js
-   Descripción: Maneja interacción, renderizado visual y animaciones
    ============================================================ */
 
 let resultadoActual = null;
 let algoritmoSeleccionado = "fcfs";
 
-// Algoritmos que usan el campo Priority
-const ALGOS_CON_PRIORIDAD = new Set(["priority", "mlq"]);
-
 /* ----------------------------------------------------------
    1. INICIALIZACIÓN
    ---------------------------------------------------------- */
-
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".algo-item").forEach((btn) => {
     btn.addEventListener("click", (e) => seleccionarAlgoritmo(e.currentTarget.dataset.algo));
@@ -26,35 +21,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("btnAddProcess")?.addEventListener("click", agregarProceso);
   document.getElementById("btnClearAll")?.addEventListener("click", limpiarTodos);
-
-  // Estado inicial: FCFS → Priority no aplica
-  _togglePriorityField(false);
+  document.getElementById("btnCancelEdit")?.addEventListener("click", cancelarEdicion);
 });
 
 /* ----------------------------------------------------------
    2. SELECCIONAR ALGORITMO
    ---------------------------------------------------------- */
-
 function seleccionarAlgoritmo(algo) {
   algoritmoSeleccionado = algo;
 
-  // Actualizar botones — añadir ring al activo
   document.querySelectorAll(".algo-item").forEach((btn) => {
     btn.classList.remove("active", "algo-ring");
   });
   const btnActivo = document.querySelector(`[data-algo="${algo}"]`);
   if (btnActivo) {
     btnActivo.classList.add("active");
-    // Forzar reflow para reiniciar animación
     void btnActivo.offsetWidth;
     btnActivo.classList.add("algo-ring");
   }
 
-  // Mostrar/ocultar quantum
+  // Mostrar/ocultar quantum (solo RR)
   document.getElementById("quantumControl").style.display = algo === "rr" ? "flex" : "none";
-
-  // Habilitar / deshabilitar campo Priority
-  _togglePriorityField(ALGOS_CON_PRIORIDAD.has(algo));
 
   // Actualizar título del Gantt
   const nombres = {
@@ -80,16 +67,9 @@ function seleccionarAlgoritmo(algo) {
   }
 }
 
-function _togglePriorityField(activo) {
-  const grupo = document.getElementById("groupPriority");
-  if (!grupo) return;
-  grupo.style.display = activo ? "" : "none";
-}
-
 /* ----------------------------------------------------------
    3. EJECUTAR SIMULACIÓN
    ---------------------------------------------------------- */
-
 function ejecutarSimulacion() {
   if (procesosGlobales.length === 0) {
     alert("Agrega procesos primero");
@@ -104,234 +84,108 @@ function ejecutarSimulacion() {
   resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum);
   if (!resultadoActual) return;
 
-  // Marcar canvas como "cargando"
-  const canvas = document.getElementById("ganttCanvas");
-  if (canvas) canvas.classList.add("gantt-loading");
-
   dibujarGantt();
   actualizarMetricas();
   actualizarQueueDinámica();
+  renderEstadosProcesos();
 
-  localStorage.setItem('osim_scheduling', JSON.stringify({
-    algoritmo: resultadoActual.algoritmo,
-    avgWaiting: resultadoActual.metricas.avgWaiting,
-    avgTurnaround: resultadoActual.metricas.avgTurnaround,
+  localStorage.setItem("osim_scheduling", JSON.stringify({
+    algoritmo:      resultadoActual.algoritmo,
+    avgWaiting:     resultadoActual.metricas.avgWaiting,
+    avgTurnaround:  resultadoActual.metricas.avgTurnaround,
     cpuUtilization: resultadoActual.metricas.cpuUtilization,
-    makespan: resultadoActual.metricas.makespan,
-    totalProcesos: resultadoActual.procesos.length
+    makespan:       resultadoActual.metricas.makespan,
+    totalProcesos:  resultadoActual.procesos.length,
   }));
-  
 }
 
 /* ----------------------------------------------------------
-   4. DIBUJAR GANTT EN CANVAS — con animación de barrido
+   4. DIBUJAR GANTT EN HTML/CSS (sin Canvas)
    ---------------------------------------------------------- */
-
 function dibujarGantt() {
-  const canvas = document.getElementById("ganttCanvas");
-  if (!canvas || !resultadoActual) return;
+  const ganttChart = document.getElementById("ganttChart");
+  if (!ganttChart || !resultadoActual) return;
 
-  const ctx   = canvas.getContext("2d");
-  const ancho = canvas.offsetWidth;
-  const alto  = canvas.offsetHeight;
-  canvas.width  = ancho;
-  canvas.height = alto;
-
-  // Usar segmentos cronológicos; fallback a un bloque por proceso
   const segments = resultadoActual.segments ||
     [...resultadoActual.procesos]
       .sort((a, b) => a.startTime - b.startTime)
       .map(p => ({ pid: p.pid, start: p.startTime, end: p.finishTime }));
 
   const makespan = resultadoActual.metricas.makespan;
-  if (!segments.length || makespan === 0) return;
+  if (!segments.length || makespan === 0) { ganttChart.innerHTML = ""; return; }
 
-  // PIDs únicos en orden de primera aparición (para filas del Gantt)
+  // PIDs únicos en orden de primera aparición
   const seenPids = [];
   segments.forEach(s => { if (!seenPids.includes(s.pid)) seenPids.push(s.pid); });
 
-  const margenIzq    = 54;
-  const margenDer    = 20;
-  const margenArriba = 24;
-  const margenAbajo  = 44;
-  const anchoGrafico  = ancho - margenIzq - margenDer;
-  const altoGrafico   = alto  - margenArriba - margenAbajo;
-  const alturaProceso = Math.min(38, altoGrafico / seenPids.length);
-  const espacioFila   = alturaProceso + 6;
-
-  const colores  = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
+  const colores = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
   const pidToIdx = {};
   seenPids.forEach((pid, i) => { pidToIdx[pid] = i; });
 
-  const off    = document.createElement("canvas");
-  off.width    = ancho;
-  off.height   = alto;
-  const offCtx = off.getContext("2d");
-
-  // Fondo
-  offCtx.fillStyle = "#F4F6F9";
-  offCtx.fillRect(0, 0, ancho, alto);
-
-  // Ejes
-  offCtx.strokeStyle = "#000000";
-  offCtx.lineWidth   = 1.5;
-  offCtx.beginPath();
-  offCtx.moveTo(margenIzq, margenArriba);
-  offCtx.lineTo(margenIzq, altoGrafico + margenArriba);
-  offCtx.lineTo(ancho - margenDer, altoGrafico + margenArriba);
-  offCtx.stroke();
-
-  // Ticks y guías verticales de tiempo
-  const paso = Math.ceil(makespan / 10);
-  offCtx.fillStyle  = "#8298AC";
-  offCtx.font       = "10px 'IBM Plex Mono', monospace";
-  offCtx.textAlign  = "center";
-  for (let t = 0; t <= makespan; t += paso) {
-    const x = margenIzq + (t / makespan) * anchoGrafico;
-    offCtx.save();
-    offCtx.strokeStyle = "rgba(0,0,0,0.07)";
-    offCtx.lineWidth   = 1;
-    offCtx.beginPath();
-    offCtx.moveTo(x, margenArriba);
-    offCtx.lineTo(x, altoGrafico + margenArriba);
-    offCtx.stroke();
-    offCtx.restore();
-    offCtx.fillText(t, x, altoGrafico + margenArriba + 16);
-  }
-
-  // Etiquetas PID en el eje Y
-  seenPids.forEach((pid, idx) => {
-    const y = margenArriba + idx * espacioFila;
-    offCtx.fillStyle  = "#000000";
-    offCtx.font       = "bold 11px 'IBM Plex Mono', monospace";
-    offCtx.textAlign  = "right";
-    offCtx.fillText(`P${pid}`, margenIzq - 8, y + alturaProceso / 2 + 4);
-  });
-
-  // Bloques por segmento (un proceso puede tener múltiples bloques)
-  segments.forEach(seg => {
-    const idx         = pidToIdx[seg.pid];
-    const color       = colores[idx % colores.length];
-    const y           = margenArriba + idx * espacioFila;
-    const xBloque     = margenIzq + (seg.start / makespan) * anchoGrafico;
-    const anchoBloque = ((seg.end - seg.start) / makespan) * anchoGrafico;
-    if (anchoBloque < 1) return;
-
-    const grad = offCtx.createLinearGradient(xBloque, y, xBloque, y + alturaProceso);
-    grad.addColorStop(0, _colorBright(color));
-    grad.addColorStop(1, color);
-
-    offCtx.shadowColor   = "rgba(0,0,0,0.18)";
-    offCtx.shadowBlur    = 4;
-    offCtx.shadowOffsetY = 2;
-    _roundRect(offCtx, xBloque, y, anchoBloque, alturaProceso, 4);
-    offCtx.fillStyle = grad;
-    offCtx.fill();
-
-    offCtx.shadowBlur    = 0;
-    offCtx.shadowOffsetY = 0;
-    offCtx.strokeStyle   = "rgba(0,0,0,0.25)";
-    offCtx.lineWidth     = 1;
-    _roundRect(offCtx, xBloque, y, anchoBloque, alturaProceso, 4);
-    offCtx.stroke();
-
-    if (anchoBloque > 22) {
-      offCtx.fillStyle = "#FFFFFF";
-      offCtx.font      = `bold ${Math.min(11, anchoBloque / 3)}px 'IBM Plex Mono', monospace`;
-      offCtx.textAlign = "center";
-      offCtx.fillText(`P${seg.pid}`, xBloque + anchoBloque / 2, y + alturaProceso / 2 + 4);
-    }
-  });
-
-  // Marcadores de cambio de contexto — línea roja punteada donde cambia el proceso en CPU
+  // Posiciones x de cambios de contexto
+  const csPositions = new Set();
   for (let i = 1; i < segments.length; i++) {
-    if (segments[i].pid !== segments[i - 1].pid) {
-      const x = margenIzq + (segments[i].start / makespan) * anchoGrafico;
-      offCtx.save();
-      offCtx.strokeStyle = "rgba(220,50,50,0.5)";
-      offCtx.lineWidth   = 1.5;
-      offCtx.setLineDash([3, 3]);
-      offCtx.beginPath();
-      offCtx.moveTo(x, margenArriba);
-      offCtx.lineTo(x, altoGrafico + margenArriba);
-      offCtx.stroke();
-      offCtx.restore();
-    }
+    if (segments[i].pid !== segments[i - 1].pid)
+      csPositions.add(((segments[i].start / makespan) * 100).toFixed(3));
   }
+  const csHTML = [...csPositions]
+    .map(x => `<div class="gantt-cs" style="left:${x}%"></div>`)
+    .join("");
 
-  // Animación de barrido izquierda → derecha
-  const DUR   = 750;
-  const start = performance.now();
-  function frame(ahora) {
-    const t    = Math.min((ahora - start) / DUR, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    ctx.clearRect(0, 0, ancho, alto);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, margenIzq + anchoGrafico * ease, alto);
-    ctx.clip();
-    ctx.drawImage(off, 0, 0);
-    ctx.restore();
-    if (t < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      canvas.classList.remove("gantt-loading");
-      actualizarTimelineGantt(makespan, paso);
-    }
+  // Filas por PID
+  const rowsHTML = seenPids.map(pid => {
+    const idx   = pidToIdx[pid];
+    const color = colores[idx % colores.length];
+
+    const blocksHTML = segments
+      .filter(s => s.pid === pid)
+      .map((seg, i) => {
+        const left  = ((seg.start / makespan) * 100).toFixed(3);
+        const width = (((seg.end - seg.start) / makespan) * 100).toFixed(3);
+        const label = parseFloat(width) > 4 ? `P${pid}` : "";
+        return `<div class="gantt-block"
+          style="left:${left}%;width:${width}%;background:${color};color:#fff;font-weight:700;font-size:11px;"
+          title="P${pid}: t${seg.start} → t${seg.end}">${label}</div>`;
+      }).join("");
+
+    return `<div class="gantt-row">
+      <div class="gantt-pid">P${pid}</div>
+      <div class="gantt-track">${csHTML}${blocksHTML}</div>
+    </div>`;
+  }).join("");
+
+  // Eje de tiempo (único, sin duplicado)
+  const paso = Math.ceil(makespan / 10) || 1;
+  const ticks = [];
+  for (let t = 0; t <= makespan; t += paso) {
+    const left = ((t / makespan) * 100).toFixed(3);
+    ticks.push(`<span class="gantt-tick" style="position:absolute;left:${left}%;transform:translateX(-50%)">${t}</span>`);
   }
-  requestAnimationFrame(frame);
-}
+  const axisHTML = `<div class="gantt-row" style="margin-top:4px;">
+    <div class="gantt-pid"></div>
+    <div class="gantt-track" style="background:transparent;border:none;height:18px;position:relative;">${ticks.join("")}</div>
+  </div>`;
 
-/* Aux: rect redondeado compatible */
-function _roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y,     x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-/* Aux: aclarar un color hex */
-function _colorBright(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  const factor = 1.22;
-  return `rgb(${Math.min(255,r*factor)|0},${Math.min(255,g*factor)|0},${Math.min(255,b*factor)|0})`;
-}
-
-function actualizarTimelineGantt(makespan, paso) {
-  const timeline = document.getElementById("ganttTimeline");
-  if (!timeline) return;
-  timeline.innerHTML = "";
-  for (let t = 0; t <= makespan; t += (paso || Math.ceil(makespan / 10))) {
-    const span = document.createElement("span");
-    span.textContent = t;
-    timeline.appendChild(span);
-  }
+  ganttChart.innerHTML = rowsHTML + axisHTML;
+  ganttChart.classList.remove("gantt-loaded");
+  void ganttChart.offsetWidth; // reflow para reiniciar animación
+  ganttChart.classList.add("gantt-loaded");
 }
 
 /* ----------------------------------------------------------
    5. ACTUALIZAR MÉTRICAS — con animación count-up y pop
    ---------------------------------------------------------- */
-
 function actualizarMetricas() {
   if (!resultadoActual) return;
   const m = resultadoActual.metricas;
 
   const datos = [
-    { label: "Avg Waiting",      raw: m.avgWaiting,                          sufijo: "ms" },
-    { label: "Avg Turnaround",   raw: m.avgTurnaround,                       sufijo: "ms" },
-    { label: "Avg Response",     raw: m.avgResponse,                         sufijo: "ms" },
-    { label: "CPU Utilization",  raw: m.cpuUtilization,                      sufijo: "", clase: "good" },
-    { label: "Makespan",         raw: m.makespan,                            sufijo: "ms" },
-    { label: "Context Switches", raw: resultadoActual.contextSwitches ?? 0,  sufijo: "" },
+    { label: "Avg Waiting",      raw: m.avgWaiting,                         sufijo: "ms" },
+    { label: "Avg Turnaround",   raw: m.avgTurnaround,                      sufijo: "ms" },
+    { label: "Avg Response",     raw: m.avgResponse,                        sufijo: "ms" },
+    { label: "CPU Utilization",  raw: m.cpuUtilization,                     sufijo: "", clase: "good" },
+    { label: "Makespan",         raw: m.makespan,                           sufijo: "ms" },
+    { label: "Context Switches", raw: resultadoActual.contextSwitches ?? 0, sufijo: "" },
   ];
 
   const lista = document.getElementById("metricsList");
@@ -343,11 +197,10 @@ function actualizarMetricas() {
       <span class="metric-value ${d.clase || ""}" data-target="${d.raw}" data-sufijo="${d.sufijo}">0${d.sufijo}</span>
     </div>`).join("");
 
-  // Animar cada valor contando desde 0
   lista.querySelectorAll(".metric-value[data-target]").forEach((el) => {
-    const destino  = parseFloat(el.dataset.target) || 0;
-    const sufijo   = el.dataset.sufijo;
-    const esPct    = String(el.dataset.target).includes("%");
+    const destino = parseFloat(el.dataset.target) || 0;
+    const sufijo  = el.dataset.sufijo;
+    const esPct   = String(el.dataset.target).includes("%");
     const textoFin = esPct ? String(el.dataset.target) : null;
 
     if (esPct) { setTimeout(() => { el.textContent = textoFin; }, 650); return; }
@@ -355,9 +208,9 @@ function actualizarMetricas() {
     const dur   = 650;
     const start = performance.now();
     function tick(ahora) {
-      const t     = Math.min((ahora - start) / dur, 1);
-      const ease  = 1 - Math.pow(1 - t, 2);
-      const val   = destino * ease;
+      const t    = Math.min((ahora - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 2);
+      const val  = destino * ease;
       el.textContent = (Number.isInteger(destino) ? Math.round(val) : val.toFixed(2)) + sufijo;
       if (t < 1) requestAnimationFrame(tick);
     }
@@ -366,12 +219,10 @@ function actualizarMetricas() {
 }
 
 /* ----------------------------------------------------------
-   6. ACTUALIZAR QUEUE DINÁMICA — stagger bounce-in
+   6. ACTUALIZAR QUEUE DINÁMICA
    ---------------------------------------------------------- */
-
 function actualizarQueueDinámica() {
   if (!resultadoActual) return;
-
   const queueItems = document.getElementById("queueItems");
   if (!queueItems) return;
   queueItems.innerHTML = "";
@@ -382,26 +233,53 @@ function actualizarQueueDinámica() {
     item.style.animationDelay = `${i * 60}ms`;
     item.style.opacity = "0";
     item.textContent = `P${p.pid}`;
-
-    // El primero en la cola luce como "running"
     if (i === 0) item.classList.add("running");
-
     queueItems.appendChild(item);
   });
 }
 
 /* ----------------------------------------------------------
-   7. LIMPIAR GANTT
+   7. RENDERIZAR ESTADOS DE PROCESOS
    ---------------------------------------------------------- */
+function renderEstadosProcesos() {
+  if (!resultadoActual) return;
+  const statesPanel = document.getElementById("statesPanel");
+  const grid        = document.getElementById("processStateGrid");
+  if (!statesPanel || !grid) return;
 
+  statesPanel.style.display = "block";
+
+  // Marcar todos los procesos ejecutados como Terminated
+  resultadoActual.procesos.forEach(p => {
+    const orig = procesosGlobales.find(x => x.pid === p.pid);
+    if (orig) orig.state = "terminated";
+  });
+
+  const cardsHTML = resultadoActual.procesos
+    .sort((a, b) => a.pid - b.pid)
+    .map(p => `
+      <div class="psc-card">
+        <div class="psc-pid">P${p.pid}</div>
+        ${badgeEstado("terminated")}
+        <div class="psc-metrics">
+          <span class="psc-metric">WT <strong>${p.waitingTime}</strong></span>
+          <span class="psc-metric">TAT <strong>${p.turnaroundTime}</strong></span>
+          <span class="psc-metric">RT <strong>${p.responseTime}</strong></span>
+        </div>
+      </div>`).join("");
+
+  grid.innerHTML = cardsHTML;
+
+  // Refrescar tabla para mostrar badge Terminated
+  if (typeof renderizarTablaProcesos === "function") renderizarTablaProcesos();
+}
+
+/* ----------------------------------------------------------
+   8. LIMPIAR GANTT
+   ---------------------------------------------------------- */
 function limpiarGantt() {
-  const canvas = document.getElementById("ganttCanvas");
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#F4F6F9";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    canvas.classList.remove("gantt-loading");
-  }
+  const ganttChart = document.getElementById("ganttChart");
+  if (ganttChart) ganttChart.innerHTML = "";
 
   document.getElementById("metricsList").innerHTML = `
     <div class="metric-row"><span class="metric-label">Avg Waiting</span><span class="metric-value">—</span></div>
@@ -412,8 +290,8 @@ function limpiarGantt() {
     <div class="metric-row"><span class="metric-label">Context Switches</span><span class="metric-value">—</span></div>
   `;
 
-  const timeline = document.getElementById("ganttTimeline");
-  if (timeline) timeline.innerHTML = "";
+  const statesPanel = document.getElementById("statesPanel");
+  if (statesPanel) statesPanel.style.display = "none";
 
   resultadoActual = null;
 }

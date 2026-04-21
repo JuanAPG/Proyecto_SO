@@ -1,0 +1,4 @@
+Memoria=64
+PageSize=4
+Frames=16
+Referencias=7 0 1 2 0 3 0 4 2 3

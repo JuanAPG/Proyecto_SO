@@ -9,6 +9,7 @@
  */
 let procesosGlobales = [];
 let procesoIdCounter = 1;
+let editandoIdx = -1; // índice del proceso en edición (-1 = sin edición)
 
 /* ----------------------------------------------------------
    1. CAPTURA DE PROCESOS DESDE FORM
@@ -49,9 +50,62 @@ function obtenerProcesoDesdeFórmula() {
 }
 
 /**
- * Agrega un proceso a la lista global
+ * Abre el formulario en modo edición para el proceso indicado
+ */
+function editarProceso(idx) {
+  const p = procesosGlobales[idx];
+  editandoIdx = idx;
+
+  document.getElementById("inputPid").value      = p.pid;
+  document.getElementById("inputPid").disabled   = true;
+  document.getElementById("inputArrival").value  = p.arrivalTime;
+  document.getElementById("inputBurst").value    = p.burstTime;
+  document.getElementById("inputPriority").value = p.priority;
+  document.getElementById("inputPages").value    = p.pages;
+
+  const btn = document.getElementById("btnAddProcess");
+  btn.textContent = "Guardar";
+  btn.style.background = "var(--color-blue-700)";
+
+  document.getElementById("btnCancelEdit").style.display = "inline-block";
+  document.getElementById("btnClearAll").style.display   = "none";
+
+  document.getElementById("inputBurst").focus();
+}
+
+/**
+ * Cancela la edición y restaura el formulario
+ */
+function cancelarEdicion() {
+  editandoIdx = -1;
+  document.getElementById("inputPid").disabled   = false;
+
+  const btn = document.getElementById("btnAddProcess");
+  btn.textContent = "Agregar";
+  btn.style.background = "";
+
+  document.getElementById("btnCancelEdit").style.display = "none";
+  document.getElementById("btnClearAll").style.display   = "inline-block";
+
+  limpiarFormulario();
+}
+
+/**
+ * Agrega un proceso a la lista global (o guarda edición)
  */
 function agregarProceso() {
+  // — Modo edición: actualizar proceso existente
+  if (editandoIdx >= 0) {
+    const proceso = obtenerProcesoDesdeFórmula();
+    if (!proceso) return;
+    proceso.pid   = procesosGlobales[editandoIdx].pid; // PID no cambia
+    proceso.state = procesosGlobales[editandoIdx].state;
+    procesosGlobales[editandoIdx] = proceso;
+    cancelarEdicion();
+    renderizarTablaProcesos();
+    return;
+  }
+
   const proceso = obtenerProcesoDesdeFórmula();
   if (!proceso) return;
 
@@ -136,8 +190,9 @@ function renderizarTablaProcesos() {
       <td class="td-center">${proceso.priority}</td>
       <td class="td-center">${proceso.pages}</td>
       <td>${badgeEstado(proceso.state)}</td>
-      <td>
-        <button class="btn-clear" onclick="eliminarProceso(${idx})" style="padding:4px 8px; font-size:11px;">×</button>
+      <td style="white-space:nowrap;">
+        <button class="btn-edit" onclick="editarProceso(${idx})" title="Editar proceso">✎</button>
+        <button class="btn-clear" onclick="eliminarProceso(${idx})" style="padding:4px 8px; font-size:11px;" title="Eliminar proceso">×</button>
       </td>
     `;
     tbody.appendChild(fila);
