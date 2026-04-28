@@ -1315,11 +1315,11 @@ body {
 .ti {
   background: var(--card2);
   border: 1.5px solid transparent;
-  border-radius: 8px;
-  padding: 6px 10px;
+  border-radius: 6px;
+  padding: 4px 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   transition: all .15s;
   user-select: none;
