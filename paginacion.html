@@ -1194,6 +1194,143 @@
       .ctrl-panel { padding: 14px; gap: 14px; }
       .algo-card-sub { display: none; }
     }
+
+    /* ═══════════════════════════════════════════════════════
+       VIEWPORT FIT — sin scroll, todo visible
+    ═══════════════════════════════════════════════════════ */
+    html, body { height: 100%; overflow: hidden; }
+
+    .page-container {
+      height: calc(100vh - 56px);
+      overflow: hidden;
+      padding: 8px 20px;
+      box-sizing: border-box;
+      max-width: none;
+    }
+
+    .two-col {
+      height: 100%;
+      overflow: hidden;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    /* Columna izquierda — scroll interno imperceptible como fallback */
+    .left-panel-col {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(61,104,123,0.2) transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .left-panel-col::-webkit-scrollbar { width: 3px; }
+    .left-panel-col::-webkit-scrollbar-thumb { background: rgba(61,104,123,0.2); border-radius: 99px; }
+
+    /* Columna derecha — cinema + métricas como unidad */
+    .right-panel-col {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Cinema ocupa todo el espacio restante */
+    .memory-cinema {
+      flex: 1 !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      border-radius: 14px 14px 0 0 !important;
+    }
+
+    .cinema-interior {
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .cinema-stage  { overflow: hidden !important; }
+    .cinema-sidebar{ overflow: hidden !important; }
+    .seats-zone    { overflow: hidden; }
+
+    /* Métricas pegadas al fondo del cinema */
+    #metricas-wrap {
+      flex-shrink: 0;
+      border-radius: 0 0 14px 14px !important;
+      border-top: none !important;
+      margin-top: 0 !important;
+      padding: 6px 14px 8px !important;
+    }
+    .metrics-dark-title { margin-bottom: 4px !important; font-size: 8px; }
+    .metrics-dark-grid  { grid-template-columns: repeat(4,1fr) !important; gap: 5px; }
+    .mcard     { padding: 5px 9px !important; }
+    .mcard-lbl { font-size: 8px !important; margin-bottom: 2px !important; }
+    .mcard-val { font-size: 14px !important; }
+
+    /* ── Compactar panel izquierdo ── */
+    .ctrl-panel          { gap: 8px !important; padding: 11px 13px !important; }
+    .ctrl-section-label  { margin-bottom: 5px !important; font-size: 8px; }
+    .ctrl-input          { padding: 7px 10px !important; font-size: 12px; }
+    .ctrl-label          { font-size: 10px; margin-bottom: 3px; }
+    .btn-cine-primary    { padding: 9px !important; font-size: 12px; }
+    .btn-cine-ghost      { padding: 7px !important; font-size: 11px; }
+
+    .algo-grid     { gap: 4px !important; }
+    .algo-card     { padding: 6px 5px 5px !important; }
+    .algo-card-icon svg { width: 14px !important; height: 14px !important; }
+    .algo-card-name { font-size: 10px !important; }
+    .algo-card-sub  { display: none !important; }
+    #algo-desc      { display: none !important; }
+
+    /* ── Compactar cinema ── */
+    .marquee-bar  { padding: 7px 16px 6px !important; }
+    .marquee-title{ font-size: 20px !important; }
+    .marquee-bulb { width: 6px !important; height: 6px !important; }
+    .narrator-bar { padding: 5px 16px !important; min-height: 28px !important; }
+    #narrator-text{ font-size: 11px; }
+    .cinema-footer{ padding: 6px 14px 7px !important; }
+    .film-strip-label { margin-bottom: 3px; font-size: 8px; }
+    #film-strip   { padding: 2px 0 !important; }
+    .audience-row { padding-top: 5px; margin-top: 3px; }
+    .audience-head::before { width: 11px !important; height: 11px !important; }
+    .audience-head::after  { width: 16px  !important; height: 7px   !important; }
+
+    /* ── Playback compacto ── */
+    #playback-bar { padding: 10px 13px !important; gap: 7px !important; }
+    .pb-btn     { width: 26px !important; height: 26px !important; }
+    .pb-play    { height: 26px !important; padding: 0 12px !important; }
+    .pb-counter { font-size: 10px; }
+    .vel-label  { font-size: 9px; }
+    .pb-progress{ height: 3px !important; }
+
+    /* ── Sección comparación — modal overlay fijo ── */
+    #seccion-comparacion {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 200;
+      background: rgba(3,8,16,0.93);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      margin: 0 !important;
+    }
+    .comp-card {
+      max-height: 82vh;
+      overflow-y: auto;
+      max-width: 860px;
+      width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(61,104,123,0.3) transparent;
+    }
+    .comp-card::-webkit-scrollbar { width: 4px; }
+    .comp-card::-webkit-scrollbar-thumb { background: rgba(61,104,123,0.35); border-radius: 99px; }
   </style>
 </head>
 <body>
@@ -1219,7 +1356,7 @@
     <!-- ══════════════════════════════
          PANEL IZQUIERDO — Controles
     ══════════════════════════════ -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
+    <div class="left-panel-col">
 
       <!-- Configuración -->
       <div class="ctrl-panel">
@@ -1228,7 +1365,7 @@
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Configuración de Memoria
           </div>
-          <div class="ctrl-row" style="margin-bottom:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px;">
             <div>
               <label class="ctrl-label" for="inp-frames">Marcos</label>
               <input id="inp-frames" type="number" class="ctrl-input" min="1" max="16" value="3" />
@@ -1237,9 +1374,11 @@
               <label class="ctrl-label" for="inp-pagesize">Página (KB)</label>
               <input id="inp-pagesize" type="number" class="ctrl-input" min="1" value="4" />
             </div>
+            <div>
+              <label class="ctrl-label" for="inp-memoria">Memoria (KB)</label>
+              <input id="inp-memoria" type="number" class="ctrl-input" min="1" value="64" />
+            </div>
           </div>
-          <label class="ctrl-label" for="inp-memoria">Memoria total (KB)</label>
-          <input id="inp-memoria" type="number" class="ctrl-input" min="1" value="64" />
         </div>
 
         <div>
@@ -1296,40 +1435,39 @@
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:grid; grid-template-columns:1fr auto; gap:7px;">
           <button class="btn-cine-primary" onclick="iniciarSimulacion()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Simular
           </button>
-          <button class="btn-cine-ghost" style="display:flex; align-items:center; justify-content:center; gap:6px;" onclick="resetearSimulacion()">
+          <button class="btn-cine-ghost" style="display:flex; align-items:center; justify-content:center; gap:5px; width:auto; padding:7px 11px;" onclick="resetearSimulacion()" title="Reiniciar">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
-            Reiniciar
           </button>
         </div>
       </div>
 
-      <!-- Controles de reproducción -->
-      <div class="ctrl-panel" id="playback-bar" style="padding:12px 14px; gap:10px;">
+      <!-- Reproducción + Comparar -->
+      <div class="ctrl-panel" id="playback-bar">
         <div class="ctrl-section-label" style="margin-bottom:0;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Reproducción
         </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:5px;">
           <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
           </button>
           <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
           </button>
           <span id="pb-counter" class="pb-counter">— / —</span>
           <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
           </button>
           <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último" disabled>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
           </button>
-          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()" style="flex:1; min-width:60px;">
-            <svg id="pb-play-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()" style="flex:1; min-width:55px;">
+            <svg id="pb-play-icon" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span id="pb-play-label">Play</span>
           </button>
         </div>
@@ -1338,15 +1476,9 @@
           <input type="range" class="vel-slider" id="vel-slider" min="200" max="2000" step="100" value="700" title="Velocidad" />
           <span class="vel-label">Rápido</span>
         </div>
-        <div class="pb-progress">
-          <div class="pb-progress-fill" id="pb-progress-fill"></div>
-        </div>
-      </div>
-
-      <!-- Botón comparar -->
-      <div class="ctrl-panel" style="padding:14px;">
-        <button class="btn-compare" onclick="mostrarComparacion()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+        <div class="pb-progress"><div class="pb-progress-fill" id="pb-progress-fill"></div></div>
+        <button class="btn-compare" onclick="mostrarComparacion()" style="margin-top:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
           Comparar los 5 algoritmos
         </button>
       </div>
@@ -1356,7 +1488,7 @@
     <!-- ══════════════════════════════
          MEMORY CINEMA — Zona derecha
     ══════════════════════════════ -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
+    <div class="right-panel-col">
 
       <div class="memory-cinema" id="memory-cinema">
         <!-- Flash overlays -->
@@ -1632,21 +1764,22 @@
 
   </div><!-- /two-col -->
 
-  <!-- ════════════════════════════════════════════════════════
-       COMPARACIÓN
-  ════════════════════════════════════════════════════════ -->
-  <div id="seccion-comparacion">
-    <div class="comp-card">
-      <div class="comp-header">
-        <div class="comp-title">Comparación de los 5 algoritmos — misma cadena, mismos marcos</div>
-        <button class="btn-cine-ghost" style="width:auto; padding:6px 14px; font-size:11px;"
-                onclick="document.getElementById('seccion-comparacion').style.display='none'">Cerrar</button>
-      </div>
-      <div id="comparacion-tabla"></div>
-    </div>
-  </div>
 
 </div><!-- /page-container -->
+
+<!-- ════════════════════════════════════════════════════════
+     COMPARACIÓN — modal overlay fijo (fuera del contenedor)
+════════════════════════════════════════════════════════ -->
+<div id="seccion-comparacion">
+  <div class="comp-card">
+    <div class="comp-header">
+      <div class="comp-title">Comparación de los 5 algoritmos — misma cadena, mismos marcos</div>
+      <button class="btn-cine-ghost" style="width:auto; padding:6px 14px; font-size:11px;"
+              onclick="document.getElementById('seccion-comparacion').style.display='none'">Cerrar</button>
+    </div>
+    <div id="comparacion-tabla"></div>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════════════════════════
      SCRIPTS

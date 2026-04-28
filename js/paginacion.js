@@ -877,8 +877,7 @@ function mostrarComparacion() {
     }).join("");
   }
 
-  document.getElementById("seccion-comparacion").style.display = "block";
-  document.getElementById("seccion-comparacion").scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("seccion-comparacion").style.display = "flex";
 }
 
 /* ----------------------------------------------------------
