@@ -971,9 +971,9 @@ body {
   --card2: #253244;
   --card3: #2d3d52;
   --border: rgba(255, 255, 255, 0.08);
-  --text: #e8f0f8;
-  --muted: #7a99b8;
-  --accent: #f0c040;
+  --text: #f0f6fc;
+  --muted: #8fb4d0;
+  --accent: #4a9fd4;
   --blue: #5ba3d9;
   --green: #3dc495;
   --orange: #e09040;
@@ -1215,12 +1215,12 @@ body {
 
 .btn-primary {
   background: var(--accent);
-  color: #1e2a38;
-  box-shadow: 0 2px 8px rgba(240, 192, 64, .3);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 159, 212, .4);
 }
 
 .btn-primary:hover {
-  background: #ffe066;
+  background: #5aaee0;
   transform: translateY(-1px);
 }
 
@@ -1305,34 +1305,34 @@ body {
 }
 
 .config-card-body {
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
 }
 
 /* test item */
 .ti {
   background: var(--card2);
   border: 1.5px solid transparent;
-  border-radius: 12px;
-  padding: 10px 13px;
+  border-radius: 8px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
   transition: all .15s;
   user-select: none;
 }
 
 .ti:hover {
-  border-color: rgba(240, 192, 64, .3);
+  border-color: rgba(74, 159, 212, .3);
   background: var(--card3);
 }
 
 .ti.sel {
   border-color: var(--accent);
-  background: rgba(240, 192, 64, .06);
+  background: rgba(74, 159, 212, .08);
 }
 
 .ti-chk {
@@ -1352,7 +1352,7 @@ body {
 .ti.sel .ti-chk {
   background: var(--accent);
   border-color: var(--accent);
-  color: #1e2a38;
+  color: #fff;
 }
 
 .ti-dot {
@@ -1368,7 +1368,7 @@ body {
 }
 
 .ti-name {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -1377,9 +1377,9 @@ body {
 }
 
 .ti-meta {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .ti-badge {
@@ -1700,7 +1700,7 @@ body {
 
 .r1 {
   background: rgba(240, 192, 64, .2);
-  color: var(--accent);
+  color: #f0c040;
 }
 
 .r2 {
