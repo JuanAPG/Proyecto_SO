@@ -150,241 +150,237 @@
      SCRIPTS
      ============================================================ -->
     <script>
-        /* ═══════════════════════════════════
-           NAVIGATION
-        ═══════════════════════════════════ */
-        let cur = 0;
-        function go(n) {
-            cur = Math.max(0, Math.min(1, n));
-            document.getElementById('track').style.transform = `translateX(-${cur * 100}%)`;
-            ['pb0', 'pb1'].forEach((id, i) => document.getElementById(id).classList.toggle('on', i === cur));
-        }
-        let tx0 = 0;
-        document.addEventListener('touchstart', e => tx0 = e.touches[0].clientX);
-        document.addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx0; if (Math.abs(d) > 55) go(cur + (d < 0 ? 1 : -1)); });
-
-        /* ═══════════════════════════════════
-           ALGO DEFINITIONS
-        ═══════════════════════════════════ */
-        const SA = [
-            { key: 'fcfs', label: 'FCFS', color: '#4a8ca8' },
-            { key: 'sjf', label: 'SJF', color: '#3dc495' },
-            { key: 'hrrn', label: 'HRRN', color: '#e09040' },
-            { key: 'rr', label: 'RR', color: '#d46090' },
-            { key: 'srtf', label: 'SRTF', color: '#9b8fdd' },
-            { key: 'priority', label: 'Priority', color: '#5ba3d9' },
-        ];
-        const PA = [
-            { key: 'fifo', label: 'FIFO', color: '#4a8ca8' },
-            { key: 'lru', label: 'LRU', color: '#3dc495' },
-            { key: 'opt', label: 'OPT', color: '#9b8fdd' },
-            { key: 'lfu', label: 'LFU', color: '#d46090' },
-            { key: 'clock', label: 'Clock', color: '#e09040' },
-        ];
-        const aC = (l, k) => (l.find(a => a.key === k) || { color: '#888' }).color;
-        const aL = (l, k) => (l.find(a => a.key === k) || { label: k }).label;
-
-        /* ═══════════════════════════════════
-           SCHEDULING ALGORITHMS
-        ═══════════════════════════════════ */
-        function calcFCFS(p) { const ps = p.map(x => ({ ...x })).sort((a, b) => a.arrival - b.arrival); let t = 0; return ps.map(pr => { if (t < pr.arrival) t = pr.arrival; const rt = t - pr.arrival, ct = t + pr.burst, tat = ct - pr.arrival, wt = tat - pr.burst; t = ct; return { ...pr, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-        function calcSJF(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.sort((a, b) => a.burst - b.burst); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
-        function calcHRRN(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.forEach(x => { x._rr = (t - x.arrival + x.burst) / x.burst; }); av.sort((a, b) => b._rr - a._rr); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
-        function calcRR(p, q = 2) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1 })); const sorted = [...ps].sort((a, b) => a.arrival - b.arrival); const queue = []; let t = 0, idx = 0; const res = []; const arrived = new Set(); while (true) { while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (!queue.length) { if (idx >= sorted.length) break; t = sorted[idx].arrival; continue; } const c = queue.shift(); if (c.firstRun < 0) c.firstRun = t; const run = Math.min(c.remaining, q); t += run; c.remaining -= run; while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (c.remaining > 0) queue.push(c); else { const ct = t, tat = ct - c.arrival, wt = tat - c.burst, rt = c.firstRun - c.arrival; res.push({ pid: c.pid, arrival: c.arrival, burst: c.burst, priority: c.priority, ct, tat, wt, rt: Math.max(0, rt) }); } } return res.sort((a, b) => a.pid - b.pid); }
-        function calcSRTF(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.remaining - b.remaining || (a.arrival - b.arrival)); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-        function calcPrio(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.priority - b.priority); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-
-        function runS(k, p) { switch (k) { case 'fcfs': return calcFCFS(p); case 'sjf': return calcSJF(p); case 'hrrn': return calcHRRN(p); case 'rr': return calcRR(p); case 'srtf': return calcSRTF(p); case 'priority': return calcPrio(p); default: return calcFCFS(p); } }
-
-        /* Build Gantt timeline (slot per tick) */
-        function buildGantt(key, procs) {
-            const ps = procs.map(x => ({ ...x, remaining: x.burst, done: false }));
-            const mksp = ps.reduce((s, x) => s + x.burst, 0) + Math.max(...ps.map(x => x.arrival)) + 2;
-            const slots = [];
-            if (key === 'fcfs' || key === 'sjf' || key === 'hrrn') {
-                const rows = runS(key, procs);
-                const sorted = [...rows].sort((a, b) => a.arrival - b.arrival);
-                let t = 0;
-                for (const r of rows.sort((a, b) => a.ct - b.ct)) {
-                    const start = r.ct - r.burst;
-                    while (t < start) { slots.push(null); t++; }
-                    for (let i = 0; i < r.burst; i++) { slots.push(r.pid); t++; }
-                }
-            } else {
-                // preemptive: tick-by-tick
-                const state = procs.map(x => ({ ...x, remaining: x.burst, firstRun: -1 }));
-                for (let t = 0; t < mksp; t++) {
-                    let av = state.filter(x => x.arrival <= t && x.remaining > 0);
-                    if (!av.length) { slots.push(null); continue; }
-                    let c;
-                    if (key === 'rr') {
-                        // simplified: pick lowest pid in RR order for Gantt
-                        c = av[0]; // approximate
-                    } else if (key === 'srtf') {
-                        av.sort((a, b) => a.remaining - b.remaining); c = av[0];
-                    } else {
-                        av.sort((a, b) => a.priority - b.priority); c = av[0];
-                    }
-                    c.remaining--;
-                    slots.push(c.pid);
-                }
-                // trim trailing null
-            }
-            while (slots.length && slots[slots.length - 1] === null) slots.pop();
-            return slots;
-        }
-
-        const avg = (a, k) => a.length ? a.reduce((s, x) => s + (x[k] || 0), 0) / a.length : 0;
-        const mksp = a => a.reduce((m, x) => Math.max(m, x.ct || 0), 0);
-
-        /* ═══════════════════════════════════
-           PAGINACIÓN ALGORITHMS
-        ═══════════════════════════════════ */
-        function simFIFO(refs, frames) { const mem = [], q = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; } else { fault = true; f++; if (mem.length >= frames) { ev = q.shift(); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); q.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-        function simLRU(refs, frames) { const mem = [], u = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; u.splice(u.indexOf(pg), 1); u.push(pg); } else { fault = true; f++; if (mem.length >= frames) { ev = u.shift(); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); u.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-        function simOPT(refs, frames) { const mem = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; } else { fault = true; f++; if (mem.length >= frames) { const nxt = mem.map(p => { const fi = refs.indexOf(p, i + 1); return fi === -1 ? Infinity : fi; }); const idx = nxt.indexOf(Math.max(...nxt)); ev = mem[idx]; mem.splice(idx, 1); } mem.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-        function simLFU(refs, frames) { const mem = [], fr = {}; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (!fr[pg]) fr[pg] = 0; if (mem.includes(pg)) { h++; fr[pg]++; } else { fault = true; f++; if (mem.length >= frames) { const minF = Math.min(...mem.map(p => fr[p])); ev = mem.find(p => fr[p] === minF); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); fr[pg]++; } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-        function simClk(refs, frames) { const mem = new Array(frames).fill(null), bits = new Array(frames).fill(0); let ptr = 0, f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; const idx = mem.indexOf(pg); if (idx !== -1) { h++; bits[idx] = 1; } else { fault = true; f++; while (bits[ptr] === 1) { bits[ptr] = 0; ptr = (ptr + 1) % frames; } ev = mem[ptr]; mem[ptr] = pg; bits[ptr] = 1; ptr = (ptr + 1) % frames; } st.push({ page: pg, fault, evicted: ev, mem: mem.filter(x => x !== null) }); } return { faults: f, hits: h, steps: st }; }
-        function runP(k, refs, frames) { switch (k) { case 'fifo': return simFIFO(refs, frames); case 'lru': return simLRU(refs, frames); case 'opt': return simOPT(refs, frames); case 'lfu': return simLFU(refs, frames); case 'clock': return simClk(refs, frames); default: return simFIFO(refs, frames); } }
-
-        /* ═══════════════════════════════════
-           STORAGE
-        ═══════════════════════════════════ */
-        const KS = 'osim_s_tests', KP = 'osim_p_tests';
-        const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } };
-        const save = (k, a) => localStorage.setItem(k, JSON.stringify(a));
-
-        let sTests = [], pTests = [];
-        let selS = new Set(), selP = new Set();
-        let sChips = new Set(SA.map(a => a.key));
-        let pChips = new Set(PA.map(a => a.key));
-
-        /* ═══════════════════════════════════
-           RENDER CONFIG
-        ═══════════════════════════════════ */
-        function renderLists() {
-            renderList('ls', sTests, 's');
-            renderList('lp', pTests, 'p');
-            document.getElementById('btn-run').disabled = (selS.size === 0 && selP.size === 0);
-        }
-        function renderList(id, tests, type) {
-            const el = document.getElementById(id);
-            const sel = type === 's' ? selS : selP;
-            const algos = type === 's' ? SA : PA;
-            if (!tests.length) { el.innerHTML = `<div class="empty-l">Sin pruebas. Ejecuta simulaciones primero.</div>`; return; }
-            el.innerHTML = tests.map((t, i) => {
-                const color = aC(algos, t.algo), label = aL(algos, t.algo), on = sel.has(i);
-                const meta = type === 's' ? `${t.processes?.length || 0} procesos · ${new Date(t.ts || 0).toLocaleDateString()}` : `${t.refs?.length || 0} refs · ${t.frames} marcos · ${new Date(t.ts || 0).toLocaleDateString()}`;
-                return `<div class="ti ${on ? 'sel' : ''}" onclick="togTest('${type}',${i})">
-      <div class="ti-chk">${on ? '✓' : ''}</div>
+/* ═══════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════ */
+let cur=0;
+function go(n){
+  cur=Math.max(0,Math.min(1,n));
+  document.getElementById('track').style.transform=`translateX(-${cur*100}%)`;
+  ['pb0','pb1'].forEach((id,i)=>document.getElementById(id).classList.toggle('on',i===cur));
+}
+let tx0=0;
+document.addEventListener('touchstart',e=>tx0=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx0;if(Math.abs(d)>55)go(cur+(d<0?1:-1));});
+ 
+/* ═══════════════════════════════════
+   ALGO DEFINITIONS
+═══════════════════════════════════ */
+const SA=[
+  {key:'fcfs',label:'FCFS',color:'#4a8ca8'},
+  {key:'sjf', label:'SJF', color:'#3dc495'},
+  {key:'hrrn',label:'HRRN',color:'#e09040'},
+  {key:'rr',  label:'RR',  color:'#d46090'},
+  {key:'srtf',label:'SRTF',color:'#9b8fdd'},
+  {key:'priority',label:'Priority',color:'#5ba3d9'},
+];
+const PA=[
+  {key:'fifo', label:'FIFO', color:'#4a8ca8'},
+  {key:'lru',  label:'LRU',  color:'#3dc495'},
+  {key:'opt',  label:'OPT',  color:'#9b8fdd'},
+  {key:'lfu',  label:'LFU',  color:'#d46090'},
+  {key:'clock',label:'Clock',color:'#e09040'},
+];
+const aC=(l,k)=>(l.find(a=>a.key===k)||{color:'#888'}).color;
+const aL=(l,k)=>(l.find(a=>a.key===k)||{label:k}).label;
+ 
+/* ═══════════════════════════════════
+   SCHEDULING ALGORITHMS
+═══════════════════════════════════ */
+function calcFCFS(p){const ps=p.map(x=>({...x})).sort((a,b)=>a.arrival-b.arrival);let t=0;return ps.map(pr=>{if(t<pr.arrival)t=pr.arrival;const rt=t-pr.arrival,ct=t+pr.burst,tat=ct-pr.arrival,wt=tat-pr.burst;t=ct;return{...pr,ct,tat,wt,rt:Math.max(0,rt)};});}
+function calcSJF(p){const ps=p.map(x=>({...x,done:false}));let t=0,done=0;const res=[];while(done<ps.length){const av=ps.filter(x=>!x.done&&x.arrival<=t);if(!av.length){t++;continue;}av.sort((a,b)=>a.burst-b.burst);const c=av[0];const rt=t-c.arrival;t+=c.burst;const ct=t,tat=ct-c.arrival,wt=tat-c.burst;res.push({...c,ct,tat,wt,rt:Math.max(0,rt)});ps.find(x=>x.pid===c.pid).done=true;done++;}return res;}
+function calcHRRN(p){const ps=p.map(x=>({...x,done:false}));let t=0,done=0;const res=[];while(done<ps.length){const av=ps.filter(x=>!x.done&&x.arrival<=t);if(!av.length){t++;continue;}av.forEach(x=>{x._rr=(t-x.arrival+x.burst)/x.burst;});av.sort((a,b)=>b._rr-a._rr);const c=av[0];const rt=t-c.arrival;t+=c.burst;const ct=t,tat=ct-c.arrival,wt=tat-c.burst;res.push({...c,ct,tat,wt,rt:Math.max(0,rt)});ps.find(x=>x.pid===c.pid).done=true;done++;}return res;}
+function calcRR(p,q=2){const ps=p.map(x=>({...x,remaining:x.burst,firstRun:-1}));const sorted=[...ps].sort((a,b)=>a.arrival-b.arrival);const queue=[];let t=0,idx=0;const res=[];const arrived=new Set();while(true){while(idx<sorted.length&&sorted[idx].arrival<=t&&!arrived.has(sorted[idx].pid)){queue.push(sorted[idx]);arrived.add(sorted[idx].pid);idx++;}if(!queue.length){if(idx>=sorted.length)break;t=sorted[idx].arrival;continue;}const c=queue.shift();if(c.firstRun<0)c.firstRun=t;const run=Math.min(c.remaining,q);t+=run;c.remaining-=run;while(idx<sorted.length&&sorted[idx].arrival<=t&&!arrived.has(sorted[idx].pid)){queue.push(sorted[idx]);arrived.add(sorted[idx].pid);idx++;}if(c.remaining>0)queue.push(c);else{const ct=t,tat=ct-c.arrival,wt=tat-c.burst,rt=c.firstRun-c.arrival;res.push({pid:c.pid,arrival:c.arrival,burst:c.burst,priority:c.priority,ct,tat,wt,rt:Math.max(0,rt)});}}return res.sort((a,b)=>a.pid-b.pid);}
+function calcSRTF(p){const ps=p.map(x=>({...x,remaining:x.burst,firstRun:-1,ct:-1}));const tMax=ps.reduce((s,x)=>s+x.burst,0)+ps.reduce((a,x)=>Math.max(a,x.arrival),0)+5;let t=0;for(;t<tMax;t++){const av=ps.filter(x=>x.arrival<=t&&x.remaining>0);if(!av.length)continue;av.sort((a,b)=>a.remaining-b.remaining||(a.arrival-b.arrival));const c=av[0];if(c.firstRun<0)c.firstRun=t;c.remaining--;if(c.remaining===0)c.ct=t+1;if(ps.every(x=>x.remaining===0))break;}return ps.map(x=>{const ct=x.ct||0,tat=ct-x.arrival,wt=tat-x.burst,rt=x.firstRun-x.arrival;return{...x,ct,tat,wt,rt:Math.max(0,rt)};});}
+function calcPrio(p){const ps=p.map(x=>({...x,remaining:x.burst,firstRun:-1,ct:-1}));const tMax=ps.reduce((s,x)=>s+x.burst,0)+ps.reduce((a,x)=>Math.max(a,x.arrival),0)+5;let t=0;for(;t<tMax;t++){const av=ps.filter(x=>x.arrival<=t&&x.remaining>0);if(!av.length)continue;av.sort((a,b)=>a.priority-b.priority);const c=av[0];if(c.firstRun<0)c.firstRun=t;c.remaining--;if(c.remaining===0)c.ct=t+1;if(ps.every(x=>x.remaining===0))break;}return ps.map(x=>{const ct=x.ct||0,tat=ct-x.arrival,wt=tat-x.burst,rt=x.firstRun-x.arrival;return{...x,ct,tat,wt,rt:Math.max(0,rt)};});}
+ 
+function runS(k,p){switch(k){case'fcfs':return calcFCFS(p);case'sjf':return calcSJF(p);case'hrrn':return calcHRRN(p);case'rr':return calcRR(p);case'srtf':return calcSRTF(p);case'priority':return calcPrio(p);default:return calcFCFS(p);}}
+ 
+/* Build Gantt timeline (slot per tick) */
+function buildGantt(key,procs){
+  const ps=procs.map(x=>({...x,remaining:x.burst,done:false}));
+  const mksp=ps.reduce((s,x)=>s+x.burst,0)+Math.max(...ps.map(x=>x.arrival))+2;
+  const slots=[];
+  if(key==='fcfs'||key==='sjf'||key==='hrrn'){
+    const rows=runS(key,procs);
+    const sorted=[...rows].sort((a,b)=>a.arrival-b.arrival);
+    let t=0;
+    for(const r of rows.sort((a,b)=>a.ct-b.ct)){
+      const start=r.ct-r.burst;
+      while(t<start){slots.push(null);t++;}
+      for(let i=0;i<r.burst;i++){slots.push(r.pid);t++;}
+    }
+  } else {
+    // preemptive: tick-by-tick
+    const state=procs.map(x=>({...x,remaining:x.burst,firstRun:-1}));
+    for(let t=0;t<mksp;t++){
+      let av=state.filter(x=>x.arrival<=t&&x.remaining>0);
+      if(!av.length){slots.push(null);continue;}
+      let c;
+      if(key==='rr'){
+        // simplified: pick lowest pid in RR order for Gantt
+        c=av[0]; // approximate
+      } else if(key==='srtf'){
+        av.sort((a,b)=>a.remaining-b.remaining);c=av[0];
+      } else {
+        av.sort((a,b)=>a.priority-b.priority);c=av[0];
+      }
+      c.remaining--;
+      slots.push(c.pid);
+    }
+    // trim trailing null
+  }
+  while(slots.length&&slots[slots.length-1]===null)slots.pop();
+  return slots;
+}
+ 
+const avg=(a,k)=>a.length?a.reduce((s,x)=>s+(x[k]||0),0)/a.length:0;
+const mksp=a=>a.reduce((m,x)=>Math.max(m,x.ct||0),0);
+ 
+/* ═══════════════════════════════════
+   PAGINACIÓN ALGORITHMS
+═══════════════════════════════════ */
+function simFIFO(refs,frames){const mem=[],q=[];let f=0,h=0;const st=[];for(let i=0;i<refs.length;i++){const pg=refs[i];let fault=false,ev=null;if(mem.includes(pg)){h++;}else{fault=true;f++;if(mem.length>=frames){ev=q.shift();mem.splice(mem.indexOf(ev),1);}mem.push(pg);q.push(pg);}st.push({page:pg,fault,evicted:ev,mem:[...mem]});}return{faults:f,hits:h,steps:st};}
+function simLRU(refs,frames){const mem=[],u=[];let f=0,h=0;const st=[];for(let i=0;i<refs.length;i++){const pg=refs[i];let fault=false,ev=null;if(mem.includes(pg)){h++;u.splice(u.indexOf(pg),1);u.push(pg);}else{fault=true;f++;if(mem.length>=frames){ev=u.shift();mem.splice(mem.indexOf(ev),1);}mem.push(pg);u.push(pg);}st.push({page:pg,fault,evicted:ev,mem:[...mem]});}return{faults:f,hits:h,steps:st};}
+function simOPT(refs,frames){const mem=[];let f=0,h=0;const st=[];for(let i=0;i<refs.length;i++){const pg=refs[i];let fault=false,ev=null;if(mem.includes(pg)){h++;}else{fault=true;f++;if(mem.length>=frames){const nxt=mem.map(p=>{const fi=refs.indexOf(p,i+1);return fi===-1?Infinity:fi;});const idx=nxt.indexOf(Math.max(...nxt));ev=mem[idx];mem.splice(idx,1);}mem.push(pg);}st.push({page:pg,fault,evicted:ev,mem:[...mem]});}return{faults:f,hits:h,steps:st};}
+function simLFU(refs,frames){const mem=[],fr={};let f=0,h=0;const st=[];for(let i=0;i<refs.length;i++){const pg=refs[i];let fault=false,ev=null;if(!fr[pg])fr[pg]=0;if(mem.includes(pg)){h++;fr[pg]++;}else{fault=true;f++;if(mem.length>=frames){const minF=Math.min(...mem.map(p=>fr[p]));ev=mem.find(p=>fr[p]===minF);mem.splice(mem.indexOf(ev),1);}mem.push(pg);fr[pg]++;}st.push({page:pg,fault,evicted:ev,mem:[...mem]});}return{faults:f,hits:h,steps:st};}
+function simClk(refs,frames){const mem=new Array(frames).fill(null),bits=new Array(frames).fill(0);let ptr=0,f=0,h=0;const st=[];for(let i=0;i<refs.length;i++){const pg=refs[i];let fault=false,ev=null;const idx=mem.indexOf(pg);if(idx!==-1){h++;bits[idx]=1;}else{fault=true;f++;while(bits[ptr]===1){bits[ptr]=0;ptr=(ptr+1)%frames;}ev=mem[ptr];mem[ptr]=pg;bits[ptr]=1;ptr=(ptr+1)%frames;}st.push({page:pg,fault,evicted:ev,mem:mem.filter(x=>x!==null)});}return{faults:f,hits:h,steps:st};}
+function runP(k,refs,frames){switch(k){case'fifo':return simFIFO(refs,frames);case'lru':return simLRU(refs,frames);case'opt':return simOPT(refs,frames);case'lfu':return simLFU(refs,frames);case'clock':return simClk(refs,frames);default:return simFIFO(refs,frames);}}
+ 
+/* ═══════════════════════════════════
+   STORAGE
+═══════════════════════════════════ */
+const KS='osim_s_tests',KP='osim_p_tests';
+const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];}};
+const save=(k,a)=>localStorage.setItem(k,JSON.stringify(a));
+ 
+let sTests=[],pTests=[];
+let selS=new Set(),selP=new Set();
+let sChips=new Set(SA.map(a=>a.key));
+let pChips=new Set(PA.map(a=>a.key));
+ 
+/* ═══════════════════════════════════
+   RENDER CONFIG
+═══════════════════════════════════ */
+function renderLists(){
+  renderList('ls',sTests,'s');
+  renderList('lp',pTests,'p');
+  document.getElementById('btn-run').disabled=(selS.size===0&&selP.size===0);
+}
+function renderList(id,tests,type){
+  const el=document.getElementById(id);
+  const sel=type==='s'?selS:selP;
+  const algos=type==='s'?SA:PA;
+  if(!tests.length){el.innerHTML=`<div class="empty-l">Sin pruebas. Ejecuta simulaciones primero.</div>`;return;}
+  el.innerHTML=tests.map((t,i)=>{
+    const color=aC(algos,t.algo),label=aL(algos,t.algo),on=sel.has(i);
+    const meta=type==='s'?`${t.processes?.length||0} procesos · ${new Date(t.ts||0).toLocaleDateString()}`:`${t.refs?.length||0} refs · ${t.frames} marcos · ${new Date(t.ts||0).toLocaleDateString()}`;
+    return `<div class="ti ${on?'sel':''}" onclick="togTest('${type}',${i})">
+      <div class="ti-chk">${on?'✓':''}</div>
       <div class="ti-dot" style="background:${color}"></div>
-      <div class="ti-info"><div class="ti-name">${t.name || label + ' #' + (i + 1)}</div><div class="ti-meta">${meta}</div></div>
+      <div class="ti-info"><div class="ti-name">${t.name||label+' #'+(i+1)}</div><div class="ti-meta">${meta}</div></div>
       <span class="ti-badge b${type}">${label}</span>
       <button class="btn btn-danger btn-sm" style="padding:3px 8px" onclick="event.stopPropagation();delTest('${type}',${i})">✕</button>
     </div>`;
-            }).join('');
-        }
-        function togTest(type, i) { const s = type === 's' ? selS : selP; s.has(i) ? s.delete(i) : s.add(i); renderLists(); }
-        function selAll(type) { const tests = type === 's' ? sTests : pTests, s = type === 's' ? selS : selP; tests.forEach((_, i) => s.add(i)); renderLists(); }
-        function delTest(type, i) { if (type === 's') { sTests.splice(i, 1); selS = new Set([...selS].filter(x => x < sTests.length)); save(KS, sTests); } else { pTests.splice(i, 1); selP = new Set([...selP].filter(x => x < pTests.length)); save(KP, pTests); } renderLists(); }
-        function delAll(type) { if (!confirm('¿Borrar todas?')) return; if (type === 's') { sTests = []; selS = new Set(); save(KS, []); } else { pTests = []; selP = new Set(); save(KP, []); } renderLists(); }
-
-        function renderChips() {
-            renderChipGroup('cs', SA, sChips, 's');
-            renderChipGroup('cp', PA, pChips, 'p');
-        }
-        function renderChipGroup(id, algos, sel, type) {
-            document.getElementById(id).innerHTML = algos.map(a => {
-                const on = sel.has(a.key);
-                return `<div class="chip ${on ? 'on' : ''}" style="${on ? 'background:' + a.color + ';color:#1e2a38' : ''}"
+  }).join('');
+}
+function togTest(type,i){const s=type==='s'?selS:selP;s.has(i)?s.delete(i):s.add(i);renderLists();}
+function selAll(type){const tests=type==='s'?sTests:pTests,s=type==='s'?selS:selP;tests.forEach((_,i)=>s.add(i));renderLists();}
+function delTest(type,i){if(type==='s'){sTests.splice(i,1);selS=new Set([...selS].filter(x=>x<sTests.length));save(KS,sTests);}else{pTests.splice(i,1);selP=new Set([...selP].filter(x=>x<pTests.length));save(KP,pTests);}renderLists();}
+function delAll(type){if(!confirm('¿Borrar todas?'))return;if(type==='s'){sTests=[];selS=new Set();save(KS,[]);}else{pTests=[];selP=new Set();save(KP,[]);}renderLists();}
+ 
+function renderChips(){
+  renderChipGroup('cs',SA,sChips,'s');
+  renderChipGroup('cp',PA,pChips,'p');
+}
+function renderChipGroup(id,algos,sel,type){
+  document.getElementById(id).innerHTML=algos.map(a=>{
+    const on=sel.has(a.key);
+    return `<div class="chip ${on?'on':''}" style="${on?'background:'+a.color+';color:#1e2a38':''}"
       onclick="togChip('${a.key}','${a.color}',this,'${type}')">${a.label}</div>`;
-            }).join('');
-        }
-        function togChip(key, color, el, type) {
-            const sel = type === 's' ? sChips : pChips;
-            if (sel.has(key)) { if (sel.size <= 1) return; sel.delete(key); el.classList.remove('on'); el.style.background = ''; el.style.color = ''; }
-            else { sel.add(key); el.classList.add('on'); el.style.background = color; el.style.color = '#1e2a38'; }
-        }
-        function allChips(type) { const algos = type === 's' ? SA : PA, sel = type === 's' ? sChips : pChips; algos.forEach(a => sel.add(a.key)); renderChips(); }
-
-        /* ═══════════════════════════════════
-           EXECUTE ANALYSIS
-        ═══════════════════════════════════ */
-        let _charts = {};
-        let tblAll = [];
-
-        function ejecutar() {
-            Object.values(_charts).forEach(c => { try { c.destroy(); } catch (e) { } });
-            Object.keys(_charts).forEach(k => delete _charts[k]);
-
-            const sRows = [];
-            [...selS].forEach(idx => {
-                const t = sTests[idx]; if (!t) return;
-                [...sChips].forEach(key => {
-                    const r = runS(key, t.processes);
-                    const ms2 = mksp(r), tb = r.reduce((s, x) => s + x.burst, 0);
-                    sRows.push({
-                        testName: t.name || aL(SA, t.algo) + ' #' + (idx + 1), testIdx: idx,
-                        algo: key, label: aL(SA, key), color: aC(SA, key),
-                        awt: avg(r, 'wt'), atat: avg(r, 'tat'), art: avg(r, 'rt'),
-                        cpu: ms2 > 0 ? Math.round(tb / ms2 * 100) : 0, ms: ms2,
-                        rows: r, processes: t.processes,
-                        type: 's', m1: avg(r, 'wt'), m2: avg(r, 'tat'), m1l: 'Avg WT', m2l: 'Avg TAT'
-                    });
-                });
-            });
-
-            const pRows = [];
-            [...selP].forEach(idx => {
-                const t = pTests[idx]; if (!t) return;
-                [...pChips].forEach(key => {
-                    const r = runP(key, t.refs, t.frames);
-                    const tot = r.faults + r.hits;
-                    pRows.push({
-                        testName: t.name || aL(PA, t.algo) + ' #' + (idx + 1), testIdx: idx,
-                        algo: key, label: aL(PA, key), color: aC(PA, key),
-                        faults: r.faults, hits: r.hits, hitrate: tot > 0 ? Math.round(r.hits / tot * 100) : 0,
-                        steps: r.steps, refs: t.refs, frames: t.frames,
-                        type: 'p', m1: r.faults, m2: tot > 0 ? Math.round(r.hits / tot * 100) : 0, m1l: 'Faults', m2l: 'Hit %'
-                    });
-                });
-            });
-
-            tblAll = [...sRows, ...pRows];
-            document.getElementById('res-sub').textContent =
-                `${selS.size + selP.size} prueba(s) · ${sChips.size + pChips.size} algoritmos · ${tblAll.length} combinaciones`;
-
-            buildResultsUI(sRows, pRows);
-            go(1);
-        }
-
-        /* ═══════════════════════════════════
-           BUILD RESULTS UI
-        ═══════════════════════════════════ */
-        function buildResultsUI(sRows, pRows) {
-            const bWT = sRows.length ? sRows.reduce((b, r) => r.awt < b.awt ? r : b, sRows[0]) : null;
-            const bTAT = sRows.length ? sRows.reduce((b, r) => r.atat < b.atat ? r : b, sRows[0]) : null;
-            const bCPU = sRows.length ? sRows.reduce((b, r) => r.cpu > b.cpu ? r : b, sRows[0]) : null;
-            const bPF = pRows.length ? pRows.reduce((b, r) => r.faults < b.faults ? r : b, pRows[0]) : null;
-
-            const kpi = (lbl, algo, val, color, icon, tn) => `
+  }).join('');
+}
+function togChip(key,color,el,type){
+  const sel=type==='s'?sChips:pChips;
+  if(sel.has(key)){if(sel.size<=1)return;sel.delete(key);el.classList.remove('on');el.style.background='';el.style.color='';}
+  else{sel.add(key);el.classList.add('on');el.style.background=color;el.style.color='#1e2a38';}
+}
+function allChips(type){const algos=type==='s'?SA:PA,sel=type==='s'?sChips:pChips;algos.forEach(a=>sel.add(a.key));renderChips();}
+ 
+/* ═══════════════════════════════════
+   EXECUTE ANALYSIS
+═══════════════════════════════════ */
+let _charts={};
+let tblAll=[];
+ 
+function ejecutar(){
+  Object.values(_charts).forEach(c=>{try{c.destroy();}catch(e){}});
+  Object.keys(_charts).forEach(k=>delete _charts[k]);
+ 
+  const sRows=[];
+  [...selS].forEach(idx=>{
+    const t=sTests[idx];if(!t)return;
+    [...sChips].forEach(key=>{
+      const r=runS(key,t.processes);
+      const ms2=mksp(r),tb=r.reduce((s,x)=>s+x.burst,0);
+      sRows.push({testName:t.name||aL(SA,t.algo)+' #'+(idx+1),testIdx:idx,
+        algo:key,label:aL(SA,key),color:aC(SA,key),
+        awt:avg(r,'wt'),atat:avg(r,'tat'),art:avg(r,'rt'),
+        cpu:ms2>0?Math.round(tb/ms2*100):0,ms:ms2,
+        rows:r, processes:t.processes,
+        type:'s',m1:avg(r,'wt'),m2:avg(r,'tat'),m1l:'Avg WT',m2l:'Avg TAT'});
+    });
+  });
+ 
+  const pRows=[];
+  [...selP].forEach(idx=>{
+    const t=pTests[idx];if(!t)return;
+    [...pChips].forEach(key=>{
+      const r=runP(key,t.refs,t.frames);
+      const tot=r.faults+r.hits;
+      pRows.push({testName:t.name||aL(PA,t.algo)+' #'+(idx+1),testIdx:idx,
+        algo:key,label:aL(PA,key),color:aC(PA,key),
+        faults:r.faults,hits:r.hits,hitrate:tot>0?Math.round(r.hits/tot*100):0,
+        steps:r.steps,refs:t.refs,frames:t.frames,
+        type:'p',m1:r.faults,m2:tot>0?Math.round(r.hits/tot*100):0,m1l:'Faults',m2l:'Hit %'});
+    });
+  });
+ 
+  tblAll=[...sRows,...pRows];
+  document.getElementById('res-sub').textContent=
+    `${selS.size+selP.size} prueba(s) · ${sChips.size+pChips.size} algoritmos · ${tblAll.length} combinaciones`;
+ 
+  buildResultsUI(sRows,pRows);
+  go(1);
+}
+ 
+/* ═══════════════════════════════════
+   BUILD RESULTS UI
+═══════════════════════════════════ */
+function buildResultsUI(sRows,pRows){
+  const bWT =sRows.length?sRows.reduce((b,r)=>r.awt<b.awt?r:b,sRows[0]):null;
+  const bTAT=sRows.length?sRows.reduce((b,r)=>r.atat<b.atat?r:b,sRows[0]):null;
+  const bCPU=sRows.length?sRows.reduce((b,r)=>r.cpu>b.cpu?r:b,sRows[0]):null;
+  const bPF =pRows.length?pRows.reduce((b,r)=>r.faults<b.faults?r:b,pRows[0]):null;
+ 
+  const kpi=(lbl,algo,val,color,icon,tn)=>`
     <div class="kpi-w" style="--wc:${color}">
       <div class="kpi-icon">${icon}</div>
       <div class="kpi-lbl">${lbl}</div>
       <div class="kpi-algo">${algo}</div>
       <div class="kpi-val">${val}</div>
-      ${tn ? `<div class="kpi-test">${tn}</div>` : ''}
+      ${tn?`<div class="kpi-test">${tn}</div>`:''}
     </div>`;
-
-            let html = `<div class="kpi-grid">
-    ${kpi('Menor Waiting Time', bWT ? bWT.label : '—', bWT ? bWT.awt.toFixed(2) + 's avg' : '—', 'var(--blue)', '🏆', bWT?.testName)}
-    ${kpi('Menor Turnaround', bTAT ? bTAT.label : '—', bTAT ? bTAT.atat.toFixed(2) + 's avg' : '—', 'var(--green)', '⚡', bTAT?.testName)}
-    ${kpi('Mayor CPU %', bCPU ? bCPU.label : '—', bCPU ? bCPU.cpu + '%' : '—', 'var(--purple)', '💻', bCPU?.testName)}
-    ${kpi('Menos Page Faults', bPF ? bPF.label : '—', bPF ? bPF.faults + ' fallos' : '—', 'var(--pink)', '📄', bPF?.testName)}
+ 
+  let html=`<div class="kpi-grid">
+    ${kpi('Menor Waiting Time',bWT?bWT.label:'—',bWT?bWT.awt.toFixed(2)+'s avg':'—','var(--blue)','🏆',bWT?.testName)}
+    ${kpi('Menor Turnaround', bTAT?bTAT.label:'—',bTAT?bTAT.atat.toFixed(2)+'s avg':'—','var(--green)','⚡',bTAT?.testName)}
+    ${kpi('Mayor CPU %',      bCPU?bCPU.label:'—',bCPU?bCPU.cpu+'%':'—','var(--purple)','💻',bCPU?.testName)}
+    ${kpi('Menos Page Faults',bPF?bPF.label:'—', bPF?bPF.faults+' fallos':'—','var(--pink)','📄',bPF?.testName)}
   </div>`;
-
-            if (sRows.length) {
-                html += `<div class="charts-row">
+ 
+  if(sRows.length){
+    html+=`<div class="charts-row">
       <div class="chart-card">
         <div class="cc-head"><span class="cc-title">Waiting Time por algoritmo</span><span class="cc-hint">Menor = mejor · click para detalle</span></div>
         <div class="cc-body"><div class="ch-wrap"><canvas id="ch-swt"></canvas></div></div>
@@ -394,11 +390,11 @@
         <div class="cc-body"><div class="ch-wrap"><canvas id="ch-stat"></canvas></div></div>
       </div>
     </div>`;
-            }
-
-            if (pRows.length) {
-                const tns = [...new Set(pRows.map(r => r.testName))];
-                const pies = tns.map((tn, i) => `
+  }
+ 
+  if(pRows.length){
+    const tns=[...new Set(pRows.map(r=>r.testName))];
+    const pies=tns.map((tn,i)=>`
       <div class="chart-card">
         <div class="cc-head"><span class="cc-title">Faults vs Hits</span><span class="cc-hint">${tn}</span></div>
         <div class="cc-body" style="display:flex;align-items:center;gap:16px;padding:12px 16px;">
@@ -406,18 +402,18 @@
           <div class="pie-leg" id="pl-${i}"></div>
         </div>
       </div>`).join('');
-                html += `<div class="charts-row">
+    html+=`<div class="charts-row">
       <div class="chart-card">
         <div class="cc-head"><span class="cc-title">Page Faults por algoritmo</span><span class="cc-hint">Menor = mejor · click para detalle</span></div>
         <div class="cc-body"><div class="ch-wrap"><canvas id="ch-pfaults"></canvas></div></div>
       </div>
       ${pies}
     </div>`;
-            }
-
-            // Table
-            const testNames = [...new Set(tblAll.map(r => r.testName))];
-            html += `<div class="tbl-card">
+  }
+ 
+  // Table
+  const testNames=[...new Set(tblAll.map(r=>r.testName))];
+  html+=`<div class="tbl-card">
     <div class="tbl-bar">
       <span class="tbl-title">Tabla de resultados</span>
       <div class="fg"><span class="flbl">Tipo</span>
@@ -426,7 +422,7 @@
         </select></div>
       <div class="fg"><span class="flbl">Prueba</span>
         <select class="fsel" id="f-test" onchange="applyF()">
-          <option value="all">Todas</option>${testNames.map(n => `<option value="${n}">${n}</option>`).join('')}
+          <option value="all">Todas</option>${testNames.map(n=>`<option value="${n}">${n}</option>`).join('')}
         </select></div>
       <div class="fg"><span class="flbl">Orden</span>
         <select class="fsel" id="f-ord" onchange="applyF()">
@@ -449,140 +445,140 @@
       </table>
     </div>
   </div>`;
-
-            document.getElementById('s1-body').innerHTML = html;
-
-            requestAnimationFrame(() => {
-                if (sRows.length) {
-                    _charts['swt'] = drawBar('ch-swt', sRows, 'awt', sRows);
-                    _charts['stat'] = drawBar('ch-stat', sRows, 'atat', sRows);
-                }
-                if (pRows.length) {
-                    _charts['pf'] = drawBar('ch-pfaults', pRows, 'faults', pRows);
-                    const tns = [...new Set(pRows.map(r => r.testName))];
-                    tns.forEach((tn, i) => {
-                        const tr = pRows.filter(r => r.testName === tn);
-                        const tf = tr.reduce((s, r) => s + r.faults, 0), th = tr.reduce((s, r) => s + r.hits, 0), tot = tf + th;
-                        const hp = tot > 0 ? Math.round(th / tot * 100) : 0, fp = 100 - hp;
-                        const el = document.getElementById(`ch-pie-${i}`); if (!el) return;
-                        _charts[`pie${i}`] = new Chart(el, { type: 'doughnut', data: { labels: ['Hits', 'Faults'], datasets: [{ data: [hp, fp], backgroundColor: ['#3dc495aa', '#e05555aa'], borderColor: ['#3dc495', '#e05555'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } } });
-                        const lg = document.getElementById(`pl-${i}`);
-                        if (lg) lg.innerHTML = `
+ 
+  document.getElementById('s1-body').innerHTML=html;
+ 
+  requestAnimationFrame(()=>{
+    if(sRows.length){
+      _charts['swt']=drawBar('ch-swt',sRows,'awt',sRows);
+      _charts['stat']=drawBar('ch-stat',sRows,'atat',sRows);
+    }
+    if(pRows.length){
+      _charts['pf']=drawBar('ch-pfaults',pRows,'faults',pRows);
+      const tns=[...new Set(pRows.map(r=>r.testName))];
+      tns.forEach((tn,i)=>{
+        const tr=pRows.filter(r=>r.testName===tn);
+        const tf=tr.reduce((s,r)=>s+r.faults,0),th=tr.reduce((s,r)=>s+r.hits,0),tot=tf+th;
+        const hp=tot>0?Math.round(th/tot*100):0,fp=100-hp;
+        const el=document.getElementById(`ch-pie-${i}`);if(!el)return;
+        _charts[`pie${i}`]=new Chart(el,{type:'doughnut',data:{labels:['Hits','Faults'],datasets:[{data:[hp,fp],backgroundColor:['#3dc495aa','#e05555aa'],borderColor:['#3dc495','#e05555'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
+        const lg=document.getElementById(`pl-${i}`);
+        if(lg)lg.innerHTML=`
           <div class="ple"><div class="ple-dot" style="background:#3dc495"></div><span class="ple-lbl">Page Hits</span><span class="ple-val" style="color:var(--green)">${hp}%</span></div>
           <div class="ple"><div class="ple-dot" style="background:#e05555"></div><span class="ple-lbl">Page Faults</span><span class="ple-val" style="color:var(--red)">${fp}%</span></div>
           <div style="font-size:10px;color:var(--muted);margin-top:4px">${th} hits · ${tf} fallos</div>`;
-                    });
-                }
-                applyF();
-            });
-        }
-
-        /* ═══════════════════════════════════
-           BAR CHART (clickable)
-        ═══════════════════════════════════ */
-        function drawBar(id, rows, key, fullRows) {
-            const el = document.getElementById(id); if (!el) return null;
-            const byAlgo = {};
-            rows.forEach(r => { if (!byAlgo[r.algo]) byAlgo[r.algo] = { label: r.label, color: r.color, vals: [], rows: [] }; byAlgo[r.algo].vals.push(r[key]); byAlgo[r.algo].rows.push(r); });
-            const labels = Object.values(byAlgo).map(a => a.label);
-            const data = Object.values(byAlgo).map(a => +(a.vals.reduce((s, v) => s + v, 0) / a.vals.length).toFixed(2));
-            const colors = Object.values(byAlgo).map(a => a.color);
-            const algoRows = Object.values(byAlgo).map(a => a.rows);
-
-            const ch = new Chart(el, {
-                type: 'bar',
-                data: { labels, datasets: [{ label: key, data, backgroundColor: colors.map(c => c + '66'), borderColor: colors, borderWidth: 2, borderRadius: 8, hoverBackgroundColor: colors.map(c => c + 'cc') }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + (key === 'faults' ? '' : (key === 'awt' || key === 'atat' ? 's' : '%')) } } },
-                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: '#7a99b8', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#7a99b8', font: { size: 10 } } } },
-                    onClick: (e, els) => { if (!els.length) return; const i = els[0].index; openModal(algoRows[i][0]); }
-                }
-            });
-            return ch;
-        }
-
-        /* ═══════════════════════════════════
-           TABLE
-        ═══════════════════════════════════ */
-        function applyF() {
-            const type = document.getElementById('f-type')?.value || 'all';
-            const test = document.getElementById('f-test')?.value || 'all';
-            const ord = document.getElementById('f-ord')?.value || 'm1-asc';
-            const show = document.getElementById('f-show')?.value || 'all';
-            const [col, dir] = ord.split('-');
-            let rows = [...tblAll];
-            if (type !== 'all') rows = rows.filter(r => r.type === type);
-            if (test !== 'all') rows = rows.filter(r => r.testName === test);
-            rows.sort((a, b) => dir === 'asc' ? a[col] - b[col] : b[col] - a[col]);
-            const ranked = [...rows].sort((a, b) => a.m1 - b.m1);
-            rows.forEach(r => { r._rank = ranked.indexOf(r) + 1; r._total = ranked.length; });
-            if (show === 'top3') rows = rows.filter(r => r._rank <= 3);
-            else if (show === 'best') rows = rows.filter(r => r._rank === 1);
-            else if (show === 'worst') rows = rows.filter(r => r._rank === r._total);
-            const maxM1 = Math.max(...rows.map(r => r.m1), 1);
-            const maxM2 = Math.max(...rows.map(r => r.m2), 1);
-            const rb = r => { if (r._rank === 1) return `<span class="rnk r1">🥇 #1</span>`; if (r._rank === 2) return `<span class="rnk r2">🥈 #2</span>`; if (r._rank === 3) return `<span class="rnk r3">🥉 #3</span>`; if (r._rank === r._total && r._total > 1) return `<span class="rnk rl">↓</span>`; return `<span style="color:var(--muted);font-size:10px">#${r._rank}</span>`; };
-            const fm1 = r => r.type === 's' ? r.m1.toFixed(2) + 's' : r.m1;
-            const fm2 = r => r.type === 's' ? r.m2.toFixed(2) + 's' : r.m2 + '%';
-            const th1 = document.getElementById('th1'), th2 = document.getElementById('th2');
-            if (th1 && rows.length) { th1.textContent = rows[0].m1l; th2.textContent = rows[0].m2l; }
-            document.getElementById('tbl-body').innerHTML = rows.map((r, i) => `
+      });
+    }
+    applyF();
+  });
+}
+ 
+/* ═══════════════════════════════════
+   BAR CHART (clickable)
+═══════════════════════════════════ */
+function drawBar(id,rows,key,fullRows){
+  const el=document.getElementById(id);if(!el)return null;
+  const byAlgo={};
+  rows.forEach(r=>{if(!byAlgo[r.algo])byAlgo[r.algo]={label:r.label,color:r.color,vals:[],rows:[]};byAlgo[r.algo].vals.push(r[key]);byAlgo[r.algo].rows.push(r);});
+  const labels=Object.values(byAlgo).map(a=>a.label);
+  const data=Object.values(byAlgo).map(a=>+(a.vals.reduce((s,v)=>s+v,0)/a.vals.length).toFixed(2));
+  const colors=Object.values(byAlgo).map(a=>a.color);
+  const algoRows=Object.values(byAlgo).map(a=>a.rows);
+ 
+  const ch=new Chart(el,{
+    type:'bar',
+    data:{labels,datasets:[{label:key,data,backgroundColor:colors.map(c=>c+'66'),borderColor:colors,borderWidth:2,borderRadius:8,hoverBackgroundColor:colors.map(c=>c+'cc')}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+(key==='faults'?'':(key==='awt'||key==='atat'?'s':'%'))}}},
+      scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#7a99b8',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#7a99b8',font:{size:10}}}},
+      onClick:(e,els)=>{if(!els.length)return;const i=els[0].index;openModal(algoRows[i][0]);}
+    }
+  });
+  return ch;
+}
+ 
+/* ═══════════════════════════════════
+   TABLE
+═══════════════════════════════════ */
+function applyF(){
+  const type=document.getElementById('f-type')?.value||'all';
+  const test=document.getElementById('f-test')?.value||'all';
+  const ord=document.getElementById('f-ord')?.value||'m1-asc';
+  const show=document.getElementById('f-show')?.value||'all';
+  const[col,dir]=ord.split('-');
+  let rows=[...tblAll];
+  if(type!=='all')rows=rows.filter(r=>r.type===type);
+  if(test!=='all')rows=rows.filter(r=>r.testName===test);
+  rows.sort((a,b)=>dir==='asc'?a[col]-b[col]:b[col]-a[col]);
+  const ranked=[...rows].sort((a,b)=>a.m1-b.m1);
+  rows.forEach(r=>{r._rank=ranked.indexOf(r)+1;r._total=ranked.length;});
+  if(show==='top3')rows=rows.filter(r=>r._rank<=3);
+  else if(show==='best')rows=rows.filter(r=>r._rank===1);
+  else if(show==='worst')rows=rows.filter(r=>r._rank===r._total);
+  const maxM1=Math.max(...rows.map(r=>r.m1),1);
+  const maxM2=Math.max(...rows.map(r=>r.m2),1);
+  const rb=r=>{if(r._rank===1)return`<span class="rnk r1">🥇 #1</span>`;if(r._rank===2)return`<span class="rnk r2">🥈 #2</span>`;if(r._rank===3)return`<span class="rnk r3">🥉 #3</span>`;if(r._rank===r._total&&r._total>1)return`<span class="rnk rl">↓</span>`;return`<span style="color:var(--muted);font-size:10px">#${r._rank}</span>`;};
+  const fm1=r=>r.type==='s'?r.m1.toFixed(2)+'s':r.m1;
+  const fm2=r=>r.type==='s'?r.m2.toFixed(2)+'s':r.m2+'%';
+  const th1=document.getElementById('th1'),th2=document.getElementById('th2');
+  if(th1&&rows.length){th1.textContent=rows[0].m1l;th2.textContent=rows[0].m2l;}
+  document.getElementById('tbl-body').innerHTML=rows.map((r,i)=>`
     <tr style="cursor:pointer" onclick="openModal(tblAll[tblAll.indexOf(tblAll.find(x=>x.algo===\`${r.algo}\`&&x.testName===\`${r.testName}\`&&x.type===\`${r.type}\`))])">
-      <td style="color:var(--muted);font-size:10px">${i + 1}</td>
+      <td style="color:var(--muted);font-size:10px">${i+1}</td>
       <td><div class="algo-cell"><div class="a-dot" style="background:${r.color}"></div>${r.label}</div></td>
       <td style="color:var(--muted);font-size:10px">${r.testName}</td>
-      <td><span class="type-${r.type}">${r.type === 's' ? 'Sched' : 'Pag'}</span></td>
-      <td><div class="ibar"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m1 / maxM1 * 100)}%;background:${r.color}"></div></div><span class="ibv">${fm1(r)}</span></div></td>
-      <td><div class="ibar"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m2 / maxM2 * 100)}%;background:${r.color}88"></div></div><span class="ibv">${fm2(r)}</span></div></td>
+      <td><span class="type-${r.type}">${r.type==='s'?'Sched':'Pag'}</span></td>
+      <td><div class="ibar"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m1/maxM1*100)}%;background:${r.color}"></div></div><span class="ibv">${fm1(r)}</span></div></td>
+      <td><div class="ibar"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m2/maxM2*100)}%;background:${r.color}88"></div></div><span class="ibv">${fm2(r)}</span></div></td>
       <td>${rb(r)}</td>
-    </tr>`).join('') || `<tr><td colspan="7" style="color:var(--muted);padding:20px;text-align:center">Sin resultados</td></tr>`;
-        }
-
-        /* ═══════════════════════════════════
-           MODAL
-        ═══════════════════════════════════ */
-        let modalData = null; let modalTab = 0;
-        let _mChart = null;
-
-        function openModal(row) {
-            if (!row) return;
-            modalData = row; modalTab = 0;
-            document.getElementById('modal-title').textContent = `${row.label} — ${row.testName}`;
-            document.getElementById('modal-subtitle').textContent = row.type === 's' ? 'Algoritmo de Scheduling' : 'Algoritmo de Paginación';
-            document.querySelectorAll('.m-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
-            renderModalTab(0);
-            document.getElementById('modal-bg').classList.add('open');
-        }
-
-        function closeModal(e) {
-            if (e && e.target !== document.getElementById('modal-bg')) return;
-            document.getElementById('modal-bg').classList.remove('open');
-            if (_mChart) { try { _mChart.destroy(); } catch (e) { }; _mChart = null; }
-        }
-
-        function switchMTab(n, el) {
-            modalTab = n;
-            document.querySelectorAll('.m-tab').forEach((t, i) => t.classList.toggle('on', i === n));
-            renderModalTab(n);
-        }
-
-        function renderModalTab(n) {
-            if (_mChart) { try { _mChart.destroy(); } catch (e) { }; _mChart = null; }
-            if (!modalData) return;
-            if (modalData.type === 's') n === 0 ? renderSMetrics() : renderSDiagram();
-            else n === 0 ? renderPMetrics() : renderPDiagram();
-        }
-
-        /* ── SCHEDULING: métricas individuales ── */
-        function renderSMetrics() {
-            const r = modalData;
-            const rows = r.rows;
-            const color = r.color;
-            const maxWT = Math.max(...rows.map(x => x.wt), 1);
-            document.getElementById('modal-body').innerHTML = `
+    </tr>`).join('')||`<tr><td colspan="7" style="color:var(--muted);padding:20px;text-align:center">Sin resultados</td></tr>`;
+}
+ 
+/* ═══════════════════════════════════
+   MODAL
+═══════════════════════════════════ */
+let modalData=null;let modalTab=0;
+let _mChart=null;
+ 
+function openModal(row){
+  if(!row)return;
+  modalData=row;modalTab=0;
+  document.getElementById('modal-title').textContent=`${row.label} — ${row.testName}`;
+  document.getElementById('modal-subtitle').textContent=row.type==='s'?'Algoritmo de Scheduling':'Algoritmo de Paginación';
+  document.querySelectorAll('.m-tab').forEach((t,i)=>t.classList.toggle('on',i===0));
+  renderModalTab(0);
+  document.getElementById('modal-bg').classList.add('open');
+}
+ 
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('modal-bg'))return;
+  document.getElementById('modal-bg').classList.remove('open');
+  if(_mChart){try{_mChart.destroy();}catch(e){}; _mChart=null;}
+}
+ 
+function switchMTab(n,el){
+  modalTab=n;
+  document.querySelectorAll('.m-tab').forEach((t,i)=>t.classList.toggle('on',i===n));
+  renderModalTab(n);
+}
+ 
+function renderModalTab(n){
+  if(_mChart){try{_mChart.destroy();}catch(e){}; _mChart=null;}
+  if(!modalData)return;
+  if(modalData.type==='s') n===0?renderSMetrics():renderSDiagram();
+  else                     n===0?renderPMetrics():renderPDiagram();
+}
+ 
+/* ── SCHEDULING: métricas individuales ── */
+function renderSMetrics(){
+  const r=modalData;
+  const rows=r.rows;
+  const color=r.color;
+  const maxWT=Math.max(...rows.map(x=>x.wt),1);
+  document.getElementById('modal-body').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
-      ${[['Avg WT', r.awt.toFixed(2) + 's', 'var(--blue)'], ['Avg TAT', r.atat.toFixed(2) + 's', 'var(--green)'], ['Avg RT', r.art.toFixed(2) + 's', 'var(--orange)'], ['CPU %', r.cpu + '%', 'var(--purple)']].map(([l, v, c]) => `
+      ${[['Avg WT',r.awt.toFixed(2)+'s','var(--blue)'],['Avg TAT',r.atat.toFixed(2)+'s','var(--green)'],['Avg RT',r.art.toFixed(2)+'s','var(--orange)'],['CPU %',r.cpu+'%','var(--purple)']].map(([l,v,c])=>`
         <div style="background:var(--card3);border-radius:10px;padding:10px 12px;border-top:3px solid ${c}">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">${l}</div>
           <div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${c}">${v}</div>
@@ -590,20 +586,20 @@
     </div>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr>${['PID', 'Arrival', 'Burst', 'Priority', 'CT', 'TAT', 'WT', 'RT', ''].map(h => `<th style="padding:7px 10px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map(p => `<tr>
+        <thead><tr>${['PID','Arrival','Burst','Priority','CT','TAT','WT','RT',''].map(h=>`<th style="padding:7px 10px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(p=>`<tr>
           <td style="padding:6px 10px;font-weight:700;color:var(--accent)">P${p.pid}</td>
           <td style="padding:6px 10px;text-align:right;color:var(--muted)">${p.arrival}</td>
           <td style="padding:6px 10px;text-align:right;color:var(--muted)">${p.burst}</td>
-          <td style="padding:6px 10px;text-align:right;color:var(--muted)">${p.priority || '—'}</td>
+          <td style="padding:6px 10px;text-align:right;color:var(--muted)">${p.priority||'—'}</td>
           <td style="padding:6px 10px;text-align:right">${p.ct}</td>
           <td style="padding:6px 10px;text-align:right">${p.tat}</td>
-          <td style="padding:6px 10px;text-align:right;color:${p.wt === Math.max(...rows.map(x => x.wt)) ? 'var(--red)' : p.wt === Math.min(...rows.map(x => x.wt)) ? 'var(--green)' : 'var(--text)'}">${p.wt}</td>
+          <td style="padding:6px 10px;text-align:right;color:${p.wt===Math.max(...rows.map(x=>x.wt))?'var(--red)':p.wt===Math.min(...rows.map(x=>x.wt))?'var(--green)':'var(--text)'}">${p.wt}</td>
           <td style="padding:6px 10px;text-align:right">${p.rt}</td>
           <td style="padding:6px 10px;min-width:80px">
             <div style="display:flex;align-items:center;gap:5px">
               <div style="flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px">
-                <div style="height:100%;width:${Math.round(p.wt / maxWT * 100)}%;background:${color};border-radius:2px"></div>
+                <div style="height:100%;width:${Math.round(p.wt/maxWT*100)}%;background:${color};border-radius:2px"></div>
               </div>
               <span style="font-size:9px;color:var(--muted)">${p.wt}s</span>
             </div>
@@ -618,69 +614,80 @@
         </tr></tfoot>
       </table>
     </div>`;
-        }
-
-        /* ── SCHEDULING: diagrama ── */
-        function renderSDiagram() {
-            const r = modalData;
-            const slots = buildGantt(r.algo, r.processes);
-            const pids = [...new Set(r.processes.map(p => p.pid))].sort((a, b) => a - b);
-            const pidColors = {};
-            pids.forEach((pid, i) => {
-                const hue = (i * 67 + 180) % 360;
-                pidColors[pid] = `hsl(${hue},55%,55%)`;
-            });
-
-            const totalT = slots.length;
-            const unitW = 15;
-
-            // 1. Inyectamos la estructura de la Card y el Botón
-            document.getElementById('modal-body').innerHTML = `
-    <div class="card" style="border:1px solid var(--border); border-radius:12px; margin-bottom:20px;">
-        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--card2);">
-            <h3 style="margin:0; font-size:15px;">Diagrama de Gantt / Avance</h3>
-            <button class="btn btn-primary" onclick="reRunSimulation()" style="padding:6px 15px; font-size:11px;">
-                Reiniciar Simulación
-            </button>
+}
+ 
+/* ── SCHEDULING: diagrama ── */
+function renderSDiagram(){
+  const r=modalData;
+  const slots=buildGantt(r.algo,r.processes);
+  const pids=[...new Set(r.processes.map(p=>p.pid))].sort((a,b)=>a-b);
+  const pidColors={};
+  pids.forEach((pid,i)=>{const hue=(i*67+180)%360;pidColors[pid]=`hsl(${hue},55%,55%)`;});
+ 
+  // Gantt rows per pid
+  const totalT=slots.length;
+  const unitW=Math.max(18, Math.min(28, Math.floor(560/totalT)));
+ 
+  // Build state events for diagram
+  const states=r.rows;
+  const stateItems=states.map(p=>({
+    pid:p.pid, arrival:p.arrival, start:p.ct-p.burst, end:p.ct,
+    wt:p.wt, color:pidColors[p.pid]||r.color
+  }));
+ 
+  document.getElementById('modal-body').innerHTML=`
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Gantt Chart</div>
+      <div class="gantt-wrap">
+        <!-- timeline -->
+        <div style="display:flex;margin-left:44px;margin-bottom:4px;gap:1px">
+          ${slots.map((_,i)=>`<div style="width:${unitW}px;flex-shrink:0;font-size:8px;color:var(--muted);text-align:center">${i%Math.max(1,Math.floor(totalT/10))===0?i:''}</div>`).join('')}
+          <div style="width:${unitW}px;flex-shrink:0;font-size:8px;color:var(--muted)">${totalT}</div>
         </div>
-        <div id="gantt-container" style="padding:20px; overflow-x:auto;">
-            <div style="display:flex; margin-left:44px; margin-bottom:5px;">
-                ${slots.map((_, i) => `<div style="width:${unitW + 1}px; font-size:9px; color:var(--muted); text-align:center">${i % 5 === 0 ? i : ''}</div>`).join('')}
+        ${pids.map(pid=>`
+          <div class="gantt-row">
+            <div class="gantt-label">P${pid}</div>
+            <div class="gantt-track">
+              ${slots.map((s,i)=>{
+                const col=s===pid?(pidColors[pid]||r.color):'rgba(255,255,255,.05)';
+                const isActive=s===pid;
+                return `<div style="width:${unitW}px;height:24px;flex-shrink:0;background:${col};border-radius:3px;opacity:${isActive?1:.3}" title="t=${i}${isActive?' · P'+pid+' running':''}"></div>`;
+              }).join('')}
             </div>
-            ${pids.map(pid => `
-                <div style="display:flex; align-items:center; margin-bottom:4px;">
-                    <div style="width:40px; font-size:11px; font-weight:bold;">P${pid}</div>
-                    <div style="display:flex; gap:1px;">
-                        ${slots.map(s => {
-                const color = (s === pid) ? (pidColors[pid]) : 'rgba(255,255,255,0.03)';
-                return `<div style="width:${unitW}px; height:18px; background:${color}; border-radius:2px;"></div>`;
-            }).join('')}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Ciclo de vida por proceso</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${stateItems.map(p=>`
+          <div style="background:var(--card3);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px">
+            <div style="font-size:13px;font-weight:700;color:${p.color};width:28px">P${p.pid}</div>
+            <div style="display:flex;align-items:center;gap:4px;flex:1;flex-wrap:wrap">
+              <div style="background:#5ba3d933;color:var(--blue);font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600">NEW t=0</div>
+              <div style="color:var(--muted);font-size:10px">→</div>
+              <div style="background:#3dc49533;color:var(--green);font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600">READY t=${p.arrival}</div>
+              <div style="color:var(--muted);font-size:10px">→</div>
+              <div style="background:${p.color}33;color:${p.color};font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600">RUNNING t=${p.start}</div>
+              <div style="color:var(--muted);font-size:10px">→</div>
+              <div style="background:#7a99b833;color:var(--muted);font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600">DONE t=${p.end}</div>
+            </div>
+            <div style="font-size:10px;color:var(--muted)">WT: <span style="color:var(--text)">${p.wt}s</span></div>
+          </div>`).join('')}
+      </div>
     </div>`;
-        }
-
-        function reRunSimulation() {
-            const container = document.getElementById('gantt-container');
-            container.style.opacity = '0';
-            setTimeout(() => {
-                renderSDiagram();
-                container.style.opacity = '1';
-            }, 250);
-        }
-
-        /* ── PAGINACIÓN: métricas ── */
-        function renderPMetrics() {
-            const r = modalData;
-            const total = r.faults + r.hits;
-            const hp = total > 0 ? Math.round(r.hits / total * 100) : 0;
-            const fp = 100 - hp;
-            document.getElementById('modal-body').innerHTML = `
+}
+ 
+/* ── PAGINACIÓN: métricas ── */
+function renderPMetrics(){
+  const r=modalData;
+  const total=r.faults+r.hits;
+  const hp=total>0?Math.round(r.hits/total*100):0;
+  const fp=100-hp;
+  document.getElementById('modal-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${[['Page Faults', r.faults, 'var(--red)'], ['Page Hits', r.hits, 'var(--green)'], ['Hit Rate', hp + '%', 'var(--blue)'], ['Fault Rate', fp + '%', 'var(--orange)']].map(([l, v, c]) => `
+        ${[['Page Faults',r.faults,'var(--red)'],['Page Hits',r.hits,'var(--green)'],['Hit Rate',hp+'%','var(--blue)'],['Fault Rate',fp+'%','var(--orange)']].map(([l,v,c])=>`
           <div style="background:var(--card3);border-radius:10px;padding:10px 12px;border-top:3px solid ${c}">
             <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">${l}</div>
             <div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${c}">${v}</div>
@@ -697,36 +704,36 @@
     <div style="overflow-x:auto;max-height:280px">
       <table class="pag-step-tbl">
         <thead><tr><th>#</th><th>Página</th><th>Resultado</th><th>Expulsada</th><th>Marcos</th></tr></thead>
-        <tbody>${r.steps.map((s, i) => `
-          <tr class="${s.fault ? 'fault-row' : ''}">
-            <td style="color:var(--muted)">${i + 1}</td>
-            <td style="font-weight:600;color:${s.fault ? 'var(--red)' : 'var(--green)'}">${s.page}</td>
-            <td>${s.fault ? '<span class="badge-fault">FAULT</span>' : '<span class="badge-hit">HIT</span>'}</td>
-            <td style="color:var(--orange)">${s.evicted !== null ? s.evicted : '—'}</td>
+        <tbody>${r.steps.map((s,i)=>`
+          <tr class="${s.fault?'fault-row':''}">
+            <td style="color:var(--muted)">${i+1}</td>
+            <td style="font-weight:600;color:${s.fault?'var(--red)':'var(--green)'}">${s.page}</td>
+            <td>${s.fault?'<span class="badge-fault">FAULT</span>':'<span class="badge-hit">HIT</span>'}</td>
+            <td style="color:var(--orange)">${s.evicted!==null?s.evicted:'—'}</td>
             <td style="font-size:10px;color:var(--muted)">[${s.mem.join(', ')}]</td>
           </tr>`).join('')}
         </tbody>
       </table>
     </div>`;
-            requestAnimationFrame(() => {
-                const el = document.getElementById('m-pie'); if (!el) return;
-                _mChart = new Chart(el, { type: 'doughnut', data: { labels: ['Hits', 'Faults'], datasets: [{ data: [hp, fp], backgroundColor: ['#3dc495aa', '#e05555aa'], borderColor: ['#3dc495', '#e05555'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } } });
-            });
-        }
-
-        /* ── PAGINACIÓN: diagrama de marcos ── */
-        function renderPDiagram() {
-            const r = modalData;
-            const frames = r.frames;
-            // Build frame states per step
-            const palette = ['#5ba3d9', '#3dc495', '#e09040', '#9b8fdd', '#d46090', '#4a8ca8', '#e05555', '#f0c040'];
-            const pageColor = {}; let ci = 0;
-            r.steps.forEach(s => { if (!(s.page in pageColor)) pageColor[s.page] = palette[ci++ % palette.length]; });
-
-            // Compress: show every step up to 40, then sample
-            const stepsToShow = r.steps.length <= 40 ? r.steps : r.steps.filter((_, i) => i % Math.ceil(r.steps.length / 40) === 0 || r.steps[i].fault);
-
-            document.getElementById('modal-body').innerHTML = `
+  requestAnimationFrame(()=>{
+    const el=document.getElementById('m-pie');if(!el)return;
+    _mChart=new Chart(el,{type:'doughnut',data:{labels:['Hits','Faults'],datasets:[{data:[hp,fp],backgroundColor:['#3dc495aa','#e05555aa'],borderColor:['#3dc495','#e05555'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
+  });
+}
+ 
+/* ── PAGINACIÓN: diagrama de marcos ── */
+function renderPDiagram(){
+  const r=modalData;
+  const frames=r.frames;
+  // Build frame states per step
+  const palette=['#5ba3d9','#3dc495','#e09040','#9b8fdd','#d46090','#4a8ca8','#e05555','#f0c040'];
+  const pageColor={};let ci=0;
+  r.steps.forEach(s=>{if(!(s.page in pageColor))pageColor[s.page]=palette[ci++%palette.length];});
+ 
+  // Compress: show every step up to 40, then sample
+  const stepsToShow=r.steps.length<=40?r.steps:r.steps.filter((_,i)=>i%Math.ceil(r.steps.length/40)===0||r.steps[i].fault);
+ 
+  document.getElementById('modal-body').innerHTML=`
     <div style="font-size:10px;color:var(--muted);margin-bottom:12px">
       Evolución de los marcos de memoria — cada columna es un paso. <span style="color:var(--red)">Rojo = Page Fault</span>.
     </div>
@@ -734,17 +741,17 @@
       <div style="display:flex;align-items:flex-start;gap:3px;min-width:max-content">
         <!-- row labels -->
         <div style="display:flex;flex-direction:column;gap:3px;padding-top:22px">
-          ${Array.from({ length: frames }, (_, i) => `<div style="height:26px;display:flex;align-items:center;font-size:10px;color:var(--muted);width:56px;flex-shrink:0">Marco ${i}</div>`).join('')}
+          ${Array.from({length:frames},(_,i)=>`<div style="height:26px;display:flex;align-items:center;font-size:10px;color:var(--muted);width:56px;flex-shrink:0">Marco ${i}</div>`).join('')}
         </div>
         <!-- steps columns -->
-        ${stepsToShow.map((s, i) => `
+        ${stepsToShow.map((s,i)=>`
           <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
-            <div style="font-size:8px;color:${s.fault ? 'var(--red)' : 'var(--muted)'};height:18px;writing-mode:vertical-lr;transform:rotate(180deg)">${s.page}</div>
-            ${Array.from({ length: frames }, (_, fi) => {
-                const pg = s.mem[fi];
-                const bg = pg != null ? pageColor[pg] : 'rgba(255,255,255,.05)';
-                const isFault = s.fault && pg === s.page && fi === s.mem.indexOf(s.page);
-                return `<div style="width:24px;height:26px;border-radius:4px;background:${bg};border:${isFault ? '2px solid var(--red)' : '1px solid rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${pg != null ? '#fff' : 'transparent'}" title="${pg != null ? 'Página ' + pg : 'vacío'}">${pg != null ? pg : ''}</div>`;
+            <div style="font-size:8px;color:${s.fault?'var(--red)':'var(--muted)'};height:18px;writing-mode:vertical-lr;transform:rotate(180deg)">${s.page}</div>
+            ${Array.from({length:frames},(_,fi)=>{
+              const pg=s.mem[fi];
+              const bg=pg!=null?pageColor[pg]:'rgba(255,255,255,.05)';
+              const isFault=s.fault&&pg===s.page&&fi===s.mem.indexOf(s.page);
+              return `<div style="width:24px;height:26px;border-radius:4px;background:${bg};border:${isFault?'2px solid var(--red)':'1px solid rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${pg!=null?'#fff':'transparent'}" title="${pg!=null?'Página '+pg:'vacío'}">${pg!=null?pg:''}</div>`;
             }).join('')}
           </div>`).join('')}
       </div>
@@ -752,60 +759,36 @@
     <div style="margin-top:12px">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Leyenda de páginas</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${Object.entries(pageColor).map(([pg, c]) => `<div style="display:flex;align-items:center;gap:5px;background:var(--card3);border-radius:6px;padding:4px 8px"><div style="width:8px;height:8px;border-radius:2px;background:${c}"></div><span style="font-size:11px">Pág ${pg}</span></div>`).join('')}
+        ${Object.entries(pageColor).map(([pg,c])=>`<div style="display:flex;align-items:center;gap:5px;background:var(--card3);border-radius:6px;padding:4px 8px"><div style="width:8px;height:8px;border-radius:2px;background:${c}"></div><span style="font-size:11px">Pág ${pg}</span></div>`).join('')}
       </div>
     </div>`;
-        }
-
-        /* ═══════════════════════════════════
-           EJEMPLOS & LEGACY
-        ═══════════════════════════════════ */
-        const EJP = [{ pid: 1, arrival: 0, burst: 6, priority: 2 }, { pid: 2, arrival: 1, burst: 4, priority: 1 }, { pid: 3, arrival: 2, burst: 9, priority: 4 }, { pid: 4, arrival: 3, burst: 3, priority: 3 }, { pid: 5, arrival: 4, burst: 5, priority: 2 }];
-        const EJR = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1], EJF = 3;
-
-        function cargarEjemplos() {
-            sTests = []; pTests = []; selS = new Set(); selP = new Set();
-            ['fcfs', 'sjf', 'rr', 'srtf'].forEach(a => { sTests.push({ name: `Ej. ${a.toUpperCase()}`, algo: a, processes: EJP, ts: Date.now() }); selS.add(sTests.length - 1); });
-            ['fifo', 'lru', 'opt'].forEach(a => { pTests.push({ name: `Ej. ${a.toUpperCase()}`, algo: a, refs: EJR, frames: EJF, ts: Date.now() }); selP.add(pTests.length - 1); });
-            save(KS, sTests); save(KP, pTests);
-            renderChips(); renderLists();
-        }
-        function importLegacy() {
-            try { const rp = localStorage.getItem('osim_processes'), rs = localStorage.getItem('osim_results'); if (rp && rs) { const pr = JSON.parse(rp), r = JSON.parse(rs); if (pr.length && r.algo && !sTests.some(t => t.ts === 0)) { sTests.push({ name: aL(SA, r.algo) + ' (importado)', algo: r.algo, processes: pr, ts: 0 }); save(KS, sTests); } } } catch (e) { }
-            try { const rpag = localStorage.getItem('osim_paginacion'); if (rpag) { const pd = JSON.parse(rpag); if (pd.refs && pd.frames && pd.algo && !pTests.some(t => t.ts === 0)) { pTests.push({ name: aL(PA, pd.algo) + ' (importado)', algo: pd.algo, refs: pd.refs, frames: pd.frames, ts: 0 }); save(KP, pTests); } } } catch (e) { }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            sTests = load(KS); pTests = load(KP);
-            importLegacy(); sTests = load(KS); pTests = load(KP);
-            if (!sTests.length && !pTests.length) cargarEjemplos();
-            renderChips(); renderLists();
-        });
-
-        function renderChips() {
-    const c = document.getElementById('chips');
-    if (!c) return;
-    c.innerHTML = '';
-    
-    // Lista de tus 4 algoritmos base
-    ['fifo', 'rr', 'sjf', 'prioridad'].forEach(a => {
-        const isSel = selS.has(a) || Array.from(selS).some(idx => sTests[idx]?.algo === a);
-        const div = document.createElement('div');
-        // La clase "on" debe estar si está seleccionado
-        div.className = `chip ${isSel ? 'on' : ''}`; 
-        div.innerHTML = `
-            <div style="font-weight:bold; font-size:18px; margin-bottom:8px;">${a.toUpperCase()}</div>
-            <div style="font-size:12px; opacity:0.7;">Algoritmo de Planificación</div>
-        `;
-        div.onclick = () => {
-            // Tu lógica de selección aquí
-            toggleS(a); 
-        };
-        c.appendChild(div);
-    });
 }
-
-    </script>
+ 
+/* ═══════════════════════════════════
+   EJEMPLOS & LEGACY
+═══════════════════════════════════ */
+const EJP=[{pid:1,arrival:0,burst:6,priority:2},{pid:2,arrival:1,burst:4,priority:1},{pid:3,arrival:2,burst:9,priority:4},{pid:4,arrival:3,burst:3,priority:3},{pid:5,arrival:4,burst:5,priority:2}];
+const EJR=[7,0,1,2,0,3,0,4,2,3,0,3,2,1,2,0,1,7,0,1],EJF=3;
+ 
+function cargarEjemplos(){
+  sTests=[];pTests=[];selS=new Set();selP=new Set();
+  ['fcfs','sjf','rr','srtf'].forEach(a=>{sTests.push({name:`Ej. ${a.toUpperCase()}`,algo:a,processes:EJP,ts:Date.now()});selS.add(sTests.length-1);});
+  ['fifo','lru','opt'].forEach(a=>{pTests.push({name:`Ej. ${a.toUpperCase()}`,algo:a,refs:EJR,frames:EJF,ts:Date.now()});selP.add(pTests.length-1);});
+  save(KS,sTests);save(KP,pTests);
+  renderChips();renderLists();
+}
+function importLegacy(){
+  try{const rp=localStorage.getItem('osim_processes'),rs=localStorage.getItem('osim_results');if(rp&&rs){const pr=JSON.parse(rp),r=JSON.parse(rs);if(pr.length&&r.algo&&!sTests.some(t=>t.ts===0)){sTests.push({name:aL(SA,r.algo)+' (importado)',algo:r.algo,processes:pr,ts:0});save(KS,sTests);}}}catch(e){}
+  try{const rpag=localStorage.getItem('osim_paginacion');if(rpag){const pd=JSON.parse(rpag);if(pd.refs&&pd.frames&&pd.algo&&!pTests.some(t=>t.ts===0)){pTests.push({name:aL(PA,pd.algo)+' (importado)',algo:pd.algo,refs:pd.refs,frames:pd.frames,ts:0});save(KP,pTests);}}}catch(e){}
+}
+ 
+window.addEventListener('DOMContentLoaded',()=>{
+  sTests=load(KS);pTests=load(KP);
+  importLegacy();sTests=load(KS);pTests=load(KP);
+  if(!sTests.length&&!pTests.length)cargarEjemplos();
+  renderChips();renderLists();
+});
+</script>
 
 </body>
 

@@ -90,9 +90,6 @@
   --pag-opt: #7F77DD;
   --pag-lfu: #D85A30;
   --pag-clock: #BA7517;
-
-  --status-ready: #f39c12;
-  --status-ready-bg: rgba(243, 156, 18, 0.15);
 }
 
 /* ----------------------------------------------------------
@@ -1176,7 +1173,7 @@ body {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: .12em;
-  color: var(--card-bg);
+  color: var(--accent);
   margin-bottom: 3px;
   font-weight: 500;
 }
@@ -1217,13 +1214,13 @@ body {
 }
 
 .btn-primary {
-  background: var(--card-bg);
+  background: var(--accent);
   color: #1e2a38;
-  box-shadow: 0 2px 8px rgba(64, 67, 240, 0.3);
+  box-shadow: 0 2px 8px rgba(240, 192, 64, .3);
 }
 
 .btn-primary:hover {
-  background: var(--card-bg);
+  background: #ffe066;
   transform: translateY(-1px);
 }
 
@@ -1410,50 +1407,34 @@ body {
   text-align: center;
 }
 
-/* Contenedor principal de algoritmos */
+/* algo chips */
 .chips {
-    display: grid !important;
-    /* Crea 4 columnas iguales que ocupan todo el ancho */
-    grid-template-columns: repeat(4, 1fr) !important; 
-    gap: 20px !important;
-    width: 100% !important;
-    padding: 20px 0 !important;
-    box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 12px;
 }
 
 .chip {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--card2) !important;
-    border: 2px solid rgba(255,255,255,0.1) !important;
-    border-radius: 16px !important;
-    padding: 40px 20px !important; /* Aumentamos padding para que sean cuadros grandes */
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    min-height: 120px;
+  font-size: 11px;
+  padding: 5px 13px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, .15);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-m);
 }
 
-/* Cuando están seleccionados */
+.chip:hover {
+  border-color: rgba(255, 255, 255, .3);
+  color: var(--text);
+}
+
 .chip.on {
-    border-color: #3d687b !important; /* Azul profesional, no amarillo */
-    background: rgba(61, 104, 123, 0.2) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
-    transform: translateY(-5px);
-}
-
-/* Quitar el amarillo de cualquier estado 'Ready' */
-.st-ready {
-    background-color: #f39c12 !important; /* Ámbar */
-    color: #fff !important;
-}
-
-/* Encoger los bloques de procesos del Gantt */
-.gantt-track div {
-  max-width: 20px !important;
-  /* Limita el ancho de cada bloque individual */
-  height: 20px !important;
+  color: #1e2a38;
+  border-color: transparent;
+  font-weight: 600;
 }
 
 /* ══════════════════════════════════════
@@ -2285,16 +2266,8 @@ body {
     padding: 14px;
   }
 
-  .comp-table th,
-  .comp-table td {
-    text-align: center !important;
-    padding: 12px 8px;
-    white-space: nowrap;
-  }
-
-  .process-row {
-    max-width: 600px;
-    margin: 0 auto;
+  .comp-table-wrap {
+    overflow-x: auto;
   }
 
   .table-wrapper {
