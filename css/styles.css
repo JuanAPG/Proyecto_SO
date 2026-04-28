@@ -1305,10 +1305,10 @@ body {
 }
 
 .config-card-body {
-  padding: 8px 10px;
+  padding: 4px 6px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 
 /* test item */

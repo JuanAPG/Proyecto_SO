@@ -969,12 +969,17 @@
       background: rgba(61, 196, 149, .25);
     }
 
-    /* Compact ti items */
     .ti {
-      padding: 4px 8px !important;
-      border-radius: 6px !important;
-      gap: 6px !important;
-      min-height: 0 !important;
+      background: var(--card2);
+      border: 1.5px solid transparent;
+      border-radius: 6px;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
     }
 
     .ti-chk {
