@@ -4,16 +4,617 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OSim — Métricas y Comparación</title>
+  <title>OSim — Métricas</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════
+       VARIABLES — from styles.css
+    ═══════════════════════════════════ */
+    :root {
+      --color-navy: #000000;
+      --color-blue-900: #365670;
+      --color-blue-700: #3d687b;
+      --color-blue-200: #b1cfde;
+      --color-blue-50: rgba(177, 207, 222, 0.25);
+
+      --surface-0: #FFFFFF;
+      --surface-1: #F4F6F9;
+      --surface-2: #EDF1F7;
+      --border: rgba(0, 0, 0, 0.12);
+      --border-strong: rgba(0, 0, 0, 0.22);
+
+      --text-primary: #0D1B2A;
+      --text-secondary: #4A5E72;
+      --text-muted: #8298AC;
+
+      --font-sans: 'IBM Plex Sans', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+
+      /* algo colors (styles.css) */
+      --algo-fcfs: #3d687b;
+      --algo-sjf: #1D9E75;
+      --algo-hrrn: #BA7517;
+      --algo-rr: #D85A30;
+      --algo-srtf: #D4537E;
+      --algo-priority: #7F77DD;
+      --pag-fifo: #3d687b;
+      --pag-lru: #1D9E75;
+      --pag-opt: #7F77DD;
+      --pag-lfu: #D85A30;
+      --pag-clock: #BA7517;
+
+      --gold: #c8960a;
+      --gold2: #f0c040;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════
+       PAGE LAYOUT
+    ═══════════════════════════════════ */
+    .page {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 56px);
+      background: var(--surface-1);
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px 10px;
+      background: var(--surface-0);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      gap: 16px;
+    }
+
+    .ph-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ph-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      background: var(--color-blue-50);
+      border: 1px solid rgba(61, 104, 123, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .ph-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .ph-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .ph-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .btn-compara {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #c8960a, #f0c040);
+      color: #1a0e00;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: all .18s;
+      font-family: var(--font-sans);
+      box-shadow: 0 2px 10px rgba(200, 150, 10, .18);
+      opacity: .4;
+      pointer-events: none;
+    }
+
+    .btn-compara.active {
+      opacity: 1;
+      pointer-events: auto;
+      animation: goldPulse 2.5s ease-in-out infinite;
+    }
+
+    .btn-compara.active:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px rgba(200, 150, 10, .38);
+    }
+
+    @keyframes goldPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 10px rgba(200, 150, 10, .2);
+      }
+
+      50% {
+        box-shadow: 0 2px 20px rgba(200, 150, 10, .48);
+      }
+    }
+
+    .val-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .v-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: color .2s;
+    }
+
+    .v-item.ok {
+      color: var(--algo-sjf);
+    }
+
+    .v-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      flex-shrink: 0;
+      transition: all .2s;
+    }
+
+    .v-item.ok .v-dot {
+      background: var(--algo-sjf);
+      box-shadow: 0 0 5px var(--algo-sjf);
+    }
+
+    /* ── Screens Row ── */
+    .screens-row {
+      display: flex;
+      gap: 12px;
+      flex: 1;
+      overflow: hidden;
+      padding: 12px 24px;
+    }
+
+    .screen {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .screen-head {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #000000 0%, #365670 100%);
+      padding: 9px 16px 8px;
+    }
+
+    .screen-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: rgba(255, 255, 255, .42);
+      margin-bottom: 2px;
+    }
+
+    .screen-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .screen-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .screen-count {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--gold2);
+    }
+
+    /* ── Tickets grid ── */
+    .tickets-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 7px;
+      align-content: start;
+      background: var(--surface-2);
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-blue-200) transparent;
+    }
+
+    .tickets-area::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .tickets-area::-webkit-scrollbar-thumb {
+      background: var(--color-blue-200);
+      border-radius: 4px;
+    }
+
+    /* ── Ticket ── */
+    /* ── Ticket ── */
+    .ticket {
+      position: relative;
+      border-radius: var(--radius-md);
+      padding: 8px 10px 6px 10px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      user-select: none;
+      border: 1.5px dashed rgba(0, 0, 0, .18);
+      overflow: visible;
+    }
+
+    /* Tear notches — semicírculos en los lados */
+    .ticket::before,
+    .ticket::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1.5px dashed rgba(0, 0, 0, .18);
+      z-index: 2;
+    }
+
+    .ticket::before {
+      left: -7px;
+    }
+
+    .ticket::after {
+      right: -7px;
+    }
+
+    /* Línea punteada divisoria interna */
+    .ticket-divider {
+      border: none;
+      border-top: 1.5px dashed rgba(0, 0, 0, .18);
+      margin: 6px 0 5px;
+    }
+
+    .ticket:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .ticket.selected {
+      border-color: rgba(61, 104, 123, .5) !important;
+      box-shadow: 0 0 0 2px rgba(61, 104, 123, .28), var(--shadow-md);
+    }
+
+    .ticket.selected::before,
+    .ticket.selected::after {
+      border-color: rgba(61, 104, 123, .5);
+    }
+
+    .ticket-check {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, .08);
+      border: 1px solid rgba(0, 0, 0, .14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: transparent;
+      transition: all .14s;
+    }
+
+    .ticket.selected .ticket-check {
+      background: var(--color-blue-900);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .ticket-name {
+      font-size: 10px;
+      font-weight: 600;
+      padding-right: 18px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ticket-meta {
+      font-size: 8px;
+      opacity: .65;
+    }
+
+    .ticket-badge {
+      display: inline-block;
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Ticket color palette — light */
+    .tc-0 {
+      background: #ddeaf4;
+      color: #1a3a52;
+    }
+
+    .tc-1 {
+      background: #d5f0e4;
+      color: #0d3a26;
+    }
+
+    .tc-2 {
+      background: #ead8f2;
+      color: #3a1050;
+    }
+
+    .tc-3 {
+      background: #f5e4cc;
+      color: #4a2000;
+    }
+
+    .tc-4 {
+      background: #cce8f4;
+      color: #0a2a40;
+    }
+
+    .tc-5 {
+      background: #f5d5e5;
+      color: #4a0a28;
+    }
+
+    .tc-6 {
+      background: #d5ecd5;
+      color: #0d3010;
+    }
+
+    .tc-7 {
+      background: #e0d5f5;
+      color: #20084a;
+    }
+
+    .empty-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      height: 100%;
+    }
+
+    .empty-icon {
+      font-size: 28px;
+      opacity: .3;
+    }
+
+    /* ── Algo section ── */
+    .algo-section {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 8px 12px 10px;
+      background: var(--surface-0);
+    }
+
+    .algo-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .algo-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .algo-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* ═══════════════════════════════════
+       CLAPPERBOARD
+    ═══════════════════════════════════ */
+    /* ═══════════════════════════════════
+   CLAPPERBOARD
+═══════════════════════════════════ */
+    .clapper {
+      position: relative;
+      width: 68px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .12s;
+    }
+
+    .clapper:hover {
+      transform: scale(1.06);
+    }
+
+    /* Base strip (static, always visible under flap) */
+    .clapper-base {
+      height: 14px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      overflow: hidden;
+      border: 1.5px solid rgba(0, 0, 0, .22);
+      border-bottom: none;
+      position: relative;
+    }
+
+    .clapper-base::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(-50deg, #fff 0px, #fff 5px, #1a1a1a 5px, #1a1a1a 10px);
+    }
+
+    /* Flap wrapper — no perspective tricks, just scaleY */
+    .clapper-flap-wrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 14px;
+      overflow: hidden;
+      transform-origin: top center;
+      /* OPEN: flap tilted up — scaleY small + translateY negative */
+      transform: scaleY(0.18) translateY(-2px);
+      transition: transform .3s cubic-bezier(.25, .46, .45, .94);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      border: 1.5px solid rgba(0, 0, 0, .3);
+      border-bottom: 2px solid rgba(0, 0, 0, .45);
+      z-index: 3;
+    }
+
+    .clapper-flap-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(-50deg,
+          rgba(255, 255, 255, .9) 0px, rgba(255, 255, 255, .9) 5px,
+          rgba(0, 0, 0, .75) 5px, rgba(0, 0, 0, .75) 10px);
+    }
+
+    /* CLOSED when selected */
+    .clapper.sel .clapper-flap-wrap {
+      transform: scaleY(1) translateY(0);
+    }
+
+    /* Body */
+    .clapper-body {
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      padding: 5px 4px 6px;
+      border: 1.5px solid rgba(0, 0, 0, .18);
+      border-top: none;
+      text-align: center;
+      transition: box-shadow .2s;
+    }
+
+    .clapper.sel .clapper-body {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .15);
+    }
+
+    .clapper-label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: #fff;
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+    }
+
+    .clapper-sub {
+      font-size: 7px;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, .6);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .clapper-check {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      z-index: 4;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--color-blue-900);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px var(--surface-0);
+    }
+
+    .clapper.sel .clapper-check {
+      display: flex;
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- ============================================================
-     NAVBAR
-     ============================================================ -->
+  <!-- NAVBAR -->
   <nav class="navbar">
     <a href="index.html" class="navbar-logo">OS<span>im</span></a>
     <a href="index.html" class="navbar-item">Inicio</a>
@@ -22,1005 +623,182 @@
     <a href="metricas.html" class="navbar-item active">Métricas</a>
   </nav>
 
-  <!-- SLIDES -->
-  <div class="outer">
-    <div class="track" id="track">
+  <div class="page">
 
-      <!-- ═══════════ SLIDE 0 ═══════════ -->
-      <div class="slide">
-        <div class="sh">
-          <div class="sh-l">
-            <div class="sh-title">Elige las pruebas y algoritmos</div>
-          </div>
-          <div class="sh-r">
-            <button class="btn btn-primary" id="btn-run" onclick="ejecutar()" disabled>Analizar →</button>
-          </div>
-        </div>
-
-        <div class="s0-body">
-
-          <!-- pruebas scheduling -->
-          <div class="config-card">
-            <div class="config-card-head">
-              <span class="config-card-title" style="color:var(--blue)">⚙ Pruebas de Scheduling</span>
-              <div style="display:flex;gap:6px;align-items:center">
-                <span class="sel-count" id="sel-count-s">0 seleccionadas</span>
-                <button class="btn btn-dark btn-sm" onclick="selAll('s')">Todas</button>
-                <button class="btn btn-danger btn-sm" onclick="delAll('s')">Borrar</button>
-              </div>
-            </div>
-            <div class="config-card-body" id="ls">
-              <div class="empty-l">Sin pruebas guardadas.</div>
-            </div>
-          </div>
-
-          <!-- algos scheduling -->
-          <div class="config-card">
-            <div class="config-card-head">
-              <span class="config-card-title">Algoritmos de Scheduling</span>
-              <span
-                style="font-size:10px;color:var(--muted);cursor:pointer;padding:3px 8px;background:var(--card2);border-radius:6px"
-                onclick="allChips('s')">Todos</span>
-            </div>
-            <div class="chips" id="cs"></div>
-          </div>
-
-          <!-- pruebas paginacion -->
-          <div class="config-card">
-            <div class="config-card-head">
-              <span class="config-card-title" style="color:var(--green)">🗂 Pruebas de Paginación</span>
-              <div style="display:flex;gap:6px;align-items:center">
-                <span class="sel-count" id="sel-count-p">0 seleccionadas</span>
-                <button class="btn btn-dark btn-sm" onclick="selAll('p')">Todas</button>
-                <button class="btn btn-danger btn-sm" onclick="delAll('p')">Borrar</button>
-              </div>
-            </div>
-            <div class="config-card-body" id="lp">
-              <div class="empty-l">Sin pruebas guardadas.</div>
-            </div>
-          </div>
-
-          <!-- algos paginacion -->
-          <div class="config-card">
-            <div class="config-card-head">
-              <span class="config-card-title">Algoritmos de Paginación</span>
-              <span
-                style="font-size:10px;color:var(--muted);cursor:pointer;padding:3px 8px;background:var(--card2);border-radius:6px"
-                onclick="allChips('p')">Todos</span>
-            </div>
-            <div class="chips" id="cp"></div>
-          </div>
-
-        </div>
-      </div><!-- /slide0 -->
-
-      <!-- ═══════════ SLIDE 1 ═══════════ -->
-      <div class="slide">
-        <div class="sh">
-          <div class="sh-l">
-            <div class="sh-eye">Paso 2 · Resultados</div>
-            <div class="sh-title">Análisis comparativo</div>
-            <div class="sh-sub" id="res-sub">—</div>
-          </div>
-          <div class="sh-r">
-            <button class="btn btn-dark" onclick="go(0)">← Reconfigurar</button>
-          </div>
-        </div>
-        <div class="s1-body" id="s1-body">
-          <div style="color:var(--muted);padding:40px;text-align:center;font-size:13px">Configura y ejecuta el
-            análisis primero</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PROGRESS BAR -->
-  <div class="progress-bar">
-    <div class="pb-step on" onclick="go(0)" id="pb0">
-      <div class="pb-dot"></div>
-      <span class="pb-label">Configurar</span>
-    </div>
-    <div class="pb-sep"></div>
-    <div class="pb-step" onclick="go(1)" id="pb1">
-      <div class="pb-dot"></div>
-      <span class="pb-label">Resultados</span>
-    </div>
-  </div>
-
-  <!-- ═══════════ MODAL ═══════════ -->
-  <div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
-    <div class="modal" id="modal">
-      <div class="modal-head">
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="ph-left">
+        <div class="ph-icon">🎬</div>
         <div>
-          <div class="modal-title" id="modal-title">Detalle</div>
-          <div class="modal-subtitle" id="modal-subtitle">—</div>
+          <div class="ph-title">Métricas</div>
+          <div class="ph-sub">Escoge tus boletos y selecciona los algoritmos para comparar</div>
         </div>
-        <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
-      <div class="modal-tabs" id="modal-tabs">
-        <div class="m-tab on" onclick="switchMTab(0,this)">Métricas Individuales</div>
-        <div class="m-tab" onclick="switchMTab(1,this)">Diagrama</div>
+      <div class="ph-right">
+        <button class="btn-compara" id="btn-compara" onclick="ejecutar()">
+          🎥 Compara Salas →
+        </button>
+        <div class="val-row">
+          <div class="v-item" id="v-sched">
+            <div class="v-dot"></div><span>1 prueba Scheduling</span>
+          </div>
+          <div class="v-item" id="v-pag">
+            <div class="v-dot"></div><span>1 prueba Paginación</span>
+          </div>
+          <div class="v-item" id="v-salg">
+            <div class="v-dot"></div><span>1 algo Scheduling</span>
+          </div>
+          <div class="v-item" id="v-palg">
+            <div class="v-dot"></div><span>1 algo Paginación</span>
+          </div>
+        </div>
       </div>
-      <div class="modal-body" id="modal-body"></div>
+    </div>
+
+    <!-- SCREENS -->
+    <div class="screens-row">
+
+      <div class="screen">
+        <div class="screen-head">
+          <div class="screen-label">🎞 Escoge tu ticket</div>
+          <div class="screen-title-row">
+            <div class="screen-title">Scheduling</div>
+            <div class="screen-count" id="cnt-s">0/0</div>
+          </div>
+        </div>
+        <div class="tickets-area" id="ts"></div>
+        <div class="algo-section">
+          <div class="algo-label">Algoritmo Scheduling</div>
+          <div class="algo-chips" id="cs"></div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-head">
+          <div class="screen-label">🎞 Escoge tu ticket</div>
+          <div class="screen-title-row">
+            <div class="screen-title">Paginación</div>
+            <div class="screen-count" id="cnt-p">0/0</div>
+          </div>
+        </div>
+        <div class="tickets-area" id="tp"></div>
+        <div class="algo-section">
+          <div class="algo-label">Algoritmo Paginación</div>
+          <div class="algo-chips" id="cp"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ============================================================
-     SCRIPTS
-     ============================================================ -->
   <script>
-    /* ═══════════════════════════════════
-       NAVIGATION
-    ═══════════════════════════════════ */
-    let cur = 0;
-    function go(n) {
-      cur = Math.max(0, Math.min(1, n));
-      document.getElementById('track').style.transform = `translateX(-${cur * 100}%)`;
-      ['pb0', 'pb1'].forEach((id, i) => document.getElementById(id).classList.toggle('on', i === cur));
-    }
-    let tx0 = 0;
-    document.addEventListener('touchstart', e => tx0 = e.touches[0].clientX);
-    document.addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx0; if (Math.abs(d) > 55) go(cur + (d < 0 ? 1 : -1)); });
-
-    /* ═══════════════════════════════════
-       ALGO DEFINITIONS
-    ═══════════════════════════════════ */
     const SA = [
-      { key: 'fcfs', label: 'FCFS', color: '#4a8ca8' },
-      { key: 'sjf', label: 'SJF', color: '#3dc495' },
-      { key: 'hrrn', label: 'HRRN', color: '#e09040' },
-      { key: 'rr', label: 'RR', color: '#d46090' },
-      { key: 'srtf', label: 'SRTF', color: '#9b8fdd' },
-      { key: 'priority', label: 'Priority', color: '#5ba3d9' },
+      { key: 'fcfs', label: 'FCFS', color: '#3d687b', sub: 'First Come' },
+      { key: 'sjf', label: 'SJF', color: '#1D9E75', sub: 'Shortest Job' },
+      { key: 'hrrn', label: 'HRRN', color: '#BA7517', sub: 'High. Res.' },
+      { key: 'rr', label: 'RR', color: '#D85A30', sub: 'Round Robin' },
+      { key: 'srtf', label: 'SRTF', color: '#D4537E', sub: 'Shortest Rem.' },
+      { key: 'priority', label: 'Priority', color: '#7F77DD', sub: 'Prioridad' },
     ];
     const PA = [
-      { key: 'fifo', label: 'FIFO', color: '#4a8ca8' },
-      { key: 'lru', label: 'LRU', color: '#3dc495' },
-      { key: 'opt', label: 'OPT', color: '#9b8fdd' },
-      { key: 'lfu', label: 'LFU', color: '#d46090' },
-      { key: 'clock', label: 'Clock', color: '#e09040' },
+      { key: 'fifo', label: 'FIFO', color: '#3d687b', sub: 'First In' },
+      { key: 'lru', label: 'LRU', color: '#1D9E75', sub: 'Least Recent' },
+      { key: 'opt', label: 'OPT', color: '#7F77DD', sub: 'Óptimo' },
+      { key: 'lfu', label: 'LFU', color: '#D85A30', sub: 'Least Freq.' },
+      { key: 'clock', label: 'Clock', color: '#BA7517', sub: 'Reloj' },
     ];
-    const aC = (l, k) => (l.find(a => a.key === k) || { color: '#888' }).color;
+    const TC = ['tc-0', 'tc-1', 'tc-2', 'tc-3', 'tc-4', 'tc-5', 'tc-6', 'tc-7'];
     const aL = (l, k) => (l.find(a => a.key === k) || { label: k }).label;
+    const aC = (l, k) => (l.find(a => a.key === k) || { color: '#888' }).color;
 
-    /* ═══════════════════════════════════
-       SCHEDULING ALGORITHMS
-    ═══════════════════════════════════ */
-    function calcFCFS(p) { const ps = p.map(x => ({ ...x })).sort((a, b) => a.arrival - b.arrival); let t = 0; return ps.map(pr => { if (t < pr.arrival) t = pr.arrival; const rt = t - pr.arrival, ct = t + pr.burst, tat = ct - pr.arrival, wt = tat - pr.burst; t = ct; return { ...pr, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-    function calcSJF(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.sort((a, b) => a.burst - b.burst); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
-    function calcHRRN(p) { const ps = p.map(x => ({ ...x, done: false })); let t = 0, done = 0; const res = []; while (done < ps.length) { const av = ps.filter(x => !x.done && x.arrival <= t); if (!av.length) { t++; continue; } av.forEach(x => { x._rr = (t - x.arrival + x.burst) / x.burst; }); av.sort((a, b) => b._rr - a._rr); const c = av[0]; const rt = t - c.arrival; t += c.burst; const ct = t, tat = ct - c.arrival, wt = tat - c.burst; res.push({ ...c, ct, tat, wt, rt: Math.max(0, rt) }); ps.find(x => x.pid === c.pid).done = true; done++; } return res; }
-    function calcRR(p, q = 2) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1 })); const sorted = [...ps].sort((a, b) => a.arrival - b.arrival); const queue = []; let t = 0, idx = 0; const res = []; const arrived = new Set(); while (true) { while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (!queue.length) { if (idx >= sorted.length) break; t = sorted[idx].arrival; continue; } const c = queue.shift(); if (c.firstRun < 0) c.firstRun = t; const run = Math.min(c.remaining, q); t += run; c.remaining -= run; while (idx < sorted.length && sorted[idx].arrival <= t && !arrived.has(sorted[idx].pid)) { queue.push(sorted[idx]); arrived.add(sorted[idx].pid); idx++; } if (c.remaining > 0) queue.push(c); else { const ct = t, tat = ct - c.arrival, wt = tat - c.burst, rt = c.firstRun - c.arrival; res.push({ pid: c.pid, arrival: c.arrival, burst: c.burst, priority: c.priority, ct, tat, wt, rt: Math.max(0, rt) }); } } return res.sort((a, b) => a.pid - b.pid); }
-    function calcSRTF(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.remaining - b.remaining || (a.arrival - b.arrival)); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-    function calcPrio(p) { const ps = p.map(x => ({ ...x, remaining: x.burst, firstRun: -1, ct: -1 })); const tMax = ps.reduce((s, x) => s + x.burst, 0) + ps.reduce((a, x) => Math.max(a, x.arrival), 0) + 5; let t = 0; for (; t < tMax; t++) { const av = ps.filter(x => x.arrival <= t && x.remaining > 0); if (!av.length) continue; av.sort((a, b) => a.priority - b.priority); const c = av[0]; if (c.firstRun < 0) c.firstRun = t; c.remaining--; if (c.remaining === 0) c.ct = t + 1; if (ps.every(x => x.remaining === 0)) break; } return ps.map(x => { const ct = x.ct || 0, tat = ct - x.arrival, wt = tat - x.burst, rt = x.firstRun - x.arrival; return { ...x, ct, tat, wt, rt: Math.max(0, rt) }; }); }
-
-    function runS(k, p) { switch (k) { case 'fcfs': return calcFCFS(p); case 'sjf': return calcSJF(p); case 'hrrn': return calcHRRN(p); case 'rr': return calcRR(p); case 'srtf': return calcSRTF(p); case 'priority': return calcPrio(p); default: return calcFCFS(p); } }
-
-    /* Build Gantt timeline (slot per tick) */
-    function buildGantt(key, procs) {
-      const ps = procs.map(x => ({ ...x, remaining: x.burst, done: false }));
-      const mksp = ps.reduce((s, x) => s + x.burst, 0) + Math.max(...ps.map(x => x.arrival)) + 2;
-      const slots = [];
-      if (key === 'fcfs' || key === 'sjf' || key === 'hrrn') {
-        const rows = runS(key, procs);
-        let t = 0;
-        for (const r of rows.sort((a, b) => a.ct - b.ct)) {
-          const start = r.ct - r.burst;
-          while (t < start) { slots.push(null); t++; }
-          for (let i = 0; i < r.burst; i++) { slots.push(r.pid); t++; }
-        }
-      } else {
-        const state = procs.map(x => ({ ...x, remaining: x.burst, firstRun: -1 }));
-        for (let t = 0; t < mksp; t++) {
-          let av = state.filter(x => x.arrival <= t && x.remaining > 0);
-          if (!av.length) { slots.push(null); continue; }
-          let c;
-          if (key === 'rr') { c = av[0]; }
-          else if (key === 'srtf') { av.sort((a, b) => a.remaining - b.remaining); c = av[0]; }
-          else { av.sort((a, b) => a.priority - b.priority); c = av[0]; }
-          c.remaining--;
-          slots.push(c.pid);
-        }
-      }
-      while (slots.length && slots[slots.length - 1] === null) slots.pop();
-      return slots;
-    }
-
-    const avg = (a, k) => a.length ? a.reduce((s, x) => s + (x[k] || 0), 0) / a.length : 0;
-    const mksp = a => a.reduce((m, x) => Math.max(m, x.ct || 0), 0);
-
-    /* ═══════════════════════════════════
-       PAGINACIÓN ALGORITHMS
-    ═══════════════════════════════════ */
-    function simFIFO(refs, frames) { const mem = [], q = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; } else { fault = true; f++; if (mem.length >= frames) { ev = q.shift(); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); q.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-    function simLRU(refs, frames) { const mem = [], u = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; u.splice(u.indexOf(pg), 1); u.push(pg); } else { fault = true; f++; if (mem.length >= frames) { ev = u.shift(); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); u.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-    function simOPT(refs, frames) { const mem = []; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (mem.includes(pg)) { h++; } else { fault = true; f++; if (mem.length >= frames) { const nxt = mem.map(p => { const fi = refs.indexOf(p, i + 1); return fi === -1 ? Infinity : fi; }); const idx = nxt.indexOf(Math.max(...nxt)); ev = mem[idx]; mem.splice(idx, 1); } mem.push(pg); } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-    function simLFU(refs, frames) { const mem = [], fr = {}; let f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; if (!fr[pg]) fr[pg] = 0; if (mem.includes(pg)) { h++; fr[pg]++; } else { fault = true; f++; if (mem.length >= frames) { const minF = Math.min(...mem.map(p => fr[p])); ev = mem.find(p => fr[p] === minF); mem.splice(mem.indexOf(ev), 1); } mem.push(pg); fr[pg]++; } st.push({ page: pg, fault, evicted: ev, mem: [...mem] }); } return { faults: f, hits: h, steps: st }; }
-    function simClk(refs, frames) { const mem = new Array(frames).fill(null), bits = new Array(frames).fill(0); let ptr = 0, f = 0, h = 0; const st = []; for (let i = 0; i < refs.length; i++) { const pg = refs[i]; let fault = false, ev = null; const idx = mem.indexOf(pg); if (idx !== -1) { h++; bits[idx] = 1; } else { fault = true; f++; while (bits[ptr] === 1) { bits[ptr] = 0; ptr = (ptr + 1) % frames; } ev = mem[ptr]; mem[ptr] = pg; bits[ptr] = 1; ptr = (ptr + 1) % frames; } st.push({ page: pg, fault, evicted: ev, mem: mem.filter(x => x !== null) }); } return { faults: f, hits: h, steps: st }; }
-    function runP(k, refs, frames) { switch (k) { case 'fifo': return simFIFO(refs, frames); case 'lru': return simLRU(refs, frames); case 'opt': return simOPT(refs, frames); case 'lfu': return simLFU(refs, frames); case 'clock': return simClk(refs, frames); default: return simFIFO(refs, frames); } }
-
-    /* ═══════════════════════════════════
-       STORAGE
-    ═══════════════════════════════════ */
     const KS = 'osim_s_tests', KP = 'osim_p_tests';
-    const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } };
-    const save = (k, a) => localStorage.setItem(k, JSON.stringify(a));
+    const loadLS = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } };
+    const saveLS = (k, a) => localStorage.setItem(k, JSON.stringify(a));
 
-    let sTests = [], pTests = [];
-    let selS = new Set(), selP = new Set();
-    // None selected by default
-    let sChips = new Set();
-    let pChips = new Set();
+    let sTests = [], pTests = [], selS = new Set(), selP = new Set(), sChips = new Set(), pChips = new Set();
 
-    /* ═══════════════════════════════════
-       RENDER CONFIG
-    ═══════════════════════════════════ */
-    function renderLists() {
-      renderList('ls', sTests, 's');
-      renderList('lp', pTests, 'p');
-      document.getElementById('btn-run').disabled = (selS.size === 0 && selP.size === 0);
-      // Update counters
-      const sc = document.getElementById('sel-count-s');
-      const pc = document.getElementById('sel-count-p');
-      if (sc) sc.textContent = selS.size === 0 ? 'Ninguna' : selS.size === sTests.length && sTests.length > 0 ? 'Todas' : selS.size + ' seleccionada' + (selS.size !== 1 ? 's' : '');
-      if (pc) pc.textContent = selP.size === 0 ? 'Ninguna' : selP.size === pTests.length && pTests.length > 0 ? 'Todas' : selP.size + ' seleccionada' + (selP.size !== 1 ? 's' : '');
-    }
-    function renderList(id, tests, type) {
+    function renderTickets(id, tests, type) {
       const el = document.getElementById(id);
-      const sel = type === 's' ? selS : selP;
-      const algos = type === 's' ? SA : PA;
-      if (!tests.length) { el.innerHTML = `<div class="empty-l">Sin pruebas. Ejecuta simulaciones primero.</div>`; return; }
+      const sel = type === 's' ? selS : selP, algos = type === 's' ? SA : PA;
+      if (!tests.length) {
+        el.innerHTML = `<div class="empty-screen"><div class="empty-icon">🎟</div><span>Sin pruebas guardadas</span></div>`;
+        document.getElementById('cnt-' + type).textContent = '0/0'; return;
+      }
       el.innerHTML = tests.map((t, i) => {
-        const color = aC(algos, t.algo), label = aL(algos, t.algo), on = sel.has(i);
-        const meta = type === 's' ? `${t.processes?.length || 0} procesos · ${new Date(t.ts || 0).toLocaleDateString()}` : `${t.refs?.length || 0} refs · ${t.frames} marcos · ${new Date(t.ts || 0).toLocaleDateString()}`;
-        return `<div class="ti ${on ? 'sel' : ''}" onclick="togTest('${type}',${i})">
-      <div class="ti-chk">${on ? '✓' : ''}</div>
-      <div class="ti-dot" style="background:${color}"></div>
-      <div class="ti-info"><div class="ti-name">${t.name || label + ' #' + (i + 1)}</div><div class="ti-meta">${meta}</div></div>
-      <span class="ti-badge b${type}">${label}</span>
-      <button class="btn btn-danger btn-sm" style="padding:3px 8px" onclick="event.stopPropagation();delTest('${type}',${i})">✕</button>
-    </div>`;
+        const on = sel.has(i), cc = TC[i % TC.length];
+        const lbl = aL(algos, t.algo), col = aC(algos, t.algo);
+        const meta = type === 's' ? `${t.processes?.length || 0} proc` : `${t.refs?.length || 0} refs · ${t.frames}F`;
+        const date = new Date(t.ts || 0).toLocaleDateString('es', { month: 'short', day: 'numeric' });
+        return `<div class="ticket ${cc} ${on ? 'selected' : ''}" onclick="togTest('${type}',${i})">
+  <div class="ticket-check">✓</div>
+  <div class="ticket-name">${t.name || lbl + ' #' + (i + 1)}</div>
+  <div class="ticket-meta">${meta} · ${date}</div>
+  <hr class="ticket-divider">
+  <span class="ticket-badge" style="background:${col}22;color:${col}">${lbl}</span>
+</div>`;
       }).join('');
+      document.getElementById('cnt-' + type).textContent = `${sel.size}/${tests.length}`;
     }
-    function togTest(type, i) { const s = type === 's' ? selS : selP; s.has(i) ? s.delete(i) : s.add(i); renderLists(); }
-    function selAll(type) { const tests = type === 's' ? sTests : pTests, s = type === 's' ? selS : selP; tests.forEach((_, i) => s.add(i)); renderLists(); }
-    function delTest(type, i) { if (type === 's') { sTests.splice(i, 1); selS = new Set([...selS].filter(x => x < sTests.length)); save(KS, sTests); } else { pTests.splice(i, 1); selP = new Set([...selP].filter(x => x < pTests.length)); save(KP, pTests); } renderLists(); }
-    function delAll(type) { if (!confirm('¿Borrar todas?')) return; if (type === 's') { sTests = []; selS = new Set(); save(KS, []); } else { pTests = []; selP = new Set(); save(KP, []); } renderLists(); }
 
-    function renderChips() {
-      renderChipGroup('cs', SA, sChips, 's');
-      renderChipGroup('cp', PA, pChips, 'p');
+    function togTest(type, idx) {
+      const sel = type === 's' ? selS : selP;
+      sel.has(idx) ? sel.delete(idx) : sel.add(idx);
+      renderAll();
     }
-    function renderChipGroup(id, algos, sel, type) {
+
+    function renderClappers(id, algos, selSet) {
       document.getElementById(id).innerHTML = algos.map(a => {
-        const on = sel.has(a.key);
-        return `<div class="chip ${on ? 'on' : ''}" style="${on ? 'background:' + a.color + ';color:#1e2a38' : ''}"
-      onclick="togChip('${a.key}','${a.color}',this,'${type}')">${a.label}</div>`;
+        const on = selSet.has(a.key);
+        return `<div class="clapper ${on ? 'sel' : ''}" onclick="togChip('${id}','${a.key}')">
+          <div class="clapper-check">✓</div>
+          <div class="clapper-top-wrap">
+            <div class="clapper-base"></div>
+            <div class="clapper-flap"></div>
+          </div>
+          <div class="clapper-body" style="background:linear-gradient(160deg,${a.color}ee,${a.color}99)">
+            <div class="clapper-label">${a.label}</div>
+            <div class="clapper-sub">${a.sub}</div>
+          </div>
+        </div>`;
       }).join('');
     }
-    function togChip(key, color, el, type) {
-      const sel = type === 's' ? sChips : pChips;
-      if (sel.has(key)) { sel.delete(key); el.classList.remove('on'); el.style.background = ''; el.style.color = ''; }
-      else { sel.add(key); el.classList.add('on'); el.style.background = color; el.style.color = '#1e2a38'; }
-      document.getElementById('btn-run').disabled = (selS.size === 0 && selP.size === 0) || (sChips.size === 0 && pChips.size === 0);
-    }
-    function allChips(type) { const algos = type === 's' ? SA : PA, sel = type === 's' ? sChips : pChips; algos.forEach(a => sel.add(a.key)); renderChips(); }
 
-    /* ═══════════════════════════════════
-       EXECUTE ANALYSIS
-    ═══════════════════════════════════ */
-    let _charts = {};
-    let tblAll = [];
-
-    function ejecutar() {
-      Object.values(_charts).forEach(c => { try { c.destroy(); } catch (e) { } });
-      Object.keys(_charts).forEach(k => delete _charts[k]);
-
-      const sRows = [];
-      [...selS].forEach(idx => {
-        const t = sTests[idx]; if (!t) return;
-        const usedChips = sChips.size > 0 ? sChips : new Set(SA.map(a => a.key));
-        [...usedChips].forEach(key => {
-          const r = runS(key, t.processes);
-          const ms2 = mksp(r), tb = r.reduce((s, x) => s + x.burst, 0);
-          sRows.push({
-            testName: t.name || aL(SA, t.algo) + ' #' + (idx + 1), testIdx: idx,
-            algo: key, label: aL(SA, key), color: aC(SA, key),
-            awt: avg(r, 'wt'), atat: avg(r, 'tat'), art: avg(r, 'rt'),
-            cpu: ms2 > 0 ? Math.round(tb / ms2 * 100) : 0, ms: ms2,
-            rows: r, processes: t.processes,
-            type: 's', m1: avg(r, 'wt'), m2: avg(r, 'tat'), m1l: 'Avg WT', m2l: 'Avg TAT'
-          });
-        });
-      });
-
-      const pRows = [];
-      [...selP].forEach(idx => {
-        const t = pTests[idx]; if (!t) return;
-        const usedChips = pChips.size > 0 ? pChips : new Set(PA.map(a => a.key));
-        [...usedChips].forEach(key => {
-          const r = runP(key, t.refs, t.frames);
-          const tot = r.faults + r.hits;
-          pRows.push({
-            testName: t.name || aL(PA, t.algo) + ' #' + (idx + 1), testIdx: idx,
-            algo: key, label: aL(PA, key), color: aC(PA, key),
-            faults: r.faults, hits: r.hits, hitrate: tot > 0 ? Math.round(r.hits / tot * 100) : 0,
-            steps: r.steps, refs: t.refs, frames: t.frames,
-            type: 'p', m1: r.faults, m2: tot > 0 ? Math.round(r.hits / tot * 100) : 0, m1l: 'Faults', m2l: 'Hit %'
-          });
-        });
-      });
-
-      tblAll = [...sRows, ...pRows];
-      document.getElementById('res-sub').textContent =
-        `${selS.size + selP.size} prueba(s) · ${sChips.size + pChips.size} algoritmos · ${tblAll.length} combinaciones`;
-
-      buildResultsUI(sRows, pRows);
-      go(1);
+    function togChip(id, key) {
+      const sel = id === 'cs' ? sChips : pChips;
+      sel.has(key) ? sel.delete(key) : sel.add(key);
+      renderAll();
     }
 
-    /* ═══════════════════════════════════
-       BUILD RESULTS UI
-    ═══════════════════════════════════ */
-    function buildResultsUI(sRows, pRows) {
-      const bWT = sRows.length ? sRows.reduce((b, r) => r.awt < b.awt ? r : b, sRows[0]) : null;
-      const bTAT = sRows.length ? sRows.reduce((b, r) => r.atat < b.atat ? r : b, sRows[0]) : null;
-      const bCPU = sRows.length ? sRows.reduce((b, r) => r.cpu > b.cpu ? r : b, sRows[0]) : null;
-      const bPF = pRows.length ? pRows.reduce((b, r) => r.faults < b.faults ? r : b, pRows[0]) : null;
-
-      const kpi = (lbl, algo, val, color, icon, tn) => `
-    <div class="kpi-w" style="--wc:${color}">
-      <div class="kpi-icon">${icon}</div>
-      <div class="kpi-lbl">${lbl}</div>
-      <div class="kpi-algo">${algo}</div>
-      <div class="kpi-val">${val}</div>
-      ${tn ? `<div class="kpi-test">${tn}</div>` : ''}
-    </div>`;
-
-      let html = `<div class="kpi-grid">
-    ${kpi('Menor Waiting Time', bWT ? bWT.label : '—', bWT ? bWT.awt.toFixed(2) + 's avg' : '—', 'var(--blue)', '🏆', bWT?.testName)}
-    ${kpi('Menor Turnaround', bTAT ? bTAT.label : '—', bTAT ? bTAT.atat.toFixed(2) + 's avg' : '—', 'var(--green)', '⚡', bTAT?.testName)}
-    ${kpi('Mayor CPU %', bCPU ? bCPU.label : '—', bCPU ? bCPU.cpu + '%' : '—', 'var(--purple)', '💻', bCPU?.testName)}
-    ${kpi('Menos Page Faults', bPF ? bPF.label : '—', bPF ? bPF.faults + ' fallos' : '—', 'var(--pink)', '📄', bPF?.testName)}
-  </div>`;
-
-      // Scheduling charts
-      if (sRows.length) {
-        html += `<div class="charts-row">
-      <div class="chart-card">
-        <div class="cc-head"><span class="cc-title">Waiting Time por algoritmo</span><span class="cc-hint">Menor = mejor · click para detalle</span></div>
-        <div class="cc-body"><div class="ch-wrap"><canvas id="ch-swt"></canvas></div></div>
-      </div>
-      <div class="chart-card">
-        <div class="cc-head"><span class="cc-title">Turnaround por algoritmo</span><span class="cc-hint">Menor = mejor · click para detalle</span></div>
-        <div class="cc-body"><div class="ch-wrap"><canvas id="ch-stat"></canvas></div></div>
-      </div>
-    </div>`;
-      }
-
-      // Paginación charts — ALWAYS shown when pRows exist
-      if (pRows.length) {
-        const tns = [...new Set(pRows.map(r => r.testName))];
-        const pies = tns.map((tn, i) => `
-      <div class="chart-card">
-        <div class="cc-head"><span class="cc-title">Faults vs Hits</span><span class="cc-hint">${tn}</span></div>
-        <div class="cc-body" style="display:flex;align-items:center;gap:16px;padding:12px 16px;">
-          <div class="pie-cw"><canvas id="ch-pie-${i}"></canvas></div>
-          <div class="pie-leg" id="pl-${i}"></div>
-        </div>
-      </div>`).join('');
-        html += `<div class="section-divider"><span>Paginación</span></div>
-    <div class="charts-row">
-      <div class="chart-card">
-        <div class="cc-head"><span class="cc-title">Page Faults por algoritmo</span><span class="cc-hint">Menor = mejor · click para detalle</span></div>
-        <div class="cc-body"><div class="ch-wrap"><canvas id="ch-pfaults"></canvas></div></div>
-      </div>
-      ${pies}
-    </div>`;
-      }
-
-      // Table
-      const testNames = [...new Set(tblAll.map(r => r.testName))];
-      html += `<div class="tbl-card">
-    <div class="tbl-bar">
-      <span class="tbl-title">Tabla de resultados</span>
-      <div class="fg"><span class="flbl">Tipo</span>
-        <select class="fsel" id="f-type" onchange="applyF()">
-          <option value="all">Todos</option><option value="s">Scheduling</option><option value="p">Paginación</option>
-        </select></div>
-      <div class="fg"><span class="flbl">Prueba</span>
-        <select class="fsel" id="f-test" onchange="applyF()">
-          <option value="all">Todas</option>${testNames.map(n => `<option value="${n}">${n}</option>`).join('')}
-        </select></div>
-      <div class="fg"><span class="flbl">Orden</span>
-        <select class="fsel" id="f-ord" onchange="applyF()">
-          <option value="m1-asc">Métrica 1 ↑</option><option value="m1-desc">Métrica 1 ↓</option>
-          <option value="m2-asc">Métrica 2 ↑</option><option value="m2-desc">Métrica 2 ↓</option>
-        </select></div>
-      <div class="fg"><span class="flbl">Ver</span>
-        <select class="fsel" id="f-show" onchange="applyF()">
-          <option value="all">Todos</option><option value="top3">Top 3</option>
-          <option value="best">Solo #1</option><option value="worst">Peores</option>
-        </select></div>
-    </div>
-    <div class="tbl-wrap">
-      <table class="rtbl">
-        <thead><tr>
-          <th style="text-align:center">#</th>
-          <th style="text-align:center">Algoritmo</th>
-          <th style="text-align:center">Prueba</th>
-          <th style="text-align:center">Tipo</th>
-          <th id="th1" style="text-align:center">Métrica 1</th>
-          <th id="th2" style="text-align:center">Métrica 2</th>
-          <th style="text-align:center">Ranking</th>
-        </tr></thead>
-        <tbody id="tbl-body"></tbody>
-      </table>
-    </div>
-  </div>`;
-
-      document.getElementById('s1-body').innerHTML = html;
-
-      requestAnimationFrame(() => {
-        if (sRows.length) {
-          _charts['swt'] = drawBar('ch-swt', sRows, 'awt', sRows);
-          _charts['stat'] = drawBar('ch-stat', sRows, 'atat', sRows);
-        }
-        if (pRows.length) {
-          _charts['pf'] = drawBar('ch-pfaults', pRows, 'faults', pRows);
-          const tns = [...new Set(pRows.map(r => r.testName))];
-          tns.forEach((tn, i) => {
-            const tr = pRows.filter(r => r.testName === tn);
-            const tf = tr.reduce((s, r) => s + r.faults, 0), th = tr.reduce((s, r) => s + r.hits, 0), tot = tf + th;
-            const hp = tot > 0 ? Math.round(th / tot * 100) : 0, fp = 100 - hp;
-            const el = document.getElementById(`ch-pie-${i}`); if (!el) return;
-            _charts[`pie${i}`] = new Chart(el, { type: 'doughnut', data: { labels: ['Hits', 'Faults'], datasets: [{ data: [hp, fp], backgroundColor: ['#3dc495aa', '#e05555aa'], borderColor: ['#3dc495', '#e05555'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } } });
-            const lg = document.getElementById(`pl-${i}`);
-            if (lg) lg.innerHTML = `
-          <div class="ple"><div class="ple-dot" style="background:#3dc495"></div><span class="ple-lbl">Page Hits</span><span class="ple-val" style="color:var(--green)">${hp}%</span></div>
-          <div class="ple"><div class="ple-dot" style="background:#e05555"></div><span class="ple-lbl">Page Faults</span><span class="ple-val" style="color:var(--red)">${fp}%</span></div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">${th} hits · ${tf} fallos</div>`;
-          });
-        }
-        applyF();
-      });
+    function validate() {
+      const checks = { 'v-sched': selS.size > 0, 'v-pag': selP.size > 0, 'v-salg': sChips.size > 0, 'v-palg': pChips.size > 0 };
+      for (const [id, ok] of Object.entries(checks)) document.getElementById(id)?.classList.toggle('ok', ok);
+      document.getElementById('btn-compara').classList.toggle('active', Object.values(checks).every(Boolean));
     }
 
-    /* ═══════════════════════════════════
-       BAR CHART (clickable)
-    ═══════════════════════════════════ */
-    function drawBar(id, rows, key, fullRows) {
-      const el = document.getElementById(id); if (!el) return null;
-      const byAlgo = {};
-      rows.forEach(r => { if (!byAlgo[r.algo]) byAlgo[r.algo] = { label: r.label, color: r.color, vals: [], rows: [] }; byAlgo[r.algo].vals.push(r[key]); byAlgo[r.algo].rows.push(r); });
-      const labels = Object.values(byAlgo).map(a => a.label);
-      const data = Object.values(byAlgo).map(a => +(a.vals.reduce((s, v) => s + v, 0) / a.vals.length).toFixed(2));
-      const colors = Object.values(byAlgo).map(a => a.color);
-      const algoRows = Object.values(byAlgo).map(a => a.rows);
-
-      const ch = new Chart(el, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: key, data, backgroundColor: colors.map(c => c + '66'), borderColor: colors, borderWidth: 2, borderRadius: 8, hoverBackgroundColor: colors.map(c => c + 'cc') }] },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + (key === 'faults' ? '' : (key === 'awt' || key === 'atat' ? 's' : '%')) } } },
-          scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: '#8fb4d0', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#8fb4d0', font: { size: 10 } } } },
-          onClick: (e, els) => { if (!els.length) return; const i = els[0].index; openModal(algoRows[i][0]); }
-        }
-      });
-      return ch;
+    function renderAll() {
+      renderTickets('ts', sTests, 's'); renderTickets('tp', pTests, 'p');
+      renderClappers('cs', SA, sChips); renderClappers('cp', PA, pChips);
+      validate();
     }
 
-    /* ═══════════════════════════════════
-       TABLE
-    ═══════════════════════════════════ */
-    function applyF() {
-      const type = document.getElementById('f-type')?.value || 'all';
-      const test = document.getElementById('f-test')?.value || 'all';
-      const ord = document.getElementById('f-ord')?.value || 'm1-asc';
-      const show = document.getElementById('f-show')?.value || 'all';
-      const [col, dir] = ord.split('-');
-      let rows = [...tblAll];
-      if (type !== 'all') rows = rows.filter(r => r.type === type);
-      if (test !== 'all') rows = rows.filter(r => r.testName === test);
-      rows.sort((a, b) => dir === 'asc' ? a[col] - b[col] : b[col] - a[col]);
-      const ranked = [...rows].sort((a, b) => a.m1 - b.m1);
-      rows.forEach(r => { r._rank = ranked.indexOf(r) + 1; r._total = ranked.length; });
-      if (show === 'top3') rows = rows.filter(r => r._rank <= 3);
-      else if (show === 'best') rows = rows.filter(r => r._rank === 1);
-      else if (show === 'worst') rows = rows.filter(r => r._rank === r._total);
-      const maxM1 = Math.max(...rows.map(r => r.m1), 1);
-      const maxM2 = Math.max(...rows.map(r => r.m2), 1);
-      const rb = r => { if (r._rank === 1) return `<span class="rnk r1">🥇 #1</span>`; if (r._rank === 2) return `<span class="rnk r2">🥈 #2</span>`; if (r._rank === 3) return `<span class="rnk r3">🥉 #3</span>`; if (r._rank === r._total && r._total > 1) return `<span class="rnk rl">↓</span>`; return `<span style="color:var(--muted);font-size:10px">#${r._rank}</span>`; };
-      const fm1 = r => r.type === 's' ? r.m1.toFixed(2) + 's' : r.m1;
-      const fm2 = r => r.type === 's' ? r.m2.toFixed(2) + 's' : r.m2 + '%';
-      const th1 = document.getElementById('th1'), th2 = document.getElementById('th2');
-      if (th1 && rows.length) { th1.textContent = rows[0].m1l; th2.textContent = rows[0].m2l; }
-      document.getElementById('tbl-body').innerHTML = rows.map((r, i) => `
-    <tr style="cursor:pointer;text-align:center" onclick="openModal(tblAll[tblAll.indexOf(tblAll.find(x=>x.algo===\`${r.algo}\`&&x.testName===\`${r.testName}\`&&x.type===\`${r.type}\`))])">
-      <td style="color:var(--muted);font-size:10px;text-align:center">${i + 1}</td>
-      <td style="text-align:center"><div class="algo-cell" style="justify-content:center"><div class="a-dot" style="background:${r.color}"></div>${r.label}</div></td>
-      <td style="color:var(--muted);font-size:10px;text-align:center">${r.testName}</td>
-      <td style="text-align:center"><span class="type-${r.type}">${r.type === 's' ? 'Sched' : 'Pag'}</span></td>
-      <td style="text-align:center"><div class="ibar" style="justify-content:center"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m1 / maxM1 * 100)}%;background:${r.color}"></div></div><span class="ibv">${fm1(r)}</span></div></td>
-      <td style="text-align:center"><div class="ibar" style="justify-content:center"><div class="ibt"><div class="ibf" style="width:${Math.round(r.m2 / maxM2 * 100)}%;background:${r.color}88"></div></div><span class="ibv">${fm2(r)}</span></div></td>
-      <td style="text-align:center">${rb(r)}</td>
-    </tr>`).join('') || `<tr><td colspan="7" style="color:var(--muted);padding:20px;text-align:center">Sin resultados</td></tr>`;
+    const DP = [{ pid: 1, arrival: 0, burst: 6, priority: 2 }, { pid: 2, arrival: 1, burst: 4, priority: 1 },
+    { pid: 3, arrival: 2, burst: 9, priority: 4 }, { pid: 4, arrival: 3, burst: 3, priority: 3 }, { pid: 5, arrival: 4, burst: 5, priority: 2 }];
+    const DR = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1], DF = 3;
+
+    function cargarDemos() {
+      sTests = []; pTests = []; selS = new Set(); selP = new Set(); sChips = new Set(); pChips = new Set();
+      SA.forEach((a, i) => sTests.push({ name: `Demo ${a.label}`, algo: a.key, processes: DP, ts: Date.now() - i * 86400000 }));
+      PA.forEach((a, i) => pTests.push({ name: `Demo ${a.label}`, algo: a.key, refs: DR, frames: DF, ts: Date.now() - i * 86400000 }));
+      saveLS(KS, sTests); saveLS(KP, pTests); renderAll();
     }
 
-    /* ═══════════════════════════════════
-       MODAL
-    ═══════════════════════════════════ */
-    let modalData = null; let modalTab = 0;
-    let _mChart = null;
-    let _simTimer = null;
-
-    function openModal(row) {
-      if (!row) return;
-      modalData = row; modalTab = 0;
-      document.getElementById('modal-title').textContent = `${row.label} — ${row.testName}`;
-      document.getElementById('modal-subtitle').textContent = row.type === 's' ? 'Algoritmo de Scheduling' : 'Algoritmo de Paginación';
-      document.querySelectorAll('.m-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
-      renderModalTab(0);
-      document.getElementById('modal-bg').classList.add('open');
-    }
-
-    function closeModal(e) {
-      if (e && e.target !== document.getElementById('modal-bg')) return;
-      if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
-      document.getElementById('modal-bg').classList.remove('open');
-      if (_mChart) { try { _mChart.destroy(); } catch (e) { }; _mChart = null; }
-    }
-
-    function switchMTab(n, el) {
-      modalTab = n;
-      if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
-      document.querySelectorAll('.m-tab').forEach((t, i) => t.classList.toggle('on', i === n));
-      renderModalTab(n);
-    }
-
-    function renderModalTab(n) {
-      if (_mChart) { try { _mChart.destroy(); } catch (e) { }; _mChart = null; }
-      if (!modalData) return;
-      if (modalData.type === 's') n === 0 ? renderSMetrics() : renderSDiagram();
-      else n === 0 ? renderPMetrics() : renderPDiagram();
-    }
-
-    /* ── SCHEDULING: métricas individuales ── */
-    function renderSMetrics() {
-      const r = modalData;
-      const rows = r.rows;
-      const color = r.color;
-      const maxWT = Math.max(...rows.map(x => x.wt), 1);
-      document.getElementById('modal-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
-      ${[['Avg Waiting Time', r.awt.toFixed(2) + 's', 'var(--blue)'], ['Avg Turnaround', r.atat.toFixed(2) + 's', 'var(--green)'], ['Avg Response Time', r.art.toFixed(2) + 's', 'var(--orange)'], ['CPU %', r.cpu + '%', 'var(--purple)']].map(([l, v, c]) => `
-        <div style="background:var(--card3);border-radius:10px;padding:10px 12px;border-top:3px solid ${c}">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">${l}</div>
-          <div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${c}">${v}</div>
-        </div>`).join('')}
-    </div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr>${['PID', 'Llegada', 'Ráfaga', 'Prioridad', 'CT', 'Turnaround', 'Waiting Time', 'Response Time', ''].map(h => `<th style="padding:7px 10px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:center">${h}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map(p => `<tr>
-          <td style="padding:6px 10px;font-weight:700;color:var(--accent);text-align:center">P${p.pid}</td>
-          <td style="padding:6px 10px;text-align:center;color:var(--muted)">${p.arrival}</td>
-          <td style="padding:6px 10px;text-align:center;color:var(--muted)">${p.burst}</td>
-          <td style="padding:6px 10px;text-align:center;color:var(--muted)">${p.priority || '—'}</td>
-          <td style="padding:6px 10px;text-align:center">${p.ct}</td>
-          <td style="padding:6px 10px;text-align:center">${p.tat}</td>
-          <td style="padding:6px 10px;text-align:center;color:${p.wt === Math.max(...rows.map(x => x.wt)) ? 'var(--red)' : p.wt === Math.min(...rows.map(x => x.wt)) ? 'var(--green)' : 'var(--text)'}">${p.wt}</td>
-          <td style="padding:6px 10px;text-align:center">${p.rt}</td>
-          <td style="padding:6px 10px;min-width:80px">
-            <div style="display:flex;align-items:center;gap:5px">
-              <div style="flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px">
-                <div style="height:100%;width:${Math.round(p.wt / maxWT * 100)}%;background:${color};border-radius:2px"></div>
-              </div>
-              <span style="font-size:9px;color:var(--muted)">${p.wt}s</span>
-            </div>
-          </td>
-        </tr>`).join('')}</tbody>
-        <tfoot><tr>
-          <td colspan="5" style="padding:7px 10px;font-size:10px;color:var(--muted);text-align:center">Promedios</td>
-          <td style="padding:7px 10px;text-align:center;font-weight:600">${r.atat.toFixed(2)}s</td>
-          <td style="padding:7px 10px;text-align:center;font-weight:600">${r.awt.toFixed(2)}s</td>
-          <td style="padding:7px 10px;text-align:center;font-weight:600">${r.art.toFixed(2)}s</td>
-          <td></td>
-        </tr></tfoot>
-      </table>
-    </div>`;
-    }
-
-    /* ── SCHEDULING: diagrama con simulación ── */
-    function renderSDiagram() {
-      const r = modalData;
-      const slots = buildGantt(r.algo, r.processes);
-      const pids = [...new Set(r.processes.map(p => p.pid))].sort((a, b) => a - b);
-      const pidColors = {};
-      pids.forEach((pid, i) => { const hue = (i * 67 + 180) % 360; pidColors[pid] = `hsl(${hue},55%,55%)`; });
-
-      const totalT = slots.length;
-      const unitW = Math.max(14, Math.min(26, Math.floor(420 / totalT)));
-
-      const states = r.rows;
-      const stateItems = states.map(p => ({
-        pid: p.pid, arrival: p.arrival, start: p.ct - p.burst, end: p.ct,
-        wt: p.wt, color: pidColors[p.pid] || r.color
-      }));
-
-      document.getElementById('modal-body').innerHTML = `
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:100%">
-    <!-- LEFT: mini Gantt + step table -->
-    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto">
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Diagrama de Gantt</div>
-        <div class="gantt-wrap">
-          <div style="display:flex;margin-left:44px;margin-bottom:4px;gap:1px">
-            ${slots.map((_, i) => `<div style="width:${unitW}px;flex-shrink:0;font-size:8px;color:var(--muted);text-align:center">${i % Math.max(1, Math.floor(totalT / 8)) === 0 ? i : ''}</div>`).join('')}
-            <div style="width:${unitW}px;flex-shrink:0;font-size:8px;color:var(--muted)">${totalT}</div>
-          </div>
-          ${pids.map(pid => `
-            <div class="gantt-row">
-              <div class="gantt-label">P${pid}</div>
-              <div class="gantt-track">
-                ${slots.map((s, i) => {
-        const col = s === pid ? (pidColors[pid] || r.color) : 'rgba(255,255,255,.05)';
-        const isActive = s === pid;
-        return `<div id="gs-${pid}-${i}" style="width:${unitW}px;height:24px;flex-shrink:0;background:${col};border-radius:3px;opacity:${isActive ? 1 : .3};transition:all .15s" title="t=${i}${isActive ? ' · P' + pid + ' running' : ''}"></div>`;
-      }).join('')}
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>
-
-      <!-- Step table -->
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Avance por tick — <span id="sim-tick-lbl" style="color:var(--accent)">t = 0</span></div>
-        <div style="overflow-y:auto;max-height:200px">
-          <table style="width:100%;border-collapse:collapse;font-size:10px">
-            <thead><tr>${['t', 'PID activo', 'Waiting', 'Estado'].map(h => `<th style="padding:5px 8px;color:var(--muted);font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center">${h}</th>`).join('')}</tr></thead>
-            <tbody id="sim-tbl-body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-sm" id="btn-simulate" onclick="startSimulation()" style="align-self:flex-start">
-        ▶ Simular algoritmo
-      </button>
-    </div>
-
-    <!-- RIGHT: live process states -->
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Estado de procesos en tiempo real</div>
-      ${pids.map(pid => `
-        <div id="proc-box-${pid}" style="background:var(--card3);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;border:1.5px solid transparent;transition:all .3s">
-          <div style="font-size:13px;font-weight:700;color:${pidColors[pid] || r.color};width:28px;text-align:center">P${pid}</div>
-          <div style="flex:1">
-            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-              <span id="proc-status-${pid}" style="font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600;background:rgba(136,135,128,.2);color:var(--muted)">NEW</span>
-              <span style="font-size:9px;color:var(--muted)">burst: ${r.processes.find(p => p.pid === pid)?.burst || '?'}s</span>
-              <span style="font-size:9px;color:var(--muted)">arrival: ${r.processes.find(p => p.pid === pid)?.arrival || 0}</span>
-            </div>
-            <div style="margin-top:6px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden">
-              <div id="proc-bar-${pid}" style="height:100%;width:0%;background:${pidColors[pid] || r.color};border-radius:2px;transition:width .3s"></div>
-            </div>
-          </div>
-          <div id="proc-rem-${pid}" style="font-size:11px;color:var(--muted);min-width:36px;text-align:right">${r.processes.find(p => p.pid === pid)?.burst || '?'}s</div>
-        </div>`).join('')}
-      <div id="sim-clock" style="text-align:center;font-family:var(--font-m);font-size:22px;font-weight:700;color:var(--accent);margin-top:8px">t = 0</div>
-      <div id="sim-status" style="text-align:center;font-size:11px;color:var(--muted)">Presiona Simular para comenzar</div>
-    </div>
-  </div>`;
-    }
-
-    /* ── SIMULATION ENGINE ── */
-    let _simStep = 0;
-    let _simSlots = [];
-    let _simProcs = [];
-    let _simTableRows = [];
-
-    function startSimulation() {
-      if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
-      const r = modalData;
-      _simSlots = buildGantt(r.algo, r.processes);
-      _simProcs = r.processes.map(p => ({ ...p, remaining: p.burst, status: 'new', started: false }));
-      _simTableRows = [];
-      _simStep = 0;
-      const btn = document.getElementById('btn-simulate');
-      if (btn) { btn.textContent = '⏹ Detener'; btn.onclick = stopSimulation; }
-      // Reset visuals
-      _simProcs.forEach(p => {
-        const box = document.getElementById(`proc-box-${p.pid}`);
-        const st = document.getElementById(`proc-status-${p.pid}`);
-        const bar = document.getElementById(`proc-bar-${p.pid}`);
-        const rem = document.getElementById(`proc-rem-${p.pid}`);
-        if (box) { box.style.borderColor = 'transparent'; }
-        if (st) { st.textContent = 'NEW'; st.style.background = 'rgba(136,135,128,.2)'; st.style.color = 'var(--muted)'; }
-        if (bar) { bar.style.width = '0%'; }
-        if (rem) { rem.textContent = p.burst + 's'; }
-      });
-      document.getElementById('sim-clock').textContent = 't = 0';
-      document.getElementById('sim-status').textContent = 'Iniciando...';
-      document.getElementById('sim-tbl-body').innerHTML = '';
-
-      _simTimer = setInterval(() => {
-        if (_simStep >= _simSlots.length) {
-          stopSimulation();
-          document.getElementById('sim-status').textContent = '✓ Simulación completada';
-          // mark all as terminated
-          _simProcs.forEach(p => {
-            const st = document.getElementById(`proc-status-${p.pid}`);
-            const box = document.getElementById(`proc-box-${p.pid}`);
-            if (st) { st.textContent = 'TERMINATED'; st.style.background = 'rgba(136,135,128,.15)'; st.style.color = '#888'; }
-            if (box) { box.style.borderColor = 'transparent'; }
-          });
-          return;
-        }
-        const t = _simStep;
-        const activePid = _simSlots[t];
-        document.getElementById('sim-clock').textContent = `t = ${t}`;
-        document.getElementById('sim-tick-lbl').textContent = `t = ${t}`;
-
-        // Update process states
-        _simProcs.forEach(p => {
-          const box = document.getElementById(`proc-box-${p.pid}`);
-          const st = document.getElementById(`proc-status-${p.pid}`);
-          const bar = document.getElementById(`proc-bar-${p.pid}`);
-          const rem = document.getElementById(`proc-rem-${p.pid}`);
-          let newStatus = 'new', bgColor = 'rgba(136,135,128,.2)', txtColor = 'var(--muted)', borderCol = 'transparent';
-
-          if (p.remaining <= 0) {
-            newStatus = 'terminated'; bgColor = 'rgba(136,135,128,.15)'; txtColor = '#666';
-          } else if (p.pid === activePid) {
-            newStatus = 'running'; bgColor = 'rgba(99,153,34,.25)'; txtColor = '#9dcc50'; borderCol = 'rgba(99,153,34,.5)';
-            p.remaining--;
-            if (!p.started) p.started = true;
-          } else if (t >= p.arrival && p.remaining > 0) {
-            newStatus = 'ready'; bgColor = 'rgba(74,159,212,.18)'; txtColor = 'var(--blue)'; borderCol = 'rgba(74,159,212,.2)';
-          }
-
-          const pct = Math.round((p.burst - p.remaining) / p.burst * 100);
-          if (st) { st.textContent = newStatus.toUpperCase(); st.style.background = bgColor; st.style.color = txtColor; }
-          if (box) { box.style.borderColor = borderCol; }
-          if (bar) { bar.style.width = pct + '%'; }
-          if (rem && p.remaining >= 0) { rem.textContent = p.remaining + 's'; }
-        });
-
-        // Highlight current slot in gantt
-        _simSlots.forEach((_, i) => {
-          if (activePid != null) {
-            const gsEl = document.getElementById(`gs-${activePid}-${i}`);
-            if (gsEl) { gsEl.style.opacity = i === t ? '1' : i < t ? '0.6' : '0.3'; }
-          }
-        });
-
-        // Add row to step table
-        const waitingPids = _simProcs.filter(p => t >= p.arrival && p.remaining > 0 && p.pid !== activePid).map(p => 'P' + p.pid).join(', ');
-        _simTableRows.push({ t, activePid, waitingPids });
-        if (_simTableRows.length > 12) _simTableRows.shift();
-        const tbody = document.getElementById('sim-tbl-body');
-        if (tbody) {
-          tbody.innerHTML = _simTableRows.map(row => `<tr>
-        <td style="padding:4px 8px;text-align:center;color:var(--muted)">${row.t}</td>
-        <td style="padding:4px 8px;text-align:center;font-weight:700;color:var(--accent)">${row.activePid !== null ? 'P' + row.activePid : '—'}</td>
-        <td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:9px">${row.waitingPids || '—'}</td>
-        <td style="padding:4px 8px;text-align:center">
-          ${row.activePid !== null ? `<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(99,153,34,.2);color:#9dcc50">Running</span>` : '<span style="font-size:9px;color:var(--muted)">Idle</span>'}
-        </td>
-      </tr>`).join('');
-          tbody.scrollTop = tbody.scrollHeight;
-        }
-
-        document.getElementById('sim-status').textContent = activePid !== null ? `Ejecutando P${activePid}...` : 'CPU idle...';
-        _simStep++;
-      }, 400);
-    }
-
-    function stopSimulation() {
-      if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
-      const btn = document.getElementById('btn-simulate');
-      if (btn) { btn.textContent = '▶ Simular algoritmo'; btn.onclick = startSimulation; }
-    }
-
-    /* ── PAGINACIÓN: métricas ── */
-    function renderPMetrics() {
-      const r = modalData;
-      const total = r.faults + r.hits;
-      const hp = total > 0 ? Math.round(r.hits / total * 100) : 0;
-      const fp = 100 - hp;
-      document.getElementById('modal-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${[['Page Faults', r.faults, 'var(--red)'], ['Page Hits', r.hits, 'var(--green)'], ['Hit Rate', hp + '%', 'var(--blue)'], ['Fault Rate', fp + '%', 'var(--orange)']].map(([l, v, c]) => `
-          <div style="background:var(--card3);border-radius:10px;padding:10px 12px;border-top:3px solid ${c}">
-            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">${l}</div>
-            <div style="font-family:var(--font-h);font-size:20px;font-weight:700;color:${c}">${v}</div>
-          </div>`).join('')}
-      </div>
-      <div style="background:var(--card3);border-radius:10px;padding:14px;display:flex;align-items:center;gap:16px">
-        <div style="width:110px;height:110px;flex-shrink:0"><canvas id="m-pie"></canvas></div>
-        <div>
-          <div class="ple" style="margin-bottom:8px"><div class="ple-dot" style="background:#3dc495"></div><span class="ple-lbl">Hits</span><span class="ple-val" style="color:var(--green)">${hp}%</span></div>
-          <div class="ple"><div class="ple-dot" style="background:#e05555"></div><span class="ple-lbl">Faults</span><span class="ple-val" style="color:var(--red)">${fp}%</span></div>
-        </div>
-      </div>
-    </div>
-    <div style="overflow-x:auto;max-height:280px">
-      <table class="pag-step-tbl">
-        <thead><tr>
-          <th style="text-align:center">#</th>
-          <th style="text-align:center">Página</th>
-          <th style="text-align:center">Resultado</th>
-          <th style="text-align:center">Expulsada</th>
-          <th style="text-align:center">Marcos</th>
-        </tr></thead>
-        <tbody>${r.steps.map((s, i) => `
-          <tr class="${s.fault ? 'fault-row' : ''}">
-            <td style="color:var(--muted);text-align:center">${i + 1}</td>
-            <td style="font-weight:600;color:${s.fault ? 'var(--red)' : 'var(--green)'};text-align:center">${s.page}</td>
-            <td style="text-align:center">${s.fault ? '<span class="badge-fault">FAULT</span>' : '<span class="badge-hit">HIT</span>'}</td>
-            <td style="color:var(--orange);text-align:center">${s.evicted !== null ? s.evicted : '—'}</td>
-            <td style="font-size:10px;color:var(--muted);text-align:center">[${s.mem.join(', ')}]</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-      requestAnimationFrame(() => {
-        const el = document.getElementById('m-pie'); if (!el) return;
-        _mChart = new Chart(el, { type: 'doughnut', data: { labels: ['Hits', 'Faults'], datasets: [{ data: [hp, fp], backgroundColor: ['#3dc495aa', '#e05555aa'], borderColor: ['#3dc495', '#e05555'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } } });
-      });
-    }
-
-    /* ── PAGINACIÓN: diagrama de marcos ── */
-    function renderPDiagram() {
-      const r = modalData;
-      const frames = r.frames;
-      const palette = ['#5ba3d9', '#3dc495', '#e09040', '#9b8fdd', '#d46090', '#4a8ca8', '#e05555', '#f0c040'];
-      const pageColor = {}; let ci = 0;
-      r.steps.forEach(s => { if (!(s.page in pageColor)) pageColor[s.page] = palette[ci++ % palette.length]; });
-
-      const stepsToShow = r.steps.length <= 40 ? r.steps : r.steps.filter((_, i) => i % Math.ceil(r.steps.length / 40) === 0 || r.steps[i].fault);
-
-      document.getElementById('modal-body').innerHTML = `
-    <div style="font-size:10px;color:var(--muted);margin-bottom:12px">
-      Evolución de los marcos de memoria — cada columna es un paso. <span style="color:var(--red)">Rojo = Page Fault</span>.
-    </div>
-    <div style="overflow-x:auto;padding-bottom:8px">
-      <div style="display:flex;align-items:flex-start;gap:3px;min-width:max-content">
-        <div style="display:flex;flex-direction:column;gap:3px;padding-top:22px">
-          ${Array.from({ length: frames }, (_, i) => `<div style="height:26px;display:flex;align-items:center;font-size:10px;color:var(--muted);width:56px;flex-shrink:0">Marco ${i}</div>`).join('')}
-        </div>
-        ${stepsToShow.map((s, i) => `
-          <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
-            <div style="font-size:8px;color:${s.fault ? 'var(--red)' : 'var(--muted)'};height:18px;writing-mode:vertical-lr;transform:rotate(180deg)">${s.page}</div>
-            ${Array.from({ length: frames }, (_, fi) => {
-        const pg = s.mem[fi];
-        const bg = pg != null ? pageColor[pg] : 'rgba(255,255,255,.05)';
-        const isFault = s.fault && pg === s.page && fi === s.mem.indexOf(s.page);
-        return `<div style="width:24px;height:26px;border-radius:4px;background:${bg};border:${isFault ? '2px solid var(--red)' : '1px solid rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${pg != null ? '#fff' : 'transparent'}" title="${pg != null ? 'Página ' + pg : 'vacío'}">${pg != null ? pg : ''}</div>`;
-      }).join('')}
-          </div>`).join('')}
-      </div>
-    </div>
-    <div style="margin-top:12px">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Leyenda de páginas</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${Object.entries(pageColor).map(([pg, c]) => `<div style="display:flex;align-items:center;gap:5px;background:var(--card3);border-radius:6px;padding:4px 8px"><div style="width:8px;height:8px;border-radius:2px;background:${c}"></div><span style="font-size:11px">Pág ${pg}</span></div>`).join('')}
-      </div>
-    </div>`;
-    }
-
-    /* ═══════════════════════════════════
-       EJEMPLOS & LEGACY
-    ═══════════════════════════════════ */
-    const EJP = [{ pid: 1, arrival: 0, burst: 6, priority: 2 }, { pid: 2, arrival: 1, burst: 4, priority: 1 }, { pid: 3, arrival: 2, burst: 9, priority: 4 }, { pid: 4, arrival: 3, burst: 3, priority: 3 }, { pid: 5, arrival: 4, burst: 5, priority: 2 }];
-    const EJR = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1], EJF = 3;
-
-    function cargarEjemplos() {
-      sTests = []; pTests = []; selS = new Set(); selP = new Set();
-      ['fcfs', 'sjf', 'rr', 'srtf'].forEach(a => { sTests.push({ name: `Ej. ${a.toUpperCase()}`, algo: a, processes: EJP, ts: Date.now() }); });
-      ['fifo', 'lru', 'opt'].forEach(a => { pTests.push({ name: `Ej. ${a.toUpperCase()}`, algo: a, refs: EJR, frames: EJF, ts: Date.now() }); });
-      // None selected by default
-      save(KS, sTests); save(KP, pTests);
-      renderChips(); renderLists();
-    }
-    function importLegacy() {
-      try { const rp = localStorage.getItem('osim_processes'), rs = localStorage.getItem('osim_results'); if (rp && rs) { const pr = JSON.parse(rp), r = JSON.parse(rs); if (pr.length && r.algo && !sTests.some(t => t.ts === 0)) { sTests.push({ name: aL(SA, r.algo) + ' (importado)', algo: r.algo, processes: pr, ts: 0 }); save(KS, sTests); } } } catch (e) { }
-      try { const rpag = localStorage.getItem('osim_paginacion'); if (rpag) { const pd = JSON.parse(rpag); if (pd.refs && pd.frames && pd.algo && !pTests.some(t => t.ts === 0)) { pTests.push({ name: aL(PA, pd.algo) + ' (importado)', algo: pd.algo, refs: pd.refs, frames: pd.frames, ts: 0 }); save(KP, pTests); } } } catch (e) { }
-    }
+    function ejecutar() { alert('🎬 Comparando salas...\n(Aquí irá la vista de resultados)'); }
 
     window.addEventListener('DOMContentLoaded', () => {
-      sTests = load(KS); pTests = load(KP);
-      importLegacy(); sTests = load(KS); pTests = load(KP);
-      if (!sTests.length && !pTests.length) cargarEjemplos();
-      renderChips(); renderLists();
+      sTests = loadLS(KS); pTests = loadLS(KP);
+      if (!sTests.length && !pTests.length) cargarDemos(); else renderAll();
     });
   </script>
-
-  <style>
-    /* Extra overrides for metricas */
-    .sel-count {
-      font-size: 10px;
-      color: var(--accent);
-      background: rgba(74, 159, 212, .12);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-
-    .section-divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: var(--green);
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-top: 4px;
-    }
-
-    .section-divider::before,
-    .section-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(61, 196, 149, .25);
-    }
-
-    .ti {
-      background: var(--card2);
-      border: 1.5px solid transparent;
-      border-radius: 6px;
-      padding: 4px 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      transition: all .15s;
-      user-select: none;
-    }
-
-    .ti-chk {
-      width: 14px !important;
-      height: 14px !important;
-      font-size: 9px !important;
-      border-radius: 3px !important;
-    }
-
-    .ti-dot {
-      width: 6px !important;
-      height: 6px !important;
-    }
-
-    .ti-name {
-      font-size: 10px !important;
-      line-height: 1.1 !important;
-    }
-
-    .ti-meta {
-      font-size: 8px !important;
-      margin-top: 0 !important;
-      line-height: 1.1 !important;
-    }
-
-    .ti-badge {
-      font-size: 9px !important;
-      padding: 1px 6px !important;
-    }
-
-    .config-card-body {
-      padding: 6px 8px !important;
-      gap: 3px !important;
-    }
-
-    .btn.btn-danger.btn-sm {
-      padding: 2px 6px !important;
-      font-size: 10px !important;
-    }
-  </style>
-
 </body>
 
 </html>
