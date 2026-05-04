@@ -738,6 +738,9 @@ function cerrarEndScreen() {
 
 /* ----------------------------------------------------------
    FUNCIÓN PRINCIPAL — iniciarSimulacion()
+   Lanza un Web Worker para calcular los pasos en un thread
+   separado (paralelismo real). Fallback síncrono si el
+   entorno no soporta Workers.
    ---------------------------------------------------------- */
 function iniciarSimulacion() {
   detenerSimulacion();
@@ -759,35 +762,100 @@ function iniciarSimulacion() {
   cadenaReferencias = refs;
   configMemoria     = { frames: numFrames, pageSize, memoria };
 
-  const resultado = simularPaginacion(cadenaReferencias, numFrames, algoritmoActivo);
+  /* ── Indicador visual de thread en ejecución ── */
+  const narratorEl   = document.getElementById("narrator-text");
+  const narratorIcon = document.getElementById("narrator-icon");
+  if (narratorEl)   { narratorEl.textContent = "Lanzando thread de cómputo..."; narratorEl.className = ""; }
+  if (narratorIcon) { narratorIcon.innerHTML = `<span class="thread-spinner"></span>`; }
+
+  /* Deshabilitar controles mientras el Worker calcula */
+  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.disabled = true;
+  });
+
+  /* ── Intentar SharedArrayBuffer (memoria compartida) ── */
+  let sabRefs   = null;
+  let useShared = false;
+  if (typeof SharedArrayBuffer !== "undefined") {
+    try {
+      const sab  = new SharedArrayBuffer(refs.length * Int32Array.BYTES_PER_ELEMENT);
+      const view = new Int32Array(sab);
+      refs.forEach((r, i) => Atomics.store(view, i, r));
+      sabRefs   = sab;
+      useShared = true;
+    } catch (_) { /* COOP/COEP no activos — usar postMessage */ }
+  }
+
+  const tLaunch = performance.now();
+
+  /* ── Lanzar Worker ── */
+  let worker;
+  try {
+    worker = new Worker("js/paginacion.worker.js");
+  } catch (_) {
+    /* Entorno sin soporte a Workers (ej. file:// en Safari) */
+    _aplicarResultadoSimulacion(
+      simularPaginacion(cadenaReferencias, numFrames, algoritmoActivo),
+      numFrames, "sync"
+    );
+    return;
+  }
+
+  worker.onmessage = function (e) {
+    const elapsed = (performance.now() - tLaunch).toFixed(1);
+    worker.terminate();
+    _aplicarResultadoSimulacion(e.data, numFrames, elapsed);
+  };
+
+  worker.onerror = function () {
+    worker.terminate();
+    /* Fallback al hilo principal */
+    _aplicarResultadoSimulacion(
+      simularPaginacion(cadenaReferencias, numFrames, algoritmoActivo),
+      numFrames, "sync"
+    );
+  };
+
+  worker.postMessage({
+    mode:        "simulate",
+    algoritmo:   algoritmoActivo,
+    referencias: sabRefs || refs,
+    marcos:      numFrames,
+    workerId:    0,
+    useShared,
+  });
+}
+
+/* Aplica el resultado devuelto por el Worker (o fallback) al DOM */
+function _aplicarResultadoSimulacion(resultado, numFrames, elapsedLabel) {
   historial  = resultado.pasos;
   pasoActual = 0;
 
-  // Métricas globales
-  const ultimoPaso = resultado.pasos[resultado.pasos.length - 1];
-  const usados     = ultimoPaso ? ultimoPaso.frames.filter(p => p !== null).length : 0;
-  const total      = cadenaReferencias.length;
-  const tasa       = (resultado.faults / total * 100);
+  const total  = cadenaReferencias.length;
+  const tasa   = (resultado.faults / total * 100);
+  const ultimo = resultado.pasos[resultado.pasos.length - 1];
+  const usados = ultimo ? ultimo.frames.filter(p => p !== null).length : 0;
 
   _renderMetricasDark([
-    { lbl: "Page Faults",    val: resultado.faults,     cls: "fault" },
-    { lbl: "Page Hits",      val: resultado.hits,       cls: "good"  },
-    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%",   cls: ""      },
-    { lbl: "Marcos usados",  val: `${usados}/${numFrames}`, cls: "" },
+    { lbl: "Page Faults",    val: resultado.faults,          cls: "fault" },
+    { lbl: "Page Hits",      val: resultado.hits,            cls: "good"  },
+    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%",        cls: ""      },
+    { lbl: "Marcos usados",  val: `${usados}/${numFrames}`,  cls: ""      },
   ]);
 
-  // Habilitar controles de playback
   ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = false;
+    const el = document.getElementById(id); if (el) el.disabled = false;
   });
   document.getElementById("cnt-faults").textContent = "0";
   document.getElementById("cnt-hits").textContent   = "0";
 
   mostrarPaso(0);
-  mostrarToast("¡Función comenzada!", "success");
 
-  // Actualizar comparación si está visible
+  const label = elapsedLabel === "sync"
+    ? "¡Función comenzada! (hilo principal)"
+    : `¡Función comenzada! Thread completó en ${elapsedLabel} ms`;
+  mostrarToast(label, "success");
+
   if (document.getElementById("seccion-comparacion").style.display !== "none") {
     mostrarComparacion();
   }
@@ -835,49 +903,148 @@ function seleccionarAlgoritmo(nombre) {
 
 /* ----------------------------------------------------------
    COMPARACIÓN DE ALGORITMOS
+   Lanza 5 Web Workers en paralelo (uno por algoritmo).
+   Usa SharedArrayBuffer para que todos lean la misma
+   cadena de referencias sin copiar datos.
    ---------------------------------------------------------- */
 function mostrarComparacion() {
-  if (cadenaReferencias.length === 0) { mostrarToast("Ingresa una cadena de referencias", "error"); return; }
+  if (cadenaReferencias.length === 0) {
+    mostrarToast("Ingresa una cadena de referencias", "error"); return;
+  }
 
-  const nf = configMemoria.frames || parseInt(document.getElementById("inp-frames").value, 10) || 3;
+  const nf    = configMemoria.frames || parseInt(document.getElementById("inp-frames").value, 10) || 3;
   const total = cadenaReferencias.length;
-  const algos = ["fifo","lru","opt","clock","sc"];
+  const algos = ["fifo", "lru", "opt", "clock", "sc"];
+  const NOMBRES = { fifo: "FIFO", lru: "LRU", opt: "OPT", clock: "Clock", sc: "2da Oport." };
 
-  const resultados = algos.map(a => {
-    const r = simularPaginacion(cadenaReferencias, nf, a);
-    return { algo: a, nombre: _nombreAlgo(a), faults: r.faults, hits: r.hits };
-  });
-
-  const minF = Math.min(...resultados.map(r => r.faults));
-  const maxF = Math.max(...resultados.map(r => r.faults));
-
+  /* Mostrar modal con panel de threads en estado "pendiente" */
+  document.getElementById("seccion-comparacion").style.display = "flex";
   const tablaEl = document.getElementById("comparacion-tabla");
-  if (tablaEl) {
-    tablaEl.innerHTML = resultados.map(r => {
+  if (!tablaEl) return;
+
+  /* ── Detectar SharedArrayBuffer ── */
+  let sabRefs   = null;
+  let useShared = false;
+  if (typeof SharedArrayBuffer !== "undefined") {
+    try {
+      const sab  = new SharedArrayBuffer(cadenaReferencias.length * Int32Array.BYTES_PER_ELEMENT);
+      const view = new Int32Array(sab);
+      cadenaReferencias.forEach((r, i) => Atomics.store(view, i, r));
+      sabRefs   = sab;
+      useShared = true;
+    } catch (_) { /* COOP/COEP no activos */ }
+  }
+
+  const shmBadge = useShared
+    ? `<span class="shm-on">SharedArrayBuffer activo — todos los Workers leen la misma memoria</span>`
+    : `<span class="shm-off">postMessage — datos copiados a cada Worker (sin COOP/COEP)</span>`;
+
+  /* Renderizar panel de status de threads */
+  tablaEl.innerHTML = `
+    <div class="thread-panel">
+      <div class="thread-panel-header">
+        <span class="thread-panel-title">⚡ ${algos.length} Threads en paralelo</span>
+        <span class="thread-panel-sub" id="comp-thread-sub">Lanzando Workers...</span>
+      </div>
+      <div class="thread-status-grid">
+        ${algos.map((a, i) => `
+          <div class="thread-card" id="tc-${i}">
+            <div class="thread-dot"></div>
+            <div class="thread-name">${NOMBRES[a]}</div>
+            <div class="thread-id">Worker #${i}</div>
+            <div class="thread-time" id="tt-${i}">—</div>
+          </div>`).join("")}
+      </div>
+      <div class="thread-shm-badge">${shmBadge}</div>
+    </div>
+    <div id="comp-results-area"></div>`;
+
+  const tStartAll = performance.now();
+
+  /* ── Lanzar un Worker por algoritmo — todos simultáneos ── */
+  const promises = algos.map((algo, idx) => new Promise(resolve => {
+
+    const tStart = performance.now();
+    const card   = document.getElementById(`tc-${idx}`);
+    if (card) card.className = "thread-card running";
+
+    /* Fallback síncrono si Workers no están disponibles */
+    let worker;
+    try { worker = new Worker("js/paginacion.worker.js"); }
+    catch (_) {
+      const r = simularPaginacion(cadenaReferencias, nf, algo);
+      if (card) { card.className = "thread-card done"; }
+      const ttEl = document.getElementById(`tt-${idx}`);
+      if (ttEl) ttEl.textContent = "sync";
+      return resolve({ algo, nombre: NOMBRES[algo], faults: r.faults, hits: r.hits, elapsed: "sync" });
+    }
+
+    worker.onmessage = function (e) {
+      const elapsed = (performance.now() - tStart).toFixed(1);
+      worker.terminate();
+      if (card) card.className = "thread-card done";
+      const ttEl = document.getElementById(`tt-${idx}`);
+      if (ttEl) ttEl.textContent = `${elapsed} ms`;
+      resolve({ algo, nombre: NOMBRES[algo], faults: e.data.faults, hits: e.data.hits, elapsed });
+    };
+
+    worker.onerror = function () {
+      worker.terminate();
+      const r = simularPaginacion(cadenaReferencias, nf, algo);
+      if (card) card.className = "thread-card done";
+      resolve({ algo, nombre: NOMBRES[algo], faults: r.faults, hits: r.hits, elapsed: "sync" });
+    };
+
+    worker.postMessage({
+      mode:        "compare",
+      algoritmo:   algo,
+      referencias: sabRefs || cadenaReferencias,
+      marcos:      nf,
+      workerId:    idx,
+      useShared,
+    });
+  }));
+
+  /* ── Cuando todos terminan — renderizar tabla de resultados ── */
+  Promise.all(promises).then(resultados => {
+    const totalMs = (performance.now() - tStartAll).toFixed(1);
+
+    const subEl = document.getElementById("comp-thread-sub");
+    if (subEl) subEl.textContent = `${algos.length} Workers completados en ${totalMs} ms`;
+
+    const minF = Math.min(...resultados.map(r => r.faults));
+    const maxF = Math.max(...resultados.map(r => r.faults));
+
+    const areaEl = document.getElementById("comp-results-area");
+    if (!areaEl) return;
+
+    areaEl.innerHTML = resultados.map(r => {
       const esMejor  = r.faults === minF;
       const esPeor   = r.faults === maxF && maxF !== minF;
       const barW     = maxF > 0 ? (r.faults / maxF * 100).toFixed(1) : 0;
       const faultPct = (r.faults / total * 100).toFixed(1);
+      const timeTag  = r.elapsed !== "sync"
+        ? `<span class="comp-thread-time">${r.elapsed} ms</span>` : "";
       return `
         <div class="comp-row ${esMejor ? "comp-best" : esPeor ? "comp-worst" : ""}">
           <div class="comp-nombre">${r.nombre}</div>
           <div class="comp-bar-wrap">
-            <div class="comp-bar ${esMejor ? "comp-bar-best" : esPeor ? "comp-bar-worst" : ""}" style="width:${barW}%"></div>
+            <div class="comp-bar ${esMejor ? "comp-bar-best" : esPeor ? "comp-bar-worst" : ""}"
+                 style="width:${barW}%"></div>
           </div>
           <div class="comp-stats">
             <span class="comp-faults">${r.faults} fallos</span>
             <span class="comp-hits">${r.hits} hits</span>
             <span class="comp-rate">${faultPct}%</span>
+            ${timeTag}
           </div>
-          <div style="display:flex; justify-content:flex-end;">
-            ${esMejor ? '<span class="comp-badge comp-badge-best">Mejor</span>' : ""}
-            ${esPeor  ? '<span class="comp-badge comp-badge-worst">Más fallos</span>' : ""}
+          <div style="display:flex; justify-content:flex-end; gap:4px; align-items:center;">
+            ${esMejor ? '<span class="comp-badge comp-badge-best">Mejor</span>'          : ""}
+            ${esPeor  ? '<span class="comp-badge comp-badge-worst">Más fallos</span>'    : ""}
           </div>
         </div>`;
     }).join("");
-  }
-
-  document.getElementById("seccion-comparacion").style.display = "flex";
+  });
 }
 
 /* ----------------------------------------------------------
