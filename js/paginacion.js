@@ -786,6 +786,11 @@ function iniciarSimulacion() {
     } catch (_) { /* COOP/COEP no activos — usar postMessage */ }
   }
 
+  /* ── Notificar inicio al servidor (si hay conexión SSE activa) ── */
+  if (window.OSimClient?.isConnected()) {
+    window.OSimClient.notificarInicio(algoritmoActivo, refs.length, numFrames);
+  }
+
   const tLaunch = performance.now();
 
   /* ── Lanzar Worker ── */
@@ -855,6 +860,11 @@ function _aplicarResultadoSimulacion(resultado, numFrames, elapsedLabel) {
     ? "¡Función comenzada! (hilo principal)"
     : `¡Función comenzada! Thread completó en ${elapsedLabel} ms`;
   mostrarToast(label, "success");
+
+  /* ── Notificar fin al servidor ── */
+  if (window.OSimClient?.isConnected()) {
+    window.OSimClient.notificarFin(resultado.faults, resultado.hits);
+  }
 
   if (document.getElementById("seccion-comparacion").style.display !== "none") {
     mostrarComparacion();

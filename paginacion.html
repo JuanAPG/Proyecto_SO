@@ -1861,9 +1861,15 @@
 
       <!-- Métricas finales -->
       <div class="metrics-dark" id="metricas-wrap">
-        <div class="metrics-dark-title">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
-          Métricas de la simulación
+        <div class="metrics-dark-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+            Métricas de la simulación
+          </span>
+          <button class="btn-cine-ghost" style="padding:3px 10px;font-size:10px;width:auto;"
+                  onclick="exportarCSVPaginacion()">
+            ↓ CSV
+          </button>
         </div>
         <div class="metrics-dark-grid" id="metricas-paginacion">
           <div class="mcard"><div class="mcard-lbl">Page Faults</div><div class="mcard-val">—</div></div>
@@ -1898,6 +1904,7 @@
      SCRIPTS
 ════════════════════════════════════════════════════════ -->
 <script src="js/ui.js"></script>
+<script src="js/client.js"></script>
 <script src="js/paginacion.js"></script>
 
 </body>

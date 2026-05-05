@@ -474,6 +474,101 @@ function mostrarToast(mensaje, tipo = "info", duracion = 3000) {
    11. EXPORTAR — disponible globalmente
    ---------------------------------------------------------- */
 
+function _csvEscape(valor) {
+  const s = String(valor ?? "");
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function _csvFila(celdas) {
+  return celdas.map(_csvEscape).join(",");
+}
+
+function _descargarCSV(contenido, nombre) {
+  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Exporta el historial de paginación a CSV.
+ * Extrae referencias numéricas con regex /(\d+)/g.
+ */
+function exportarCSVPaginacion() {
+  if (typeof historial === "undefined" || !historial.length) {
+    mostrarToast("Sin datos para exportar. Ejecuta una simulación primero.", "error");
+    return;
+  }
+  const numFrames = historial[0].frames.length;
+  const headers   = ["Paso", "Referencia",
+    ...Array.from({ length: numFrames }, (_, i) => `Marco_${i + 1}`),
+    "Tipo", "Pagina_Expulsada"];
+
+  // Regex: extrae tokens numéricos de la cadena ingresada por el usuario
+  const refStr  = document.getElementById("inp-referencias")?.value ?? "";
+  const refsRaw = [...refStr.matchAll(/(\d+)/g)].map(m => m[1]);
+
+  const filas = historial.map((paso, i) => [
+    i + 1, paso.referencia,
+    ...paso.frames.map(f => f ?? "-"),
+    paso.fault ? "Fallo" : "Hit",
+    paso.paginaExpulsada ?? "-",
+  ]);
+
+  const algo = typeof algoritmoActivo !== "undefined" ? algoritmoActivo.toUpperCase() : "SIM";
+  const csv  = [
+    `# Algoritmo: ${algo}`,
+    `# Referencias (regex /(\\d+)/g aplicado): ${refsRaw.join(" ")}`,
+    `# Marcos: ${numFrames}`,
+    "",
+    _csvFila(headers),
+    ...filas.map(_csvFila),
+  ].join("\r\n");
+
+  _descargarCSV(csv, `paginacion_${algo.toLowerCase()}_${Date.now()}.csv`);
+  mostrarToast("CSV exportado correctamente", "success");
+}
+
+/**
+ * Exporta el resultado del scheduling a CSV.
+ * Extrae valores numéricos de las métricas con regex /[\d.]+/g.
+ */
+function exportarCSVScheduling() {
+  if (typeof resultadoActual === "undefined" || !resultadoActual) {
+    mostrarToast("Sin datos para exportar. Ejecuta una simulación primero.", "error");
+    return;
+  }
+  const headers = ["PID", "BurstTime", "ArrivalTime", "Priority",
+                   "StartTime", "FinishTime", "WaitingTime", "Turnaround"];
+  const filas   = resultadoActual.procesos.map(p => [
+    p.pid,
+    p.burstTime,
+    p.arrivalTime    ?? 0,
+    p.priority       ?? "-",
+    p.startTime      ?? "-",
+    p.finishTime     ?? "-",
+    p.waitingTime    ?? "-",
+    p.turnaroundTime ?? "-",
+  ]);
+
+  // Regex: extrae todos los valores numéricos del objeto de métricas
+  const metStr  = JSON.stringify(resultadoActual.metricas ?? {});
+  const metVals = [...metStr.matchAll(/([\d.]+)/g)].map(m => m[1]);
+
+  const algo = resultadoActual.algoritmo ?? "sim";
+  const csv  = [
+    `# Algoritmo: ${algo}`,
+    `# Métricas (regex /([\\d.]+)/g aplicado): ${metVals.join(" ")}`,
+    "",
+    _csvFila(headers),
+    ...filas.map(_csvFila),
+  ].join("\r\n");
+
+  _descargarCSV(csv, `scheduling_${algo}_${Date.now()}.csv`);
+  mostrarToast("CSV exportado correctamente", "success");
+}
+
 /*
   Cómo usar este archivo en cualquier módulo:
   <script src="../js/ui.js"></script>

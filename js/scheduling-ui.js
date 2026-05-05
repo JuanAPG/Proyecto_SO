@@ -120,6 +120,16 @@ function ejecutarSimulacion() {
     makespan:       resultadoActual.metricas.makespan,
     totalProcesos:  resultadoActual.procesos.length,
   }));
+
+  /* ── Notificar al servidor (fork de scheduling) ── */
+  if (window.OSimClient?.isConnected()) {
+    const n = resultadoActual.procesos.length;
+    window.OSimClient.notificarInicio(resultadoActual.algoritmo, n, 1)
+      .then(() => window.OSimClient.notificarFin(
+        Math.round(resultadoActual.metricas.makespan ?? 0),
+        n
+      ));
+  }
 }
 
 /* ----------------------------------------------------------
