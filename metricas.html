@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <title>OSim — Métricas</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1187,8 +1188,7 @@
           <div class="modal-sub" id="modal-sub">Resultados en tiempo real</div>
         </div>
         <div style="display:flex; justify-content:flex-end; align-items:center; padding: 10px;">
-  <button class="modal-close" onclick="cerrarModal()"
-    style="
+          <button class="modal-close" onclick="cerrarModal()" style="
       display: flex !important; 
       flex-direction: row !important;
       align-items: center !important; 
@@ -1211,10 +1211,10 @@
       overflow: visible !important;
       line-height: normal;
     ">
-    <span style="font-family: sans-serif; font-weight: bold; font-size: 14px; line-height: 1;">✕</span>
-    <span style="line-height: 1;">CERRAR</span>
-  </button>
-</div>
+            <span style="font-family: sans-serif; font-weight: bold; font-size: 14px; line-height: 1;">✕</span>
+            <span style="line-height: 1;">CERRAR</span>
+          </button>
+        </div>
       </div>
       <div class="modal-body" id="modal-body">
         <div
@@ -1493,7 +1493,7 @@
       if (!results.length) return `<div class="modal-section"><div class="modal-section-title">${title}</div><div style="color:rgba(0,207,255,.3);font-size:12px;padding:20px;">Sin datos.</div></div>`;
 
       const uid = type + '_' + Date.now();
-      const R = 22;
+      const R = 20;
 
       const metricDefs = isSched ? [
         { key: 'avgWaiting', label: 'Avg Waiting', good: 'low', color: '#00CFFF', unit: 'ms' },
@@ -1517,12 +1517,12 @@
       function donut(pct, color, displayV, unit, isWinner) {
         const circ = 2 * Math.PI * R;
         const offset = circ * (1 - Math.min(pct, 1));
-        const col = isWinner ? color : 'rgba(255,255,255,.18)';
+        const col = isWinner ? color : 'rgba(255,255,255,.15)';
         const shortV = String(displayV).substring(0, 6);
-        return `<div class="donut-wrap" style="width:52px;height:52px;flex-shrink:0;">
-          <svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg)">
-            <circle class="donut-bg" cx="26" cy="26" r="${R}" stroke-width="5"/>
-            <circle class="donut-fill" cx="26" cy="26" r="${R}" stroke="${col}" stroke-width="5"
+        return `<div class="donut-wrap" style="width:48px;height:48px;flex-shrink:0;">
+          <svg width="48" height="48" viewBox="0 0 48 48" style="transform:rotate(-90deg)">
+            <circle class="donut-bg" cx="24" cy="24" r="${R}" stroke-width="4"/>
+            <circle class="donut-fill" cx="24" cy="24" r="${R}" stroke="${col}" stroke-width="4"
               stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"/>
           </svg>
           <div class="donut-label">
@@ -1537,12 +1537,12 @@
         const minV = Math.min(...vals);
         const maxV2 = Math.max(...vals, 0.001);
 
-        // ── TAB DONUTS ──
+        // ── Donut list ──
         const donutRows = results.map((r, i) => {
           const v = vals[i];
           const isWinner = md.good === 'low' ? v === minV : v === maxV2;
           const normPct = md.good === 'low' ? 1 - (v - minV) / ((maxV2 - minV) || 1) : v / maxV2;
-          const displayV = md.unit === '%' && !isSched ? v.toFixed(1) : v;
+          const displayV = (md.unit === '%' && !isSched) ? v.toFixed(1) : v;
           const label = `${r.test.name.substring(0, 12)} · ${r.algoInfo.label}`;
           return `<div class="chart-row${isWinner ? ' winner' : ''}" onclick="mostrarReplay(${i},'${type}')" style="padding:7px 9px;gap:10px;align-items:center;">
             ${donut(normPct, md.color, displayV, md.unit, isWinner)}
@@ -1554,60 +1554,55 @@
           </div>`;
         }).join('');
 
-        // ── TAB BAR CHART SVG ──
-        const barH = 28;
-        const barGap = 10;
-        const svgH = results.length * (barH + barGap) + 20;
+        // ── SVG Bar chart vertical ──
+        const n = results.length;
+        const svgW = 320;
+        const barW = Math.min(80, Math.floor((svgW - 40) / Math.max(n, 1)) - 6);
+        const gapB = Math.floor((svgW - 40 - n * barW) / (n + 1));
+        const svgH = 180;
+        const padB = 28;
+        const maxBarH = svgH - padB - 10;
         const svgBars = results.map((r, i) => {
           const v = vals[i];
           const isWinner = md.good === 'low' ? v === minV : v === maxV2;
           const pct = maxV2 > 0 ? v / maxV2 : 0;
-          const displayV = md.unit === '%' && !isSched ? v.toFixed(1) : v;
-          const label = `${r.test.name.substring(0, 9)}·${r.algoInfo.label}`;
-          const y = i * (barH + barGap) + 10;
-          const barColor = isWinner ? md.color : 'rgba(255,255,255,.15)';
-          const glowId = `${uid}_g${slideIdx}_${i}`;
-          return `
-            <defs>
-              <filter id="${glowId}" x="-20%" y="-50%" width="140%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
-            <text x="0" y="${y + barH / 2 + 4}" font-family="'IBM Plex Mono',monospace" font-size="9" fill="rgba(255,255,255,.5)" text-anchor="start">${label}</text>
-            <rect x="110" y="${y}" width="${Math.max(pct * 220, 2)}" height="${barH}" rx="4" fill="${barColor}" ${isWinner ? `filter="url(#${glowId})"` : ''} class="bar-rect" data-target="${pct * 220}" style="transition:width .7s cubic-bezier(.34,1.1,.64,1);" id="${uid}_br${slideIdx}_${i}"/>
-            <text x="${115 + pct * 220}" y="${y + barH / 2 + 4}" font-family="'Bebas Neue',sans-serif" font-size="12" fill="${isWinner ? md.color : 'rgba(255,255,255,.4)'}">${displayV}${md.unit}${isWinner ? ' 🏆' : ''}</text>
-          `;
+          const bh = Math.max(2, Math.round(maxBarH * pct));
+          const x = 20 + gapB + i * (barW + gapB);
+          const y0 = svgH - padB;
+          const col = isWinner ? md.color : 'rgba(255,255,255,.18)';
+          const lbl = r.algoInfo.label;
+          const displayV = (md.unit === '%' && !isSched) ? v.toFixed(1) : v;
+          return `<g onclick="mostrarReplay(${i},'${type}')" style="cursor:pointer;">
+            <rect x="${x}" y="${y0}" width="${barW}" height="0" rx="3" fill="${col}"
+              class="svg-bar" data-bh="${bh}" data-y0="${y0}"
+              onclick="mostrarReplay(${i},'${type}')" style="cursor:pointer;"/>
+            <text x="${x + barW / 2}" y="${y0 + 12}" text-anchor="middle"
+              font-size="7" fill="rgba(255,255,255,.45)" font-family="IBM Plex Mono,monospace">${lbl.substring(0, 8)}</text>
+            <text x="${x + barW / 2}" y="${y0 - bh - 3}" text-anchor="middle"
+              font-size="9" fill="${isWinner ? md.color : 'rgba(255,255,255,.35)'}" font-family="Bebas Neue,sans-serif">${displayV}${md.unit}</text>
+          </g>`;
         }).join('');
 
         return `<div class="slide" id="${uid}_s${slideIdx}" style="display:${slideIdx === 0 ? 'flex' : 'none'};flex-direction:column;height:100%;gap:0;">
-          <!-- Tabs header -->
-          <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid rgba(0,207,255,.12);margin-bottom:6px;">
-            <button id="${uid}_t${slideIdx}_donut" onclick="switchTab('${uid}',${slideIdx},'donut')"
-              style="flex:1;padding:6px 10px;background:rgba(0,207,255,.1);border:none;border-bottom:2px solid var(--cb-bright);color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
-              ◉ PROCESOS
-            </button>
-            <button id="${uid}_t${slideIdx}_bar" onclick="switchTab('${uid}',${slideIdx},'bar')"
-              style="flex:1;padding:6px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:rgba(0,207,255,.4);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
-              ▦ GRÁFICA
-            </button>
+          <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid rgba(0,207,255,.12);margin-bottom:5px;">
+            <button id="${uid}_t${slideIdx}_donut" onclick="switchTabSlide('${uid}',${slideIdx},'donut')"
+              style="flex:1;padding:5px 8px;background:rgba(0,207,255,.1);border:none;border-bottom:2px solid var(--cb-bright);color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">◉ LISTA</button>
+            <button id="${uid}_t${slideIdx}_bar" onclick="switchTabSlide('${uid}',${slideIdx},'bar')"
+              style="flex:1;padding:5px 8px;background:transparent;border:none;border-bottom:2px solid transparent;color:rgba(0,207,255,.4);font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">▦ GRÁFICA</button>
           </div>
-          <!-- Metric label -->
-          <div style="font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:rgba(0,207,255,.45);flex-shrink:0;padding:0 4px 4px;">${md.label}</div>
-          <!-- Tab: Donuts -->
-          <div id="${uid}_tab${slideIdx}_donut" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
+          <div style="font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:rgba(0,207,255,.4);flex-shrink:0;padding:0 4px 4px;">${md.label}</div>
+          <div id="${uid}_tab${slideIdx}_donut" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:3px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
             ${donutRows}
           </div>
-          <!-- Tab: Bar chart -->
-          <div id="${uid}_tab${slideIdx}_bar" style="flex:1;overflow-y:auto;display:none;padding:4px 8px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
-            <svg width="100%" height="${svgH}" viewBox="0 0 360 ${svgH}" preserveAspectRatio="xMidYMid meet">
+          <div id="${uid}_tab${slideIdx}_bar" style="flex:1;overflow:hidden;display:none;padding:4px;">
+            <svg id="${uid}_svg${slideIdx}" width="100%" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none"
+              style="display:block;">
               ${svgBars}
             </svg>
           </div>
         </div>`;
       }).join('');
 
-      // ── Ganadores ──
       let winnersHTML = '';
       if (results.length > 1) {
         const wDefs = isSched ? [
@@ -1626,7 +1621,7 @@
           const lbl = `${best.test.name.substring(0, 9)} · ${best.algoInfo.label}`;
           return `<div class="winner-card" onclick="mostrarReplay(${bestIdx},'${type}')">
             <div class="winner-metric">${d.icon} ${d.label}</div>
-            <div class="winner-algo" style="font-size:14px;">${lbl}</div>
+            <div class="winner-algo" style="font-size:13px;">${lbl}</div>
             <div class="winner-val">${val}</div>
           </div>`;
         }).join('');
@@ -1645,8 +1640,33 @@
           <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)+1,${metricDefs.length})">›</button>
         </div>
         ${winnersHTML ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.4);margin:6px 0 4px;">🏆 Ganadores</div><div class="winners-grid" style="grid-template-columns:repeat(${isSched ? 3 : 2},1fr);">${winnersHTML}</div>` : ''}
-        <div style="font-size:9px;color:rgba(0,207,255,.2);margin-top:4px;text-align:center;">Click en un resultado para ver replay ↓</div>
+        <div style="font-size:9px;color:rgba(0,207,255,.2);margin-top:4px;text-align:center;">Click para ver replay ↓</div>
       </div>`;
+    }
+
+    /* Tab switching dentro de un slide */
+    function switchTabSlide(uid, slideIdx, tab) {
+      const donutEl = document.getElementById(`${uid}_tab${slideIdx}_donut`);
+      const barEl = document.getElementById(`${uid}_tab${slideIdx}_bar`);
+      const tDonut = document.getElementById(`${uid}_t${slideIdx}_donut`);
+      const tBar = document.getElementById(`${uid}_t${slideIdx}_bar`);
+      if (!donutEl || !barEl) return;
+      const isDon = tab === 'donut';
+      donutEl.style.display = isDon ? 'flex' : 'none';
+      barEl.style.display = isDon ? 'none' : 'block';
+      if (tDonut) { tDonut.style.background = isDon ? 'rgba(0,207,255,.1)' : 'transparent'; tDonut.style.borderBottomColor = isDon ? 'var(--cb-bright)' : 'transparent'; tDonut.style.color = isDon ? 'var(--cb-bright)' : 'rgba(0,207,255,.4)'; }
+      if (tBar) { tBar.style.background = !isDon ? 'rgba(0,207,255,.1)' : 'transparent'; tBar.style.borderBottomColor = !isDon ? 'var(--cb-bright)' : 'transparent'; tBar.style.color = !isDon ? 'var(--cb-bright)' : 'rgba(0,207,255,.4)'; }
+      // Animar barras SVG al mostrar la gráfica
+      if (!isDon) {
+        setTimeout(() => {
+          barEl.querySelectorAll('.svg-bar[data-bh]').forEach(b => {
+            const bh = parseInt(b.getAttribute('data-bh'));
+            const y0 = parseInt(b.getAttribute('data-y0'));
+            b.setAttribute('height', bh);
+            b.setAttribute('y', y0 - bh);
+          });
+        }, 50);
+      }
     }
 
     /* Tab switching for donut/bar within a slide */
@@ -1733,44 +1753,57 @@
         ? (payload.segments?.length ? Math.max(...payload.segments.map(s => s.end)) : 0)
         : (payload.refs?.length || 0);
 
-      // ── Construir segunda pantalla ──
       const pids = isSched ? [...new Set((payload.segments || []).map(s => s.pid))] : [];
       const pidColor = {};
       pids.forEach((pid, i) => pidColor[pid] = RCOLORS[i % RCOLORS.length]);
 
-      // Tabla de procesos
-      const procTableRows = isSched ? (payload.processes || [])
-        .sort((a, b) => (a.arrivalTime || 0) - (b.arrivalTime || 0))
-        .map(p => `<tr id="rpt-${p.pid}">
-          <td style="color:${pidColor[p.pid] || '#fff'};font-family:'Bebas Neue',sans-serif;font-size:14px;">${p.pid}</td>
-          <td>${p.arrivalTime}</td>
-          <td>${p.burstTime}</td>
-          <td>${p.startTime ?? '—'}</td>
-          <td>${p.finishTime ?? '—'}</td>
-          <td>${p.waitingTime ?? '—'}</td>
-          <td>${p.turnaroundTime ?? '—'}</td>
-          <td id="rpst-${p.pid}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">NEW</td>
-        </tr>`).join('')
+      // Tabla — todo en — al inicio
+      const procTableRows = isSched
+        ? (payload.processes || [])
+          .sort((a, b) => (a.arrivalTime || 0) - (b.arrivalTime || 0))
+          .map(p => `<tr id="rpt-${p.pid}">
+              <td style="color:${pidColor[p.pid] || '#fff'};font-family:'Bebas Neue',sans-serif;font-size:14px;">${p.pid}</td>
+              <td>${p.arrivalTime}</td>
+              <td>${p.burstTime}</td>
+              <td id="rpst-start-${p.pid}">—</td>
+              <td id="rpst-fin-${p.pid}">—</td>
+              <td id="rpst-wait-${p.pid}">—</td>
+              <td id="rpst-tat-${p.pid}">—</td>
+              <td id="rpst-${p.pid}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">—</td>
+            </tr>`).join('')
         : (payload.refs || []).map((r, i) => `<tr id="rpt-ref-${i}">
-          <td>${i + 1}</td>
-          <td style="color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:14px;">${r}</td>
-          <td id="rpst-ref-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">—</td>
-        </tr>`).join('');
+              <td>${i + 1}</td>
+              <td style="color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:14px;">${r}</td>
+              <td id="rpst-ref-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">—</td>
+            </tr>`).join('');
 
       const tableHead = isSched
         ? `<tr><th>PID</th><th>Arr</th><th>Burst</th><th>Start</th><th>Fin</th><th>Wait</th><th>TAT</th><th>Estado</th></tr>`
         : `<tr><th>#</th><th>Ref</th><th>Estado</th></tr>`;
 
       // Gantt tracks
-      const ganttTracks = isSched ? pids.map(pid => `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${pidColor[pid]};min-width:36px;text-align:right;">${pid}</div>
-          <div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:5px;position:relative;border:1px solid rgba(255,255,255,.06);">
-            <div id="rpgf-${pid}" style="position:absolute;height:100%;width:0%;background:${pidColor[pid]};border-radius:5px;transition:left .3s ease,width .3s ease;display:flex;align-items:center;padding-left:6px;font-family:'Bebas Neue',sans-serif;font-size:10px;color:rgba(255,255,255,.9);overflow:hidden;"></div>
-          </div>
-        </div>`).join('') : '';
+      const ganttTracks = isSched ? pids.map(pid => {
+        // Buscamos los datos de este proceso en los segmentos para saber su duración total
+        const mySegments = (payload.segments || []).filter(s => s.pid === pid);
+        const totalDuration = mySegments.length > 0 ? Math.max(...mySegments.map(s => s.end)) : 0;
+        const startTime = mySegments.length > 0 ? Math.min(...mySegments.map(s => s.start)) : 0;
 
-      // Nodos diagrama estados
+        return `
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:28px; cursor:pointer;" onclick="console.log('PID ${pid}')">
+    <div style="font-family:'Bebas Neue',sans-serif; font-size:16px; color:${pidColor[pid]}; min-width:45px; text-align:right;">P${pid}</div>
+    <div style="flex:1; height:45px; background:rgba(255,255,255,.03); border-radius:6px; position:relative; border:1px solid rgba(255,255,255,.08); overflow:visible;">
+      
+      <div id="rpgf-${pid}" data-max="${totalDuration}" style="position:absolute; top:0; height:100%; left:0; width:0%; background:${pidColor[pid]}; border-radius:5px; transition: width 0.1s linear; pointer-events:none; display:flex; align-items:center; justify-content:center;">
+        
+        <span style="position:absolute; bottom:-22px; left:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cb-bright);">${startTime}</span>
+        
+        <span id="rptime-end-${pid}" style="position:absolute; bottom:-22px; right:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cb-bright); opacity:0;">0</span>
+      </div>
+
+    </div>
+  </div>`;
+      }).join('') : '';
+
       const stateNodes = isSched ? `
         <div id="rpdn-new"        class="rp-snode">NEW</div><div class="rp-sarr">→</div>
         <div id="rpdn-ready"      class="rp-snode">READY</div><div class="rp-sarr">→</div>
@@ -1781,32 +1814,30 @@
         <div id="rpdn-terminated" class="rp-snode">COMPLETO</div>
       `;
 
-      // Inyectar CSS de segunda pantalla si no existe
+      // CSS
       if (!document.getElementById('rp-css')) {
-        const s = document.createElement('style');
-        s.id = 'rp-css';
-        s.textContent = `
+        const st = document.createElement('style');
+        st.id = 'rp-css';
+        st.textContent = `
           .rp-screen2 { position:absolute;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94); }
           .rp-screen2.active { transform:translateX(0); }
-          .rp-snode { padding:8px 20px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.3);transition:all .25s; }
-          .rp-sarr  { color:rgba(0,207,255,.3);font-size:14px; }
+          .rp-snode { padding:12px 28px;border-radius:24px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.08em;border:2px solid rgba(0,207,255,.18);color:rgba(0,207,255,.35);transition:all .25s;white-space:nowrap; }
+          .rp-sarr  { color:rgba(0,207,255,.3);font-size:24px; }
           .rp-table { width:100%;border-collapse:collapse;font-size:11px; }
-          .rp-table th { padding:5px 8px;text-align:left;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.06em;color:rgba(0,207,255,.4);border-bottom:1px solid rgba(0,207,255,.1); }
-          .rp-table td { padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace; }
+          .rp-table th { padding:5px 6px;text-align:left;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:.06em;color:rgba(0,207,255,.4);border-bottom:1px solid rgba(0,207,255,.1); }
+          .rp-table td { padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;font-size:11px; }
           .rp-table tr.rp-row-active td { background:rgba(0,207,255,.07); }
-          .rp-snode-active { color:#fff!important;border-color:var(--cb-bright)!important;box-shadow:0 0 12px rgba(0,207,255,.4)!important;transform:scale(1.07)!important; }
-          .rpdn-running-active { color:#7BC67E!important;border-color:#7BC67E!important;box-shadow:0 0 12px rgba(106,170,26,.5)!important; }
-          .rpdn-terminated-active { color:rgba(255,255,255,.7)!important;border-color:rgba(255,255,255,.35)!important; }
+          .rp-snode-active      { color:#fff!important;border-color:var(--cb-bright)!important;box-shadow:0 0 16px rgba(0,207,255,.45)!important;transform:scale(1.08)!important; }
+          .rpdn-running-active  { color:#7BC67E!important;border-color:#7BC67E!important;box-shadow:0 0 16px rgba(106,170,26,.5)!important;transform:scale(1.08)!important; }
+          .rpdn-terminated-active { color:rgba(255,255,255,.8)!important;border-color:rgba(255,255,255,.4)!important; }
         `;
-        document.head.appendChild(s);
+        document.head.appendChild(st);
       }
 
-      // Asegurarse que modal-box es relative
       const box = document.querySelector('.modal-box');
       box.style.position = 'relative';
       box.style.overflow = 'hidden';
 
-      // Crear/reusar pantalla 2
       let s2 = document.getElementById('rp-screen2');
       if (!s2) {
         s2 = document.createElement('div');
@@ -1815,45 +1846,55 @@
         box.appendChild(s2);
       }
 
-      const _pagFb = !isSched ? ('<div style="color:rgba(0,207,255,.3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;">Ref actual: <span id=\'rp-ref-cur\'>—</span> &nbsp;|&nbsp; Paso: <span id=\'rp-step-num\'>0</span> / ' + (payload.refs?.length || 0) + '</div>') : '';
+      const _pagFb = !isSched
+        ? `<div style="color:rgba(0,207,255,.3);font-size:11px;font-family:'IBM Plex Mono',monospace;">
+            Ref actual: <span id="rp-ref-cur">—</span> &nbsp;|&nbsp; Paso: <span id="rp-step-num">0</span> / ${payload.refs?.length || 0}
+           </div>` : '';
       const _ganttContent = ganttTracks || _pagFb;
-      s2.innerHTML = `
-        <!-- Head -->
-        <div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:20px;padding:18px 16px;border-bottom:1px solid rgba(0,207,255,.08);background:rgba(0,207,255,.02);">
-          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,var(--cb-bright) 0px,var(--cb-bright) 8px,transparent 8px,transparent 16px);opacity:.4;"></div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <button onclick="volverComparacion()" style="background:none;border:1px solid rgba(0,207,255,.25);color:rgba(0,207,255,.7);border-radius:5px;padding:4px 12px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">← VOLVER</button>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.1em;color:${payload.color};text-shadow:0 0 10px ${payload.color}88;">▶ REPLAY — ${payload.testName}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="rpToggle()" id="rp-play-btn" style="background:var(--cb-mid);border:none;color:#fff;padding:5px 14px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">▶ INICIAR</button>
-            <button onclick="rpStep()"   style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">⏭ PASO</button>
-            <button onclick="rpReset()"  style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:rgba(0,207,255,.6);padding:5px 10px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">↺</button>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cb-bright);"><span style="font-size:10px;color:rgba(0,207,255,.5);">T=</span><span id="rp-t">0</span></div>
-          </div>
-        </div>
-        <!-- Progress -->
-        <div style="height:2px;background:rgba(0,207,255,.08);flex-shrink:0;"><div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div></div>
-        <!-- Diagrama estados -->
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:16px;padding:20px 16px;border-bottom:1px solid rgba(0,207,255,.08);background:rgba(0,207,255,.02);font-size:16px;">
-          ${stateNodes}
-        </div>
-        <!-- Cuerpo: gantt + tabla -->
-        <div style="display:grid;grid-template-columns:1fr 360px;overflow:hidden;min-height:0;height:calc(100% - 120px);">
-          <!-- Gantt -->
-          <div style="padding:14px 16px;border-right:1px solid rgba(0,207,255,.08);overflow-y:auto;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(0,207,255,.5);margin-bottom:10px;">TIMELINE</div>
-            ${_ganttContent}
-          </div>
-          <!-- Tabla procesos -->
-          <div style="overflow-y:auto;padding:14px 16px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(0,207,255,.5);margin-bottom:10px;">PROCESOS</div>
-            <table class="rp-table"><thead>${tableHead}</thead><tbody id="rp-tbody">${procTableRows}</tbody></table>
-          </div>
-        </div>
-      `;
 
-      // Activar slide
+      s2.innerHTML = `
+  <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid rgba(0,207,255,.15);background:#000;position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,var(--cb-bright) 0px,var(--cb-bright) 8px,transparent 8px,transparent 16px);opacity:.4;"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="volverComparacion()" style="background:none;border:1px solid rgba(0,207,255,.25);color:rgba(0,207,255,.7);border-radius:5px;padding:4px 12px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">← VOLVER</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.08em;color:${payload.color};text-shadow:0 0 10px ${payload.color}88;">▶ REPLAY — ${payload.testName}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="rpToggle()" id="rp-play-btn" style="background:var(--cb-mid);border:none;color:#fff;padding:5px 14px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">▶ INICIAR</button>
+      <button onclick="rpStep()" style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">⏭ PASO</button>
+      <button onclick="rpReset()" style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:rgba(0,207,255,.6);padding:5px 10px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">↺</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cb-bright);"><span style="font-size:10px;color:rgba(0,207,255,.5);">T=</span><span id="rp-t">0</span></div>
+    </div>
+  </div>
+
+  <div style="height:2px;background:rgba(0,207,255,.08);flex-shrink:0;">
+    <div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div>
+  </div>
+
+  <div style="flex-shrink:0; height:250px; display:flex; align-items:center; justify-content:center; gap:60px; padding:0 24px; border-bottom:1px solid rgba(0,207,255,0.15); background:rgba(0,207,255,0.04); font-size:150px;">
+    ${stateNodes}
+  </div>
+
+  <div style="display:grid; grid-template-columns:2.5fr 1.5fr; flex:1; overflow:hidden; min-height:0;">
+  <div style="padding:20px 16px; border-right:1px solid rgba(0,207,255,0.08); overflow-x:auto; overflow-y:hidden; display:flex; flex-direction:column;">
+    <div style="font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:.1em; color:rgba(0,207,255,0.45); margin-bottom:20px;">TIMELINE</div>
+    <div style="flex:1; display:flex; align-items:center; min-height:100px;">
+      <div style="display:flex; width:100%; align-items:flex-end; gap:2px;">
+        ${_ganttContent}
+      </div>
+    </div>
+  </div>
+
+  <div style="overflow-y:auto; padding:12px 16px; background:rgba(0,0,0,0.1);">
+    <div style="font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:.1em; color:rgba(0,207,255,0.45); margin-bottom:10px;">PROCESOS</div>
+    <table class="rp-table" style="width:100%;">
+      <thead>${tableHead}</thead>
+      <tbody id="rp-tbody">${procTableRows}</tbody>
+    </table>
+  </div>
+</div>
+`;
+
       requestAnimationFrame(() => { s2.classList.add('active'); });
       rpRenderT();
     }
@@ -1861,7 +1902,7 @@
     function volverComparacion() {
       rpStop();
       const s2 = document.getElementById('rp-screen2');
-      if (s2) { s2.classList.remove('active'); }
+      if (s2) s2.classList.remove('active');
     }
 
     function rpRenderT() {
@@ -1879,66 +1920,80 @@
         const procs = _replayPayload.processes || [];
         const pids = [...new Set(segs.map(s => s.pid))];
 
-        // Gantt — mostrar solo tiempo ejecutado hasta t, offset desde startTime real
+        // ── Gantt: left = startTime proporcional, width = hasta dónde llegó ──
         pids.forEach(pid => {
           const fill = document.getElementById('rpgf-' + pid);
           if (!fill) return;
           const pidSegs = segs.filter(s => s.pid === pid);
           const startT = Math.min(...pidSegs.map(s => s.start));
-          // No mostrar nada si aún no llegó
           if (t <= startT) { fill.style.left = '0%'; fill.style.width = '0%'; fill.textContent = ''; return; }
-          const exec = pidSegs.reduce((acc, s) => acc + Math.max(0, Math.min(s.end, t) - s.start), 0);
+          // endT = hasta dónde ha avanzado este proceso en el tiempo t
+          const endT = pidSegs.reduce((acc, s) => s.start < t ? Math.max(acc, Math.min(s.end, t)) : acc, startT);
           const off = max > 0 ? (startT / max * 100) : 0;
-          const pct = max > 0 ? (exec / max * 100) : 0;
+          const wPct = max > 0 ? ((endT - startT) / max * 100) : 0;
           fill.style.left = off + '%';
-          fill.style.width = pct + '%';
-          fill.textContent = pct > 4 ? pid : '';
+          fill.style.width = Math.min(wPct, 100 - off) + '%';
+          fill.textContent = wPct > 3 ? String(pid) : '';
         });
 
-        // Diagrama de estados
+        // ── Diagrama de estados ──
         const runSeg = segs.find(s => s.start < t && t <= s.end);
         const runPid = runSeg ? runSeg.pid : null;
-        ['new', 'ready', 'running', 'terminated'].forEach(s => {
-          const el = document.getElementById('rpdn-' + s);
-          if (el) { el.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active'); }
+        ['new', 'ready', 'running', 'terminated'].forEach(st => {
+          const el = document.getElementById('rpdn-' + st);
+          if (el) el.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active');
         });
         if (t === 0 || procs.some(p => (p.arrivalTime || 0) >= t))
           document.getElementById('rpdn-new')?.classList.add('rp-snode-active');
         if (procs.some(p => (p.arrivalTime || 0) < t && (p.finishTime || 0) > t && p.pid !== runPid))
           document.getElementById('rpdn-ready')?.classList.add('rp-snode-active');
-        if (runPid) document.getElementById('rpdn-running')?.classList.add('rpdn-running-active');
+        if (runPid)
+          document.getElementById('rpdn-running')?.classList.add('rpdn-running-active');
         if (procs.some(p => (p.finishTime || 0) <= t && t > 0))
           document.getElementById('rpdn-terminated')?.classList.add('rpdn-terminated-active');
 
-        // Tabla — actualizar estado por proceso
+        // ── Tabla: actualizar progresivamente ──
         procs.forEach(p => {
           const row = document.getElementById('rpt-' + p.pid);
           const cell = document.getElementById('rpst-' + p.pid);
           if (!cell) return;
           let state = 'NEW', color = 'rgba(0,207,255,.35)';
-          if ((p.finishTime || 0) <= t && t > 0) { state = 'TERMINATED'; color = 'rgba(255,255,255,.3)'; }
-          else if (p.pid === runPid) { state = 'RUNNING'; color = '#7BC67E'; }
-          else if ((p.arrivalTime || 0) < t) { state = 'READY'; color = 'var(--cb-bright)'; }
+          if ((p.finishTime || 0) <= t && t > 0) {
+            state = 'TERMINATED'; color = 'rgba(255,255,255,.3)';
+            const sEl = document.getElementById('rpst-start-' + p.pid);
+            const fEl = document.getElementById('rpst-fin-' + p.pid);
+            const wEl = document.getElementById('rpst-wait-' + p.pid);
+            const tEl2 = document.getElementById('rpst-tat-' + p.pid);
+            if (sEl && sEl.textContent === '—') sEl.textContent = p.startTime ?? '—';
+            if (fEl && fEl.textContent === '—') fEl.textContent = p.finishTime ?? '—';
+            if (wEl && wEl.textContent === '—') wEl.textContent = p.waitingTime ?? '—';
+            if (tEl2 && tEl2.textContent === '—') tEl2.textContent = p.turnaroundTime ?? '—';
+          } else if (p.pid === runPid) {
+            state = 'RUNNING'; color = '#7BC67E';
+            const sEl = document.getElementById('rpst-start-' + p.pid);
+            if (sEl && sEl.textContent === '—' && p.startTime != null) sEl.textContent = p.startTime;
+          } else if ((p.arrivalTime || 0) < t) {
+            state = 'READY'; color = 'var(--cb-bright)';
+          }
           cell.textContent = state;
           cell.style.color = color;
           if (row) row.classList.toggle('rp-row-active', p.pid === runPid);
         });
 
       } else {
-        // Paginación
+        // ── Paginación ──
         const refs = _replayPayload.refs || [];
         const cur = document.getElementById('rp-ref-cur');
         const step = document.getElementById('rp-step-num');
         if (cur) cur.textContent = t > 0 && t <= refs.length ? refs[t - 1] : '—';
         if (step) step.textContent = t;
 
-        ['running', 'terminated'].forEach(s => {
-          document.getElementById('rpdn-' + s)?.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active');
+        ['running', 'terminated'].forEach(st => {
+          document.getElementById('rpdn-' + st)?.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active');
         });
         if (t > 0 && t <= refs.length) document.getElementById('rpdn-running')?.classList.add('rpdn-running-active');
         if (t >= refs.length && t > 0) document.getElementById('rpdn-terminated')?.classList.add('rpdn-terminated-active');
 
-        // Tabla refs
         refs.forEach((_, i) => {
           const row = document.getElementById('rpt-ref-' + i);
           const cell = document.getElementById('rpst-ref-' + i);
@@ -1950,10 +2005,7 @@
       }
     }
 
-    function rpStep() {
-      if (_replayT < _replayMax) { _replayT++; rpRenderT(); }
-      if (_replayT >= _replayMax && _replayPlaying) rpStop();
-    }
+    function rpStep() { if (_replayT < _replayMax) { _replayT++; rpRenderT(); } if (_replayT >= _replayMax && _replayPlaying) rpStop(); }
     function rpToggle() { if (_replayPlaying) { rpStop(); } else { rpStart(); } }
     function rpStart() {
       if (_replayT >= _replayMax) { _replayT = 0; rpRenderT(); }
@@ -1962,6 +2014,38 @@
       if (btn) btn.textContent = '⏸ PAUSAR';
       _replayTimer = setInterval(() => { _replayT++; rpRenderT(); if (_replayT >= _replayMax) { rpStop(); } }, 650);
     }
+
+    function rpTick() {
+      _replayT++; // Incrementar tiempo actual
+      if (_replayT > _replayMax) { clearInterval(_replayTimer); return; }
+
+      // Actualizar etiqueta de tiempo general
+      document.getElementById('rp-t').innerText = _replayT;
+
+      // ACTUALIZAR BARRAS DEL GANTT
+      _replayPayload.segments.forEach(seg => {
+        if (_replayT >= seg.start) {
+          const bar = document.getElementById(`rpgf-${seg.pid}`);
+          const timeEndLabel = document.getElementById(`rptime-end-${seg.pid}`);
+
+          if (bar) {
+            // Calculamos qué porcentaje de este segmento ya pasó
+            // Si el tiempo actual es mayor al fin del segmento, queda en 100%
+            const progress = Math.min(100, ((_replayT - seg.start) / (seg.end - seg.start)) * 100);
+
+            // Si es planificación por filas, usamos una lógica simple de "si ya llegó a su tiempo"
+            if (_replayT >= seg.end) {
+              bar.style.width = "100%";
+              timeEndLabel.style.opacity = "1";
+              timeEndLabel.innerText = seg.end;
+            } else {
+              bar.style.width = progress + "%";
+            }
+          }
+        }
+      });
+    }
+
     function rpStop() {
       clearInterval(_replayTimer); _replayTimer = null; _replayPlaying = false;
       const btn = document.getElementById('rp-play-btn');
