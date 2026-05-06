@@ -36,6 +36,19 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnAddProcess")?.addEventListener("click", agregarProceso);
   document.getElementById("btnClearAll")?.addEventListener("click", limpiarTodos);
   document.getElementById("btnCancelEdit")?.addEventListener("click", cancelarEdicion);
+
+  // Mostrar/ocultar quantum de cada cola cuando cambia el algoritmo seleccionado
+  ["mlq", "mlfq"].forEach(prefix => {
+    [0, 1, 2].forEach(i => {
+      const sel = document.getElementById(`${prefix}AlgoQ${i}`);
+      const qRow = document.getElementById(`${prefix}QuantumQ${i}Row`);
+      if (sel && qRow) {
+        sel.addEventListener("change", () => {
+          qRow.style.display = sel.value === "rr" ? "flex" : "none";
+        });
+      }
+    });
+  });
 });
 
 /* ----------------------------------------------------------
@@ -54,8 +67,10 @@ function seleccionarAlgoritmo(algo) {
     btnActivo.classList.add("algo-ring");
   }
 
-  // Mostrar/ocultar quantum (solo RR)
+  // Mostrar/ocultar controles según el algoritmo
   document.getElementById("quantumControl").style.display = algo === "rr" ? "flex" : "none";
+  document.getElementById("mlqConfig").style.display = algo === "mlq" ? "block" : "none";
+  document.getElementById("mlfqConfig").style.display = algo === "mlfq" ? "block" : "none";
 
   // Actualizar título del Gantt
   const nombres = {
@@ -95,10 +110,21 @@ function ejecutarSimulacion() {
     quantum = parseInt(document.getElementById("quantumValue").value) || 2;
   }
 
+  // Leer configuración de colas para MLQ / MLFQ
+  function leerConfigColas(prefix) {
+    return [0, 1, 2].map(i => {
+      const algo = document.getElementById(`${prefix}AlgoQ${i}`)?.value || "fcfs";
+      const q = parseInt(document.getElementById(`${prefix}QuantumQ${i}`)?.value) || 2;
+      return { algo, quantum: algo === "rr" ? q : undefined };
+    });
+  }
+  const mlqConfigs  = algoritmoSeleccionado === "mlq"  ? leerConfigColas("mlq")  : null;
+  const mlfqConfigs = algoritmoSeleccionado === "mlfq" ? leerConfigColas("mlfq") : null;
+
   // Detener animación previa si existe
   if (_animTimer !== null) detenerAnimacion(false);
 
-  resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum);
+  resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum, mlqConfigs, mlfqConfigs);
   if (!resultadoActual) return;
 
   /* ── Guardar prueba en Store para Métricas ── */

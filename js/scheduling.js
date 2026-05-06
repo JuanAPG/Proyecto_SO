@@ -337,17 +337,40 @@ function algoritmo_PriorityPreemptive(procesos) {
 }
 
 /* ----------------------------------------------------------
+   HELPER: seleccionar proceso de una cola según el algoritmo
+   ---------------------------------------------------------- */
+function _pickFromQueue(queue, info, algo) {
+  if (!queue.length) return null;
+  if (algo === "fcfs" || algo === "rr") return queue[0];
+  if (algo === "sjf") {
+    return queue.reduce((best, pid) =>
+      info[pid].tiempoRestante < info[best].tiempoRestante ? pid : best, queue[0]);
+  }
+  if (algo === "priority") {
+    return queue.reduce((best, pid) =>
+      info[pid].priority < info[best].priority ? pid : best, queue[0]);
+  }
+  return queue[0];
+}
+
+/* ----------------------------------------------------------
    7. MULTILEVEL QUEUE
    Tres colas fijas por prioridad del proceso:
-     Q0 (priority ≤ 1): RR quantum=2  — mayor prioridad
-     Q1 (priority = 2): RR quantum=4
-     Q2 (priority ≥ 3): FCFS
+     Q0 (priority ≤ 1): configurable — mayor prioridad
+     Q1 (priority = 2): configurable
+     Q2 (priority ≥ 3): configurable
    Una cola de mayor prioridad siempre preempta a una menor.
    Procesos NO bajan de cola (MLQ clásico).
+   configs = [{algo:'rr', quantum:2}, {algo:'rr', quantum:4}, {algo:'fcfs'}]
    ---------------------------------------------------------- */
-function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
-  const getQueue  = (p) => p.priority <= 1 ? 0 : p.priority <= 2 ? 1 : 2;
-  const quantums  = [quantumQ0, quantumQ1, Infinity];
+function algoritmo_MultilevelQueue(procesos, configs) {
+  const defaultConfigs = [
+    { algo: "rr", quantum: 2 },
+    { algo: "rr", quantum: 4 },
+    { algo: "fcfs" },
+  ];
+  const cfgs = configs || defaultConfigs;
+  const getQueue = (p) => p.priority <= 1 ? 0 : p.priority <= 2 ? 1 : 2;
 
   const info = {};
   procesos.forEach(p => { info[p.pid] = { ...p, tiempoRestante: p.burstTime, firstStart: null }; });
@@ -359,7 +382,7 @@ function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
   let tiempoActual = 0;
   let exec = null; // { pid, queueIdx, quantumUsed }
 
-  for (let guard = 0; guard <= 100000; guard++) {
+  for (let guard = 0; guard <= 200000; guard++) {
     // Admitir procesos llegados
     pendientes = pendientes.filter(p => {
       if (p.arrivalTime <= tiempoActual) { queues[getQueue(p)].push(p.pid); return false; }
@@ -382,7 +405,10 @@ function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
         tiempoActual = pendientes[0].arrivalTime;
         continue;
       }
-      exec = { pid: queues[nextQ].shift(), queueIdx: nextQ, quantumUsed: 0 };
+      const cfg = cfgs[nextQ];
+      const pid = _pickFromQueue(queues[nextQ], info, cfg.algo);
+      queues[nextQ].splice(queues[nextQ].indexOf(pid), 1);
+      exec = { pid, queueIdx: nextQ, quantumUsed: 0 };
     }
 
     const p = info[exec.pid];
@@ -401,9 +427,13 @@ function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
         waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
         turnaroundTime: tiempoActual - p.arrivalTime });
       exec = null;
-    } else if (exec.quantumUsed >= quantums[exec.queueIdx]) {
-      queues[exec.queueIdx].push(exec.pid); // vuelve a su misma cola
-      exec = null;
+    } else {
+      const cfg = cfgs[exec.queueIdx];
+      if (cfg.algo === "rr" && exec.quantumUsed >= cfg.quantum) {
+        queues[exec.queueIdx].push(exec.pid); // vuelve a su misma cola
+        exec = null;
+      }
+      // Para no-RR: el proceso continúa hasta que sea preemptado por cola mayor o termine
     }
 
     if (resultado.length === procesos.length) break;
@@ -418,14 +448,20 @@ function algoritmo_MultilevelQueue(procesos, quantumQ0 = 2, quantumQ1 = 4) {
 /* ----------------------------------------------------------
    8. MULTILEVEL FEEDBACK QUEUE
    Tres colas con degradación por quantum agotado:
-     Q0: RR quantum=2  (todos los procesos entran aquí)
-     Q1: RR quantum=4
-     Q2: FCFS
-   Si un proceso agota su quantum, baja a la siguiente cola.
+     Q0: configurable (todos los procesos entran aquí)
+     Q1: configurable (degradados de Q0)
+     Q2: configurable (degradados de Q1)
+   Si un proceso agota su quantum en una cola RR, baja a la siguiente.
    Nuevas llegadas van a Q0 y preemptan procesos en Q1/Q2.
+   configs = [{algo:'rr', quantum:2}, {algo:'rr', quantum:4}, {algo:'fcfs'}]
    ---------------------------------------------------------- */
-function algoritmo_MultilevelFeedbackQueue(procesos) {
-  const quantums = [2, 4, Infinity];
+function algoritmo_MultilevelFeedbackQueue(procesos, configs) {
+  const defaultConfigs = [
+    { algo: "rr", quantum: 2 },
+    { algo: "rr", quantum: 4 },
+    { algo: "fcfs" },
+  ];
+  const cfgs = configs || defaultConfigs;
 
   const info = {};
   procesos.forEach(p => {
@@ -439,7 +475,7 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
   let tiempoActual = 0;
   let exec = null; // { pid, quantumUsed }
 
-  for (let guard = 0; guard <= 100000; guard++) {
+  for (let guard = 0; guard <= 200000; guard++) {
     // Nuevas llegadas van a Q0
     pendientes = pendientes.filter(p => {
       if (p.arrivalTime <= tiempoActual) { queues[0].push(p.pid); return false; }
@@ -449,7 +485,7 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
     let nextQ = -1;
     for (let i = 0; i < 3; i++) { if (queues[i].length > 0) { nextQ = i; break; } }
 
-    // Preempción: Q0 con proceso nuevo preempta a Q1/Q2
+    // Preempción: cola de mayor prioridad preempta a cola menor
     if (exec && nextQ !== -1 && nextQ < info[exec.pid].queue) {
       queues[info[exec.pid].queue].unshift(exec.pid);
       exec = null;
@@ -461,7 +497,10 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
         tiempoActual = pendientes[0].arrivalTime;
         continue;
       }
-      exec = { pid: queues[nextQ].shift(), quantumUsed: 0 };
+      const cfg = cfgs[nextQ];
+      const pid = _pickFromQueue(queues[nextQ], info, cfg.algo);
+      queues[nextQ].splice(queues[nextQ].indexOf(pid), 1);
+      exec = { pid, quantumUsed: 0 };
     }
 
     const p = info[exec.pid];
@@ -480,12 +519,16 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
         waitingTime:    tiempoActual - p.burstTime - p.arrivalTime,
         turnaroundTime: tiempoActual - p.arrivalTime });
       exec = null;
-    } else if (exec.quantumUsed >= quantums[p.queue]) {
-      // Degradar a la siguiente cola
-      const nextQueue = Math.min(p.queue + 1, 2);
-      p.queue = nextQueue;
-      queues[nextQueue].push(exec.pid);
-      exec = null;
+    } else {
+      const cfg = cfgs[p.queue];
+      if (cfg.algo === "rr" && exec.quantumUsed >= cfg.quantum) {
+        // Degradar a la siguiente cola
+        const nextQueue = Math.min(p.queue + 1, 2);
+        p.queue = nextQueue;
+        queues[nextQueue].push(exec.pid);
+        exec = null;
+      }
+      // Para colas no-RR: el proceso continúa hasta que sea preemptado por Q0 o termine
     }
 
     if (resultado.length === procesos.length) break;
@@ -500,7 +543,7 @@ function algoritmo_MultilevelFeedbackQueue(procesos) {
 /* ----------------------------------------------------------
    ROUTER
    ---------------------------------------------------------- */
-function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2) {
+function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2, mlqConfigs = null, mlfqConfigs = null) {
   if (!procesos || procesos.length === 0) { alert("Agrega procesos primero"); return null; }
   switch (nombreAlgo.toLowerCase()) {
     case "fcfs":     return algoritmo_FCFS(procesos);
@@ -509,8 +552,8 @@ function ejecutarAlgoritmo(nombreAlgo, procesos, quantum = 2) {
     case "rr":       return algoritmo_RoundRobin(procesos, quantum);
     case "srtf":     return algoritmo_SRTF(procesos);
     case "priority": return algoritmo_PriorityPreemptive(procesos);
-    case "mlq":      return algoritmo_MultilevelQueue(procesos);
-    case "mlfq":     return algoritmo_MultilevelFeedbackQueue(procesos);
+    case "mlq":      return algoritmo_MultilevelQueue(procesos, mlqConfigs);
+    case "mlfq":     return algoritmo_MultilevelFeedbackQueue(procesos, mlfqConfigs);
     default: alert(`Algoritmo no reconocido: ${nombreAlgo}`); return null;
   }
 }

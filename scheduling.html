@@ -467,6 +467,61 @@
     }
 
     /* ============================================================
+       CONFIG MULTILEVEL (MLQ / MLFQ)
+       ============================================================ */
+    .mlq-config {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .mlq-config-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    .queue-config-block {
+      padding: 8px 10px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .queue-config-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .queue-algo-select {
+      width: 100%;
+      padding: 5px 8px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-0);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-family: var(--font-base);
+    }
+    .queue-quantum-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .queue-quantum-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
        BOTONES
        ============================================================ */
     .btn-run {
@@ -1140,6 +1195,100 @@
     <div class="quantum-control" id="quantumControl" style="display:none;">
       <label class="quantum-label">Quantum:</label>
       <input type="number" class="quantum-input" id="quantumValue" value="2" min="1" max="20" />
+    </div>
+
+    <!-- Config Multilevel Queue -->
+    <div class="mlq-config" id="mlqConfig" style="display:none;">
+      <div class="mlq-config-header">Configuración de Colas</div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q0 — Mayor prioridad (priority ≤ 1)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ0">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ0Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ0" value="2" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q1 — Prioridad media (priority = 2)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ1">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ1Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ1" value="4" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q2 — Menor prioridad (priority ≥ 3)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ2">
+          <option value="fcfs" selected>FCFS</option>
+          <option value="rr">Round Robin</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ2Row" style="display:none;">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ2" value="8" min="1" max="50" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Config Multilevel Feedback Queue -->
+    <div class="mlq-config" id="mlfqConfig" style="display:none;">
+      <div class="mlq-config-header">Configuración de Colas</div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q0 — Entrada de procesos</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ0">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ0Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ0" value="2" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q1 — Degradados de Q0</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ1">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ1Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ1" value="4" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q2 — Degradados de Q1</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ2">
+          <option value="fcfs" selected>FCFS</option>
+          <option value="rr">Round Robin</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ2Row" style="display:none;">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ2" value="8" min="1" max="50" />
+        </div>
+      </div>
     </div>
 
   </aside>
