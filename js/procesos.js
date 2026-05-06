@@ -24,6 +24,7 @@ function obtenerProcesoDesdeFórmula() {
   const arrivalTime = parseInt(document.getElementById("inputArrival")?.value) || 0;
   const burstTime = parseInt(document.getElementById("inputBurst")?.value);
   const priority = parseInt(document.getElementById("inputPriority")?.value) || 1;
+  const type = document.getElementById("inputType")?.value || "fork";
   const pages = parseInt(document.getElementById("inputPages")?.value) || 1;
 
   if (!burstTime || burstTime <= 0) {
@@ -36,6 +37,7 @@ function obtenerProcesoDesdeFórmula() {
     arrivalTime,
     burstTime,
     priority,
+    type,
     pages,
     state: "new",
   });
@@ -61,6 +63,7 @@ function editarProceso(idx) {
   document.getElementById("inputArrival").value  = p.arrivalTime;
   document.getElementById("inputBurst").value    = p.burstTime;
   document.getElementById("inputPriority").value = p.priority;
+  document.getElementById("inputType").value     = p.type || "fork";
   document.getElementById("inputPages").value    = p.pages;
 
   const btn = document.getElementById("btnAddProcess");
@@ -142,6 +145,8 @@ function limpiarFormulario() {
   document.getElementById("inputArrival").value = "0";
   document.getElementById("inputBurst").value = "";
   document.getElementById("inputPriority").value = "1";
+  const typeEl = document.getElementById("inputType");
+  if (typeEl) typeEl.value = "fork";
   document.getElementById("inputPages").value = "1";
   document.getElementById("inputPid").focus();
 }
@@ -174,7 +179,7 @@ function renderizarTablaProcesos() {
 
   if (procesosGlobales.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Sin procesos. Agrega uno arriba.</td></tr>';
+      '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Sin procesos. Agrega uno arriba.</td></tr>';
     return;
   }
 
@@ -189,6 +194,7 @@ function renderizarTablaProcesos() {
       <td class="td-center">${proceso.burstTime}</td>
       <td class="td-center">${proceso.priority}</td>
       <td class="td-center">${proceso.pages}</td>
+      <td>${badgeTipo(proceso.type || "fork")}</td>
       <td>${badgeEstado(proceso.state)}</td>
       <td style="white-space:nowrap;">
         <button class="btn-edit" onclick="editarProceso(${idx})" title="Editar proceso">✎</button>
@@ -239,12 +245,15 @@ function cargarDesdearchivo(file) {
         const partes = lineas[i].split(",").map((p) => p.trim());
         if (partes.length < 5) continue;
 
+        const rawType = (partes[5] || "fork").trim().toLowerCase();
+        const type = rawType === "thread" ? "thread" : "fork";
         const proceso = crearProceso({
           pid: parseInt(partes[0]),
           arrivalTime: parseInt(partes[1]),
           burstTime: parseInt(partes[2]),
           priority: parseInt(partes[3]),
           pages: parseInt(partes[4]),
+          type,
           state: "new",
         });
 

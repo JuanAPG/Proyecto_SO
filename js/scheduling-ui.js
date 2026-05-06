@@ -204,21 +204,27 @@ function dibujarGantt() {
   const rowsHTML = seenPids.map(pid => {
     const idx = pidToIdx[pid];
     const color = colores[idx % colores.length];
+    const orig = procesosGlobales.find(p => p.pid === pid);
+    const prefix = orig?.type === "thread" ? "T" : "P";
+    // Threads: borde punteado para distinguir visualmente
+    const trackStyle = orig?.type === "thread"
+      ? "border:1.5px dashed rgba(74,20,140,0.35);border-radius:4px;"
+      : "";
 
     const blocksHTML = segments
       .filter(s => s.pid === pid)
-      .map((seg, i) => {
+      .map((seg) => {
         const left = ((seg.start / makespan) * 100).toFixed(3);
         const width = (((seg.end - seg.start) / makespan) * 100).toFixed(3);
-        const label = parseFloat(width) > 4 ? `P${pid}` : "";
+        const label = parseFloat(width) > 4 ? `${prefix}${pid}` : "";
         return `<div class="gantt-block"
           style="left:${left}%;width:${width}%;background:${color};color:#fff;font-weight:700;font-size:11px;"
-          title="P${pid}: t${seg.start} → t${seg.end}">${label}</div>`;
+          title="${prefix}${pid}: t${seg.start} → t${seg.end}">${label}</div>`;
       }).join("");
 
     return `<div class="gantt-row">
-      <div class="gantt-pid">P${pid}</div>
-      <div class="gantt-track">${csHTML}${blocksHTML}</div>
+      <div class="gantt-pid">${prefix}${pid}</div>
+      <div class="gantt-track" style="${trackStyle}">${csHTML}${blocksHTML}</div>
     </div>`;
   }).join("");
 
@@ -296,11 +302,13 @@ function actualizarQueueDinámica() {
   queueItems.innerHTML = "";
 
   resultadoActual.procesos.forEach((p, i) => {
+    const orig = procesosGlobales.find(x => x.pid === p.pid);
+    const prefix = orig?.type === "thread" ? "T" : "P";
     const item = document.createElement("div");
     item.className = "queue-item queue-enter";
     item.style.animationDelay = `${i * 60}ms`;
     item.style.opacity = "0";
-    item.textContent = `P${p.pid}`;
+    item.textContent = `${prefix}${p.pid}`;
     if (i === 0) item.classList.add("running");
     queueItems.appendChild(item);
   });
@@ -327,11 +335,18 @@ function renderEstadosProcesos() {
     .sort((a, b) => a.pid - b.pid)
     .map(p => {
       const color = _pidColors[p.pid] || "#888";
+      const orig = procesosGlobales.find(x => x.pid === p.pid);
+      const tipo = orig?.type || "fork";
+      const prefix = tipo === "thread" ? "T" : "P";
+      const memNote = tipo === "thread"
+        ? `<span style="font-size:10px;color:#4A148C;background:#EDE7F6;border-radius:4px;padding:1px 5px;">Comparte memoria</span>`
+        : `<span style="font-size:10px;color:#BF360C;background:#FFF3E0;border-radius:4px;padding:1px 5px;">Memoria privada</span>`;
       return `
       <div class="psc-card" data-pid="${p.pid}">
         <div class="psc-pid" style="display:flex;align-items:center;gap:6px;">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-          P${p.pid}
+          ${prefix}${p.pid}
+          ${badgeTipo(tipo)}
         </div>
         <div class="psc-state-badge">${badgeEstado("new")}</div>
         <div class="psc-metrics">
@@ -339,6 +354,7 @@ function renderEstadosProcesos() {
           <span class="psc-metric">TAT <strong>${p.turnaroundTime}</strong></span>
           <span class="psc-metric">RT <strong>${p.responseTime}</strong></span>
         </div>
+        <div>${memNote}</div>
       </div>`;
     }).join("");
 

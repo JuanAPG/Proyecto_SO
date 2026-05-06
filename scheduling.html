@@ -120,7 +120,7 @@
 
     .input-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 12px;
       align-items: flex-end;
     }
@@ -727,6 +727,21 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
+    /* Badge de tipo: fork / thread */
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+    .type-fork   { background: #FFF3E0; color: #BF360C; border: 1px solid #FFCC80; }
+    .type-thread { background: #EDE7F6; color: #4A148C; border: 1px solid #CE93D8; }
+
     @media (max-width: 1024px) {
       .scheduling-container {
         grid-template-columns: 1fr;
@@ -1320,6 +1335,13 @@
           <input type="number" class="form-input" id="inputPriority" min="1" value="1" />
         </div>
         <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-input" id="inputType">
+            <option value="fork">Fork</option>
+            <option value="thread">Thread</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">Pages</label>
           <input type="number" class="form-input" id="inputPages" min="1" />
         </div>
@@ -1350,6 +1372,7 @@
               <th>Burst</th>
               <th>Priority</th>
               <th>Pages</th>
+              <th>Tipo</th>
               <th>Estado</th>
               <th>Acción</th>
             </tr>

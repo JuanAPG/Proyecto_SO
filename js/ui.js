@@ -14,6 +14,7 @@
      burstTime:   5,          // número entero > 0
      priority:    2,          // número entero (1 = más alta)
      pages:       4,          // número entero > 0
+     type:        "fork",     // "fork" | "thread"
      state:       "ready"     // ver ESTADOS abajo
    };
 
@@ -76,13 +77,25 @@ function validarProceso(proceso) {
  * @param {Partial<Object>} datos - Campos a sobrescribir
  * @returns {Object} proceso completo
  */
-function crearProceso({ pid, arrivalTime = 0, burstTime = 1, priority = 1, pages = 1, state = "new" } = {}) {
-  return { pid, arrivalTime, burstTime, priority, pages, state };
+function crearProceso({ pid, arrivalTime = 0, burstTime = 1, priority = 1, pages = 1, type = "fork", state = "new" } = {}) {
+  return { pid, arrivalTime, burstTime, priority, pages, type, state };
 }
 
 /* ----------------------------------------------------------
-   3. BADGES DE ESTADO
+   3. BADGES DE ESTADO Y TIPO
    ---------------------------------------------------------- */
+
+/**
+ * Devuelve el HTML de un badge de tipo (fork / thread).
+ * @param {string} type - "fork" | "thread"
+ * @returns {string} HTML string
+ */
+function badgeTipo(type) {
+  if (type === "thread") {
+    return `<span class="type-badge type-thread" title="Thread: comparte espacio de memoria con el proceso padre">⧉ Thread</span>`;
+  }
+  return `<span class="type-badge type-fork" title="Fork: proceso independiente con su propio espacio de memoria">⑂ Fork</span>`;
+}
 
 /**
  * Devuelve el HTML de un badge de estado con el color correcto.
