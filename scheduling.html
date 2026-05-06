@@ -7,6 +7,16 @@
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     /* ============================================================
+       OVERRIDE: corregir overflow y scroll bloqueados por styles.css
+       ============================================================ */
+    html, body {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      height: auto !important;
+      background: #F4F6F9 !important;
+    }
+
+    /* ============================================================
        LAYOUT PRINCIPAL
        ============================================================ */
     .scheduling-container {
@@ -16,8 +26,15 @@
       display: grid;
       grid-template-columns: 300px 1fr;
       gap: 24px;
-      min-height: calc(100vh - 60px);
-      background: var(--surface-1);
+      background: #F4F6F9;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    /* Columna derecha: min-width: 0 evita desbordamiento en CSS Grid */
+    .scheduling-main {
+      min-width: 0;
+      overflow-x: hidden;
     }
 
     /* Panel lateral izquierdo */
@@ -758,6 +775,12 @@
       }
     }
 
+    @media (max-width: 900px) {
+      .input-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
     @media (max-width: 768px) {
       .scheduling-container {
         padding: 16px;
@@ -1212,6 +1235,16 @@
       <input type="number" class="quantum-input" id="quantumValue" value="2" min="1" max="20" />
     </div>
 
+    <!-- Control de Núm. de Cores (siempre visible) -->
+    <div class="quantum-control" id="coresControl" style="margin-top:8px; background:var(--color-blue-50); border:1px solid var(--color-blue-200);">
+      <label class="quantum-label" style="color:var(--color-blue-700);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>
+        Cores:
+      </label>
+      <input type="number" class="quantum-input" id="coresValue" value="1" min="1" max="8" title="Número de cores de CPU (1-8)" />
+      <span class="quantum-label" style="font-size:10px;font-weight:400;">/8</span>
+    </div>
+
     <!-- Config Multilevel Queue -->
     <div class="mlq-config" id="mlqConfig" style="display:none;">
       <div class="mlq-config-header">Configuración de Colas</div>
@@ -1442,6 +1475,23 @@
         </div>
       </div>
 
+    </section>
+
+    <!-- ============================================================
+         PANEL 3b: Vista por Cores (multi-core Gantt)
+         ============================================================ -->
+    <section class="execution-panel" id="coreViewPanel" style="display:none;">
+      <div class="gantt-container" style="grid-column:1/-1;">
+        <div class="gantt-header">
+          <div class="gantt-title" id="coreViewTitle">Vista por Cores</div>
+          <div class="gantt-controls">
+            <span style="font-size:11px;color:var(--text-muted);padding:4px 10px;background:var(--color-blue-50);border:1px solid var(--color-blue-200);border-radius:var(--radius-md);">
+              Cada fila = 1 Core CPU físico
+            </span>
+          </div>
+        </div>
+        <div id="coreGanttChart" style="border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-1);padding:16px 12px 8px;overflow-x:auto;"></div>
+      </div>
     </section>
 
     <!-- ============================================================

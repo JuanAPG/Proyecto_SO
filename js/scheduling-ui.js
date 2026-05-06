@@ -120,11 +120,12 @@ function ejecutarSimulacion() {
   }
   const mlqConfigs  = algoritmoSeleccionado === "mlq"  ? leerConfigColas("mlq")  : null;
   const mlfqConfigs = algoritmoSeleccionado === "mlfq" ? leerConfigColas("mlfq") : null;
+  const numCores = parseInt(document.getElementById("coresValue")?.value) || 1;
 
   // Detener animación previa si existe
   if (_animTimer !== null) detenerAnimacion(false);
 
-  resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum, mlqConfigs, mlfqConfigs);
+  resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum, mlqConfigs, mlfqConfigs, numCores);
   if (!resultadoActual) return;
 
   /* ── Guardar prueba en Store para Métricas ── */
@@ -133,6 +134,7 @@ function ejecutarSimulacion() {
   }
 
   dibujarGantt();
+  dibujarGanttCores();
 
   // Mostrar botón Animar
   const btnAnim = document.getElementById("btnAnimate");
@@ -592,7 +594,66 @@ function limpiarActivosEstado() {
 }
 
 /* ----------------------------------------------------------
-   10. LIMPIAR GANTT
+   10. DIBUJAR GANTT POR CORES (multi-core view)
+   ---------------------------------------------------------- */
+function dibujarGanttCores() {
+  const panel = document.getElementById("coreViewPanel");
+  const chart = document.getElementById("coreGanttChart");
+  if (!panel || !chart || !resultadoActual) return;
+
+  const numCores = resultadoActual.numCores || 1;
+  if (numCores <= 1) { panel.style.display = "none"; return; }
+
+  const segments = resultadoActual.segments || [];
+  const makespan = resultadoActual.metricas.makespan;
+  if (!segments.length || makespan === 0) { panel.style.display = "none"; return; }
+
+  panel.style.display = "";
+  document.getElementById("coreViewTitle").textContent =
+    `Vista por Cores — ${numCores} core${numCores > 1 ? "s" : ""} en paralelo`;
+
+  const paso = Math.ceil(makespan / 10) || 1;
+  const ticks = [];
+  for (let t = 0; t <= makespan; t += paso) {
+    const left = ((t / makespan) * 100).toFixed(2);
+    ticks.push(`<span class="gantt-tick" style="position:absolute;left:${left}%;transform:translateX(-50%)">${t}</span>`);
+  }
+  const axisHTML = `<div class="gantt-row" style="margin-top:4px;">
+    <div class="gantt-pid" style="min-width:52px;"></div>
+    <div class="gantt-track" style="background:transparent;border:none;height:18px;position:relative;">${ticks.join("")}</div>
+  </div>`;
+
+  const rowsHTML = Array.from({ length: numCores }, (_, coreId) => {
+    const coreSegs = segments.filter(s => (s.core ?? 0) === coreId);
+
+    const blocksHTML = coreSegs.map(seg => {
+      const pid   = seg.pid;
+      const color = _pidColors[pid] || "#3d687b";
+      const left  = ((seg.start / makespan) * 100).toFixed(2);
+      const width = (((seg.end - seg.start) / makespan) * 100).toFixed(2);
+      const orig  = procesosGlobales.find(p => p.pid === pid);
+      const prefix = orig?.type === "thread" ? "T" : "P";
+      const label = parseFloat(width) > 4 ? `${prefix}${pid}` : "";
+      return `<div class="gantt-block"
+        style="left:${left}%;width:${width}%;background:${color};color:#fff;font-weight:700;font-size:11px;"
+        title="${prefix}${pid}: t${seg.start}→t${seg.end}">${label}</div>`;
+    }).join("");
+
+    const idlePct = coreSegs.length
+      ? (100 - coreSegs.reduce((s, seg) => s + (seg.end - seg.start) / makespan * 100, 0)).toFixed(1)
+      : "100.0";
+
+    return `<div class="gantt-row">
+      <div class="gantt-pid" style="min-width:52px;font-size:11px;">Core ${coreId}${parseFloat(idlePct) > 0 ? `<br><span style="color:var(--text-muted);font-size:9px;">${idlePct}% idle</span>` : ""}</div>
+      <div class="gantt-track" style="background:repeating-linear-gradient(90deg,rgba(0,0,0,0.04) 0px,rgba(0,0,0,0.04) 1px,transparent 1px,transparent 20px);">${blocksHTML}</div>
+    </div>`;
+  }).join("");
+
+  chart.innerHTML = rowsHTML + axisHTML;
+}
+
+/* ----------------------------------------------------------
+   11. LIMPIAR GANTT
    ---------------------------------------------------------- */
 function limpiarGantt() {
   if (_animTimer !== null) detenerAnimacion(false);
@@ -616,6 +677,9 @@ function limpiarGantt() {
 
   const statesPanel = document.getElementById("statesPanel");
   if (statesPanel) statesPanel.style.display = "none";
+
+  const coreViewPanel = document.getElementById("coreViewPanel");
+  if (coreViewPanel) coreViewPanel.style.display = "none";
 
   resultadoActual = null;
 }
