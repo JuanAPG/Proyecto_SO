@@ -19,15 +19,6 @@ let editandoIdx = -1; // índice del proceso en edición (-1 = sin edición)
  * Obtiene los valores del formulario y crea un proceso
  * @returns {Object|null} Proceso válido o null si hay error
  */
-<<<<<<< HEAD
-function obtenerProcesoDesdeFormula() {
-  const nombreInput = document.getElementById("inputName").value.trim();
-  const pid = nombreInput || ("P" + procesoIdCounter);
-  
-  const arrivalTime = parseInt(document.getElementById("inputArrival").value) || 0;
-  const burstTime = parseInt(document.getElementById("inputBurst").value);
-  const priority = parseInt(document.getElementById("inputPriority").value) || 1;
-=======
 function obtenerProcesoDesdeFórmula() {
   const pid = parseInt(document.getElementById("inputPid")?.value) || procesoIdCounter;
   const arrivalTime = parseInt(document.getElementById("inputArrival")?.value) || 0;
@@ -35,21 +26,12 @@ function obtenerProcesoDesdeFórmula() {
   const priority = parseInt(document.getElementById("inputPriority")?.value) || 1;
   const type = document.getElementById("inputType")?.value || "fork";
   const pages = parseInt(document.getElementById("inputPages")?.value) || 1;
->>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
   if (isNaN(burstTime) || burstTime <= 0) {
     alert("Por favor, ingresa un tiempo de ráfaga (Burst) válido.");
     return null;
   }
 
-<<<<<<< HEAD
-  const proceso = {
-    pid: pid, // Aquí guardamos el nombre
-    arrivalTime: arrivalTime,
-    burstTime: burstTime,
-    remainingTime: burstTime, // Para la animación
-    priority: priority,
-=======
   const proceso = crearProceso({
     pid,
     arrivalTime,
@@ -57,10 +39,9 @@ function obtenerProcesoDesdeFórmula() {
     priority,
     type,
     pages,
->>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
     state: "new",
     color: GANTT_COLORS[procesoIdCounter % GANTT_COLORS.length]
-  };
+  });
 
   procesosGlobales.push(proceso);
   if (!nombreInput) procesoIdCounter++; // Solo aumenta si no hubo nombre manual

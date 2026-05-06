@@ -1,525 +1,928 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OSim — MemoryCinema</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap"
+    rel="stylesheet">
   <style>
-    /* ═══════════════════════════════════════════════════════
-       CHIPS DE CADENA
-    ═══════════════════════════════════════════════════════ */
-    .ref-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.05);
-      color: #6A8AAA;
-      transition: all 0.15s ease;
-      user-select: none;
-      position: relative;
+    :root {
+      --cb-bright: #00CFFF;
+      --cb-mid: #0EA5D4;
+      --cb-deep: #0769A8;
+      --cb-glow: rgba(0, 207, 255, 0.35);
     }
-    .ref-chip:hover { border-color: rgba(177,207,222,0.5); color: #b1cfde; transform: scale(1.1); }
-    .ref-chip-active  {
-      background: rgba(61,104,123,0.6) !important;
-      color: #fff !important;
-      border-color: rgba(177,207,222,0.6) !important;
-      transform: scale(1.2) !important;
-      box-shadow: 0 0 12px rgba(61,104,123,0.4) !important;
-    }
-    .ref-chip-fault   { background: rgba(226,75,74,0.2) !important; color: #FF8080 !important; border-color: rgba(255,107,107,0.3) !important; }
-    .ref-chip-hit     { background: rgba(99,198,99,0.15) !important; color: #7BC67E !important; border-color: rgba(99,198,99,0.3) !important; }
 
-    /* ═══════════════════════════════════════════════════════
-       LAYOUT PRINCIPAL
-    ═══════════════════════════════════════════════════════ */
-    .two-col {
-      display: grid;
-      grid-template-columns: 290px 1fr;
-      gap: 20px;
-      align-items: start;
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
     }
-    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
-    /* ═══════════════════════════════════════════════════════
-       CONTROLES IZQUIERDA — tarjeta clara
-    ═══════════════════════════════════════════════════════ */
-    .ctrl-panel {
-      background: var(--surface-0);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
+    /* ── Layout igual que scheduling ── */
+    .page {
       display: flex;
       flex-direction: column;
-      gap: 18px;
-    }
-    .ctrl-section-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-    .ctrl-input {
-      width: 100%;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 13px;
-      padding: 9px 12px;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .ctrl-input:focus { border-color: var(--color-blue-500); box-shadow: 0 0 0 3px var(--color-blue-50); }
-    .ctrl-input::placeholder { color: var(--text-muted); }
-    .ctrl-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-      display: block;
-    }
-    .ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    /* Algoritmo botones */
-    .algo-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-    .algo-card {
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 8px 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      position: relative;
-    }
-    .algo-card:hover { background: var(--color-blue-50); border-color: var(--color-blue-500); }
-    .algo-card.active {
-      background: var(--color-blue-700);
-      border-color: var(--color-blue-700);
-      box-shadow: 0 4px 12px rgba(61,104,123,0.25);
-    }
-    .algo-card-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-    .algo-card-name {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      letter-spacing: 0.04em;
-    }
-    .algo-card-sub {
-      font-size: 9px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-    .algo-card.active .algo-card-name { color: #fff; }
-    .algo-card.active .algo-card-sub  { color: rgba(255,255,255,0.7); }
-    .algo-card:last-child { grid-column: span 2; }
-
-    /* Botones de acción */
-    .btn-cine-primary {
-      width: 100%;
-      background: var(--color-blue-700);
-      border: none;
-      color: #fff;
-      border-radius: 10px;
-      padding: 11px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      transition: all 0.2s;
-      font-family: var(--font-sans);
-    }
-    .btn-cine-primary:hover { background: #185FA5; box-shadow: 0 4px 16px rgba(61,104,123,0.3); }
-    .btn-cine-ghost {
-      width: 100%;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 8px;
-      padding: 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: var(--font-sans);
-    }
-    .btn-cine-ghost:hover { background: var(--surface-1); color: var(--text-primary); }
-
-    /* Métricas sidebar */
-    .cine-metric-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .cine-metric-row:last-child { border-bottom: none; }
-    .cine-metric-lbl { font-size: 11px; color: #4A6A8A; }
-    .cine-metric-val { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: #8AAAC8; }
-    .cine-metric-val.fault { color: #FF6B6B; }
-    .cine-metric-val.good  { color: #7BC67E; }
-
-    /* Vel slider */
-    .vel-row { display: flex; align-items: center; gap: 8px; }
-    .vel-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
-    input[type=range].vel-slider {
-      flex: 1;
-      accent-color: #3d687b;
-      cursor: pointer;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       MEMORY CINEMA — ZONA DERECHA
-    ═══════════════════════════════════════════════════════ */
-    .memory-cinema {
-      background: #000000;
-      border-radius: 16px;
+      height: calc(100vh - 52px);
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
-      position: relative;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
     }
 
     /* ── Marquesina ── */
     .marquee-bar {
-      background: #000000;
-      padding: 12px 20px 10px;
+      flex-shrink: 0;
+      background: #000;
+      padding: 9px 20px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid rgba(255,200,50,0.12);
+      border-bottom: 1px solid rgba(0, 207, 255, .15);
       position: relative;
-      overflow: hidden;
     }
+
     .marquee-bar::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       height: 2px;
-      background: repeating-linear-gradient(90deg, #FFD700 0px, #FFD700 8px, transparent 8px, transparent 16px);
-      opacity: 0.5;
+      background: repeating-linear-gradient(90deg, var(--cb-bright) 0px, var(--cb-bright) 8px, transparent 8px, transparent 16px);
+      opacity: .45;
     }
-    .marquee-bar::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 1px;
-      background: repeating-linear-gradient(90deg, #FFD700 0px, #FFD700 4px, transparent 4px, transparent 10px);
-      opacity: 0.2;
-    }
+
     .marquee-title {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 0.15em;
-      color: #FFD700;
-      text-shadow: 0 0 20px rgba(255,215,0,0.4), 0 0 40px rgba(255,215,0,0.15);
+      font-size: 22px;
+      letter-spacing: .15em;
+      color: var(--color-blue-500);
+      text-shadow: 0 0 18px var(--cb-glow);
       line-height: 1;
     }
-    .marquee-title span { color: #fff; }
+
+    .marquee-title span {
+      color: #fff;
+    }
+
+    .marquee-sub {
+      font-size: 10px;
+      color: rgba(0, 207, 255, .45);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
     .marquee-lights {
       display: flex;
       gap: 6px;
-      align-items: center;
     }
+
     .marquee-bulb {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: #FFD700;
-      box-shadow: 0 0 6px #FFD700;
-      animation: bulb-blink 1.4s ease-in-out infinite;
+      background: var(--cb-bright);
+      box-shadow: 0 0 6px var(--cb-bright);
+      animation: bulb-blink 1.8s ease-in-out infinite;
     }
-    .marquee-bulb:nth-child(2) { animation-delay: 0.2s; }
-    .marquee-bulb:nth-child(3) { animation-delay: 0.4s; }
-    .marquee-bulb:nth-child(4) { animation-delay: 0.6s; }
-    .marquee-bulb:nth-child(5) { animation-delay: 0.8s; }
+
+    .marquee-bulb:nth-child(2) {
+      animation-delay: .6s;
+    }
+
+    .marquee-bulb:nth-child(3) {
+      animation-delay: 1.2s;
+    }
+
     @keyframes bulb-blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .2
+      }
     }
 
-    /* ── Narrador ── */
-    .narrator-bar {
-      background: rgba(255,255,255,0.03);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      padding: 9px 20px;
-      min-height: 38px;
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #000;
+      border-right: 1px solid rgba(0, 207, 255, .12);
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .narrator-icon { font-size: 16px; flex-shrink: 0; }
-    #narrator-text {
-      font-size: 12px;
-      color: #C8DFFF;
-      font-style: italic;
-      line-height: 1.4;
-      transition: opacity 0.3s;
-    }
-    .narrator-fault { color: #FF8080 !important; }
-    .narrator-hit   { color: #7BC67E !important; }
 
-    /* ── Controles de reproducción (panel claro) ── */
-    .pb-btn {
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 6px;
-      width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s;
+    .tab-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border-bottom: 1px solid rgba(0, 207, 255, .15);
       flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: rgba(0, 207, 255, .4);
+      font-family: 'Bebas Neue', sans-serif;
       font-size: 12px;
-    }
-    .pb-btn:hover:not(:disabled) { background: var(--color-blue-50); border-color: var(--color-blue-500); color: var(--color-blue-700); }
-    .pb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .pb-play {
-      background: var(--color-blue-700);
-      border: 1px solid var(--color-blue-500);
-      color: #fff;
-      height: 30px;
-      padding: 0 14px;
-      font-size: 11px;
-      font-weight: 700;
-      gap: 5px;
-      white-space: nowrap;
-      opacity: 1 !important;
-    }
-    .pb-play:hover:not(:disabled) { background: #185FA5; box-shadow: 0 2px 10px rgba(61,104,123,0.3); }
-    .pb-play.playing { background: #DC2626 !important; border-color: #EF4444 !important; box-shadow: none !important; }
-    .pb-counter {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-      min-width: 52px;
+      letter-spacing: .1em;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
       text-align: center;
     }
-    .pb-progress { width: 100%; height: 4px; background: var(--surface-1); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
-    .pb-progress-fill { height: 100%; background: var(--color-blue-700); border-radius: 99px; width: 0%; transition: width 0.3s ease; }
+
+    .tab-btn:hover {
+      color: rgba(0, 207, 255, .75);
+    }
+
+    .tab-btn.active {
+      color: var(--cb-bright);
+      border-bottom-color: var(--cb-bright);
+    }
+
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      color: var(--cb-bright);
+      border-bottom: 1px solid rgba(0, 207, 255, .2);
+      padding-bottom: 3px;
+      margin: 8px 0 4px;
+      font-size: 15px;
+      letter-spacing: .1em;
+    }
+
+    .section-title:first-child {
+      margin-top: 0;
+    }
+
+    .input-cine {
+      background: #0d0d0d;
+      border: 1px solid rgba(0, 207, 255, .18);
+      color: #fff;
+      padding: 7px 10px;
+      width: 100%;
+      border-radius: 5px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      box-sizing: border-box;
+      transition: border-color .2s;
+    }
+
+    .input-cine:focus {
+      outline: none;
+      border-color: var(--cb-bright);
+      box-shadow: 0 0 8px rgba(0, 207, 255, .2);
+    }
+
+    .input-cine::placeholder {
+      color: rgba(255, 255, 255, .28);
+    }
+
+    .input-label {
+      font-size: 10px;
+      color: rgba(0, 207, 255, .6);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 2px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .btn-cine {
+      background: var(--cb-mid);
+      border: none;
+      color: #fff;
+      padding: 9px;
+      width: 100%;
+      border-radius: 5px;
+      font-family: 'Bebas Neue', sans-serif;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: .08em;
+      margin-top: 1px;
+      transition: background .15s, box-shadow .15s;
+    }
+
+    .btn-cine:hover {
+      background: var(--cb-bright);
+      box-shadow: 0 0 14px var(--cb-glow);
+    }
+
+    .btn-cine.secondary {
+      background: #1a1a1a;
+      border: 1px solid rgba(0, 207, 255, .2);
+    }
+
+    .btn-cine.secondary:hover {
+      background: #222;
+      box-shadow: none;
+    }
+
+    .export-btn {
+      background: none;
+      border: 1px solid rgba(0, 207, 255, .25);
+      border-radius: 4px;
+      color: rgba(0, 207, 255, .6);
+      font-size: 10px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .export-btn:hover {
+      color: var(--cb-bright);
+      border-color: var(--cb-bright);
+    }
+
+    /* ── Algo cards (paginación) ── */
+    .algo-grid-pag {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .algo-card-pag {
+      background: rgba(0, 207, 255, .03);
+      border: 1px solid rgba(0, 207, 255, .12);
+      border-radius: 6px;
+      padding: 8px 6px 7px;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+
+    .algo-card-pag:hover {
+      background: rgba(0, 207, 255, .09);
+      border-color: var(--cb-mid);
+    }
+
+    .algo-card-pag.active {
+      background: rgba(0, 207, 255, .16);
+      border-color: var(--cb-bright);
+    }
+
+    .algo-card-pag:last-child {
+      grid-column: span 2;
+    }
+
+    .algo-card-icon {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .algo-card-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .75);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .algo-card-pag.active .algo-card-name {
+      color: var(--cb-bright);
+    }
+
+    .algo-card-sub {
+      font-size: 8px;
+      color: rgba(0, 207, 255, .4);
+      margin-top: 2px;
+    }
+
+    #algo-desc {
+      font-size: 10px;
+      color: rgba(0, 207, 255, .5);
+      font-style: italic;
+      line-height: 1.45;
+      padding: 6px 8px;
+      background: rgba(0, 207, 255, .04);
+      border: 1px solid rgba(0, 207, 255, .08);
+      border-radius: 5px;
+    }
+
+    /* ── Chip chips de referencia ── */
+    .ref-chip-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      background: rgba(0, 207, 255, .1);
+      border: 1px solid rgba(0, 207, 255, .2);
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--cb-bright);
+      cursor: pointer;
+    }
+
+    /* ── Sim controls (igual que scheduling) ── */
+    .sim-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #000;
+      border-bottom: 1px solid rgba(0, 207, 255, .12);
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+
+    .sim-btn {
+      background: var(--cb-mid);
+      border: none;
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: .06em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .15s;
+    }
+
+    .sim-btn:hover {
+      background: var(--cb-bright);
+    }
+
+    .sim-btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    .sim-btn.playing {
+      background: #1a5c30;
+    }
+
+    .sim-btn.step-style {
+      background: #14283a;
+      border: 1px solid rgba(0, 207, 255, .2);
+    }
+
+    .sim-btn.step-style:hover {
+      background: #1e3a50;
+    }
+
+    .algo-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: .1em;
+      color: #fff;
+      background: rgba(0, 207, 255, .1);
+      border: 1px solid rgba(0, 207, 255, .2);
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .sim-clock {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      color: var(--cb-bright);
+      letter-spacing: .1em;
+    }
+
+    .sim-clock span {
+      font-size: 10px;
+      color: rgba(0, 207, 255, .5);
+      margin-right: 2px;
+    }
+
+    /* ── Zona derecha: cinema ── */
+    .cinema-wrap {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+      background: radial-gradient(ellipse at top, #06111a 0%, #000 70%);
+    }
 
     /* ── Interior del cine ── */
     .cinema-interior {
       display: grid;
-      grid-template-columns: 1fr 120px;
-      gap: 0;
-      min-height: 420px;
+      grid-template-columns: 1fr 110px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    /* Zona izquierda: pantalla + sala */
     .cinema-stage {
-      padding: 16px 16px 12px;
+      padding: 10px 14px 8px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      border-right: 1px solid rgba(255,255,255,0.04);
-      position: relative;
-    }
-
-    /* Pantalla de proyección */
-    .cinema-screen {
-      background: linear-gradient(180deg, #365670, #000000);
-      border-radius: 10px 10px 2px 2px;
-      border: 1px solid rgba(255,255,255,0.07);
-      border-bottom: 3px solid rgba(61,104,123,0.25);
-      padding: 10px 14px 8px;
-      text-align: center;
+      gap: 8px;
+      border-right: 1px solid rgba(255, 255, 255, .04);
       position: relative;
       overflow: hidden;
     }
-    .cinema-screen::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 60%; height: 3px;
-      background: linear-gradient(90deg, transparent, rgba(61,104,123,0.6), transparent);
-    }
-    .screen-glow {
-      position: absolute;
-      top: -30px; left: 50%;
-      transform: translateX(-50%);
-      width: 220px; height: 80px;
-      background: radial-gradient(ellipse, rgba(61,104,123,0.35) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .screen-algo-name {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.1em;
-      color: #b1cfde;
-      text-shadow: 0 0 20px rgba(177,207,222,0.5);
-      line-height: 1;
-    }
-    .screen-algo-tagline {
-      font-size: 10px;
-      color: #6AABCA;
-      margin-top: 3px;
-      font-style: italic;
+
+    .cinema-stage.walker-active {
+      overflow: visible;
     }
 
-    /* Fila de espera (personas) */
-    .queue-zone {
-      background: rgba(0,0,0,0.25);
-      border-radius: 8px;
-      padding: 7px 10px;
+    .cinema-sidebar {
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0, 0, 0, .2);
+      overflow: hidden;
     }
-    .queue-label {
+
+    /* Narrador */
+    .narrator-bar {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .03);
+      border-bottom: 1px solid rgba(255, 255, 255, .05);
+      padding: 5px 16px;
+      min-height: 26px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #narrator-text {
+      font-size: 11px;
+      color: #C8DFFF;
+      font-style: italic;
+      line-height: 1.4;
+      transition: opacity .3s;
+    }
+
+    .narrator-fault {
+      color: #FF8080 !important;
+    }
+
+    .narrator-hit {
+      color: #7BC67E !important;
+    }
+
+    /* Ref bits */
+    #refbits-area {
+      display: none;
+      padding: 4px 14px 0;
+      flex-shrink: 0;
+    }
+
+    .refbits-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .refbit-cell {
+      width: 32px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      padding: 3px 2px;
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .refbit-idx {
+      font-size: 8px;
+      color: #6AABCA;
+    }
+
+    .refbit-val {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .refbit-on {
+      background: rgba(24, 95, 165, .25);
+      border-color: rgba(55, 138, 221, .4);
+    }
+
+    .refbit-on .refbit-val {
+      color: #60A0E0;
+    }
+
+    .refbit-off .refbit-val {
+      color: #5E98AE;
+    }
+
+    .refbit-ptr {
+      border-color: #185FA5 !important;
+      box-shadow: 0 0 0 2px rgba(24, 95, 165, .35);
+    }
+
+    /* Pantalla proyección */
+    .cinema-screen-proj {
+      background: linear-gradient(180deg, #0a1f35, #000);
+      border-radius: 8px 8px 2px 2px;
+      border: 1px solid rgba(0, 207, 255, .1);
+      border-bottom: 3px solid rgba(61, 104, 123, .25);
+      padding: 8px 12px 6px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .cinema-screen-proj::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cb-bright), transparent);
+      opacity: .3;
+    }
+
+    .screen-curtain {
+      position: absolute;
+      top: -1px;
+      bottom: -1px;
+      width: 18px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .screen-curtain-l {
+      left: -1px;
+      background: linear-gradient(90deg, rgba(90, 12, 30, .65), transparent);
+      border-radius: 7px 0 0 2px;
+    }
+
+    .screen-curtain-r {
+      right: -1px;
+      background: linear-gradient(-90deg, rgba(90, 12, 30, .65), transparent);
+      border-radius: 0 7px 2px 0;
+    }
+
+    .screen-algo-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: .1em;
+      color: var(--cb-bright);
+      text-shadow: 0 0 18px var(--cb-glow);
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .screen-algo-tagline {
       font-size: 9px;
-      letter-spacing: 0.1em;
+      color: rgba(0, 207, 255, .5);
+      margin-top: 2px;
+      font-style: italic;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Cola espera */
+    .queue-zone {
+      background: rgba(0, 0, 0, .25);
+      border-radius: 7px;
+      padding: 6px 9px;
+      flex-shrink: 0;
+    }
+
+    .zone-label {
+      font-size: 9px;
+      letter-spacing: .1em;
       text-transform: uppercase;
-      color: #7ABBD4;
-      margin-bottom: 6px;
+      color: rgba(0, 207, 255, .5);
+      margin-bottom: 5px;
       display: flex;
       align-items: center;
       gap: 5px;
     }
+
     #queue-strip {
       display: flex;
       flex-wrap: nowrap;
       gap: 4px;
       overflow-x: auto;
-      padding-bottom: 2px;
-      min-height: 32px;
+      min-height: 28px;
       scrollbar-width: none;
     }
-    #queue-strip::-webkit-scrollbar { display: none; }
 
-    /* Zona de asientos */
+    #queue-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Asientos */
     .seats-zone {
       flex: 1;
+      overflow: hidden;
     }
-    .seats-label {
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #7ABBD4;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
+
     #seats-grid {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
+
     .seat-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
     }
-    /* Pasillo central */
-    .seat-row.has-aisle .seat-aisle { width: 20px; flex-shrink: 0; }
 
-    /* Butaca individual */
+    .seat-row.has-aisle .seat-aisle {
+      width: 18px;
+      flex-shrink: 0;
+    }
+
     .seat {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1px;
-      cursor: default;
       position: relative;
       overflow: visible;
     }
-    .seat:hover .seat-svg { transform: translateY(-3px); }
 
-    /* SVG de butaca — animaciones y filtros por estado */
-    .seat-svg { transition: transform 0.2s ease, filter 0.3s ease; overflow: visible; }
+    .seat:hover .seat-svg {
+      transform: translateY(-3px);
+    }
+
+    .seat-svg {
+      transition: transform .2s ease, filter .3s ease;
+      overflow: visible;
+    }
 
     .seat-frame-label {
       font-size: 8px;
-      color: #6AABCA;
-      font-family: var(--font-mono);
-      margin-top: 2px;
-      letter-spacing: 0.04em;
+      color: rgba(0, 207, 255, .5);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-top: 1px;
     }
 
-    .seat-fault   { animation: seat-enter 0.35s ease; }
-    .seat-evicted { animation: seat-enter 0.35s ease; }
+    .seat-fault {
+      animation: seat-enter .35s ease;
+    }
 
-    .seat-fault   .seat-svg { animation: seat-shake 0.4s ease; filter: drop-shadow(0 0 10px rgba(255,80,80,0.65)); }
-    .seat-evicted .seat-svg { animation: seat-evict 0.5s ease;  filter: drop-shadow(0 0 9px  rgba(239,159,39,0.55)); }
-    .seat-hit     .seat-svg { animation: seat-hit-glow 0.5s ease; filter: drop-shadow(0 0 9px rgba(99,198,99,0.55)); }
+    .seat-evicted {
+      animation: seat-enter .35s ease;
+    }
 
-    /* Puntero del acomodador */
+    .seat-fault .seat-svg {
+      animation: seat-shake .4s ease;
+      filter: drop-shadow(0 0 10px rgba(255, 80, 80, .65));
+    }
+
+    .seat-evicted .seat-svg {
+      animation: seat-evict .5s ease;
+      filter: drop-shadow(0 0 9px rgba(239, 159, 39, .55));
+    }
+
+    .seat-hit .seat-svg {
+      animation: seat-hit-glow .5s ease;
+      filter: drop-shadow(0 0 9px rgba(99, 198, 99, .55));
+    }
+
+    @keyframes seat-shake {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      25% {
+        transform: translateX(-4px)
+      }
+
+      75% {
+        transform: translateX(4px)
+      }
+    }
+
+    @keyframes seat-evict {
+      0% {
+        transform: scale(1)
+      }
+
+      25% {
+        transform: scale(1.1) rotate(-2deg)
+      }
+
+      65% {
+        transform: scale(.95)
+      }
+
+      100% {
+        transform: scale(1)
+      }
+    }
+
+    @keyframes seat-hit-glow {
+
+      0%,
+      100% {
+        filter: drop-shadow(0 0 4px rgba(99, 198, 99, .3))
+      }
+
+      50% {
+        filter: drop-shadow(0 0 16px rgba(99, 198, 99, .7))
+      }
+    }
+
+    @keyframes seat-enter {
+      from {
+        transform: translateY(12px);
+        opacity: .4
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    .seat-fault::before,
+    .seat-evicted::before,
+    .seat-hit::before {
+      content: '';
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 22px solid rgba(255, 220, 80, .12);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .seat-fault::before {
+      border-top-color: rgba(255, 80, 80, .2);
+    }
+
+    .seat-evicted::before {
+      border-top-color: rgba(255, 160, 60, .2);
+    }
+
+    .seat-hit::before {
+      border-top-color: rgba(80, 220, 120, .2);
+    }
+
     .usher-pointer {
       position: absolute;
-      top: -20px;
+      top: -18px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 8px;
       font-weight: 700;
-      background: #185FA5;
+      background: var(--cb-deep);
       color: #fff;
       border-radius: 4px;
-      padding: 2px 5px;
+      padding: 2px 4px;
       white-space: nowrap;
-      font-family: var(--font-mono);
+      font-family: 'IBM Plex Mono', monospace;
       z-index: 5;
-      letter-spacing: 0.04em;
-      animation: pointer-bounce 0.8s ease infinite alternate;
+      animation: pointer-bounce .8s ease infinite alternate;
     }
+
     .usher-pointer::after {
       content: '';
       position: absolute;
-      bottom: -4px; left: 50%;
+      bottom: -4px;
+      left: 50%;
       transform: translateX(-50%);
       border: 4px solid transparent;
-      border-top-color: #185FA5;
+      border-top-color: var(--cb-deep);
     }
-    @keyframes pointer-bounce { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(-2px); } }
 
-    /* ── Zona derecha: acomodador + stats ── */
-    .cinema-sidebar {
-      padding: 14px 12px;
+    @keyframes pointer-bounce {
+      from {
+        transform: translateX(-50%) translateY(0)
+      }
+
+      to {
+        transform: translateX(-50%) translateY(-2px)
+      }
+    }
+
+    /* Hall BG */
+    .cinema-hall-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cinema-stage> :not(.cinema-hall-bg) {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Audience */
+    .audience-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 5px;
+      padding-top: 8px;
+      margin-top: 5px;
+      border-top: 1px solid rgba(255, 255, 255, .025);
+    }
+
+    .audience-head {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      background: rgba(0,0,0,0.2);
+      align-items: center;
     }
 
-    /* Acomodador CSS */
+    .audience-head::before {
+      content: '';
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #050B14;
+      border: 1px solid rgba(255, 255, 255, .05);
+      display: block;
+    }
+
+    .audience-head::after {
+      content: '';
+      width: 20px;
+      height: 9px;
+      background: #050B14;
+      border-radius: 40% 40% 0 0;
+      border: 1px solid rgba(255, 255, 255, .05);
+      border-bottom: none;
+      margin-top: -2px;
+      display: block;
+    }
+
+    .audience-head.aud-tall::before {
+      height: 16px;
+    }
+
+    .audience-head.aud-small::before {
+      width: 10px;
+      height: 10px;
+    }
+
+    .audience-head.aud-small::after {
+      width: 15px;
+    }
+
+    /* Acomodador */
     .usher-zone {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
+
     .usher-name {
       font-size: 8px;
-      letter-spacing: 0.1em;
+      letter-spacing: .1em;
       text-transform: uppercase;
-      color: #7ABBD4;
+      color: rgba(0, 207, 255, .5);
     }
+
     .usher-figure {
       position: relative;
-      width: 48px;
+      width: 44px;
     }
+
     .usher-head {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       background: #C8A882;
       border: 2px solid #B89870;
@@ -527,344 +930,241 @@
       position: relative;
       z-index: 2;
     }
-    /* Hat */
+
     .usher-head::before {
       content: '';
       position: absolute;
-      bottom: 18px;
+      bottom: 17px;
       left: 50%;
       transform: translateX(-50%);
-      width: 20px; height: 8px;
-      background: #365670;
+      width: 18px;
+      height: 7px;
+      background: #0a1f35;
       border-radius: 4px 4px 0 0;
     }
+
     .usher-body {
-      width: 32px;
-      height: 28px;
+      width: 30px;
+      height: 26px;
       border-radius: 6px 6px 4px 4px;
-      background: #3d687b;
-      border: 1.5px solid rgba(177,207,222,0.2);
+      background: var(--cb-deep);
+      border: 1.5px solid rgba(0, 207, 255, .2);
       margin: 0 auto;
       margin-top: -2px;
       position: relative;
     }
-    /* Linterna */
+
     .usher-flashlight {
       position: absolute;
-      right: -8px;
-      top: 6px;
-      width: 10px;
-      height: 6px;
+      right: -7px;
+      top: 5px;
+      width: 9px;
+      height: 5px;
       background: #FFE566;
       border-radius: 3px;
-      box-shadow: 0 0 8px #FFE566, 0 0 16px rgba(255,229,102,0.5);
+      box-shadow: 0 0 8px #FFE566;
     }
-    /* Accesorios según algoritmo */
-    .usher-accessory {
-      position: absolute;
-      top: -8px;
-      right: -6px;
-      font-size: 14px;
+
+    .usher-clock .usher-flashlight {
+      animation: flashlight-rotate 2s linear infinite;
+      transform-origin: left center;
     }
+
+    @keyframes flashlight-rotate {
+      0% {
+        transform: rotate(-20deg)
+      }
+
+      50% {
+        transform: rotate(20deg)
+      }
+
+      100% {
+        transform: rotate(-20deg)
+      }
+    }
+
     .usher-desc {
       font-size: 9px;
-      color: #7ABBD4;
+      color: rgba(0, 207, 255, .5);
       text-align: center;
       line-height: 1.35;
     }
 
-    /* Animaciones del acomodador */
-    .usher-lru  .usher-head::after { content: '🕶️'; position: absolute; top: 5px; left: 50%; transform: translateX(-50%); font-size: 8px; }
-    .usher-opt  .usher-figure::after { content: '📜'; position: absolute; right: -4px; bottom: 4px; font-size: 14px; animation: scroll-float 2s ease infinite; }
-    .usher-clock .usher-flashlight { animation: flashlight-rotate 2s linear infinite; transform-origin: left center; }
-    .usher-sc .usher-figure::after { content: '✋'; position: absolute; left: -8px; top: 2px; font-size: 14px; animation: hand-wave 1.5s ease infinite; }
+    .sidebar-sep {
+      height: 1px;
+      background: rgba(255, 255, 255, .05);
+    }
 
-    @keyframes scroll-float { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-    @keyframes flashlight-rotate { 0% { transform: rotate(-20deg); } 50% { transform: rotate(20deg); } 100% { transform: rotate(-20deg); } }
-    @keyframes hand-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-20deg); } }
+    .sidebar-counter {
+      text-align: center;
+    }
 
-    /* Separador lateral */
-    .sidebar-sep { height: 1px; background: rgba(255,255,255,0.05); }
-
-    /* Contadores en sidebar */
-    .sidebar-counter { text-align: center; }
     .sidebar-cnt-num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 36px;
+      font-size: 30px;
       line-height: 1;
-      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
     }
-    .sidebar-cnt-num.fault-color { color: #FF6B6B; text-shadow: 0 0 12px rgba(255,80,80,0.35); }
-    .sidebar-cnt-num.hit-color   { color: #7BC67E; text-shadow: 0 0 12px rgba(99,198,99,0.3); }
-    .sidebar-cnt-lbl { font-size: 9px; color: #7ABBD4; text-transform: uppercase; letter-spacing: 0.1em; }
-    .sidebar-cnt-sub { font-size: 8px; color: #5E98AE; line-height: 1.3; margin-top: 2px; }
 
-    .cnt-bump { animation: num-bump 0.35s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes num-bump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+    .fault-color {
+      color: #FF6B6B;
+      text-shadow: 0 0 10px rgba(255, 80, 80, .3);
+    }
 
-    /* Referencia actual en sidebar */
+    .hit-color {
+      color: #7BC67E;
+      text-shadow: 0 0 10px rgba(99, 198, 99, .3);
+    }
+
+    .sidebar-cnt-lbl {
+      font-size: 9px;
+      color: rgba(0, 207, 255, .5);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .sidebar-cnt-sub {
+      font-size: 8px;
+      color: rgba(0, 207, 255, .35);
+      line-height: 1.3;
+      margin-top: 1px;
+    }
+
+    .cnt-bump {
+      animation: num-bump .35s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    @keyframes num-bump {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.22)
+      }
+    }
+
     .current-ref-box {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 8px;
-      padding: 8px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(0, 207, 255, .1);
+      border-radius: 7px;
+      padding: 7px;
       text-align: center;
     }
-    .current-ref-lbl { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: #7ABBD4; margin-bottom: 3px; }
+
+    .current-ref-lbl {
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(0, 207, 255, .5);
+      margin-bottom: 2px;
+    }
+
     .current-ref-num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 30px;
+      font-size: 28px;
       color: #b1cfde;
       line-height: 1;
-      transition: color 0.2s;
+      transition: color .2s;
     }
-    .current-ref-num.fault { color: #FF6B6B; text-shadow: 0 0 10px rgba(255,80,80,0.4); }
-    .current-ref-num.hit   { color: #7BC67E; text-shadow: 0 0 10px rgba(99,198,99,0.35); }
+
+    .current-ref-num.fault {
+      color: #FF6B6B;
+    }
+
+    .current-ref-num.hit {
+      color: #7BC67E;
+    }
+
     #current-ref-badge {
-      margin-top: 4px;
+      margin-top: 3px;
       font-size: 9px;
       font-weight: 700;
-      letter-spacing: 0.06em;
     }
 
-    /* ── Barra inferior del cine ── */
-    .cinema-footer {
-      background: #000000;
-      border-top: 1px solid rgba(255,255,255,0.04);
-      padding: 10px 16px;
-    }
-    .film-strip-label {
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #7ABBD4;
-      margin-bottom: 6px;
-    }
-    #film-strip {
-      display: flex;
-      gap: 3px;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding: 4px 0;
-      scrollbar-width: none;
-    }
-    #film-strip::-webkit-scrollbar { display: none; }
-
-    /* Bits de referencia (Clock/SC) dentro del cine */
-    #refbits-area {
-      display: none;
-      padding: 6px 16px 0;
-    }
-    .refbits-row { display: flex; gap: 5px; flex-wrap: wrap; }
-    .refbit-cell {
-      width: 36px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 3px 2px;
-      text-align: center;
-      font-family: var(--font-mono);
-      transition: all 0.2s;
-    }
-    .refbit-idx { font-size: 8px; color: #6AABCA; }
-    .refbit-val { font-size: 13px; font-weight: 700; }
-    .refbit-on  { background: rgba(24,95,165,0.25); border-color: rgba(55,138,221,0.4); }
-    .refbit-on .refbit-val { color: #60A0E0; }
-    .refbit-off { background: rgba(255,255,255,0.02); }
-    .refbit-off .refbit-val { color: #5E98AE; }
-    .refbit-ptr { border-color: #185FA5 !important; box-shadow: 0 0 0 2px rgba(24,95,165,0.35); }
-
-    /* ── Flash de fallo ── */
+    /* Flashes */
     .cinema-fault-flash {
       position: absolute;
       inset: 0;
-      background: rgba(255,50,50,0.06);
+      background: rgba(255, 50, 50, .06);
       pointer-events: none;
       opacity: 0;
-      border-radius: 16px;
     }
-    .cinema-fault-flash.active { animation: flash-red 0.45s ease forwards; }
-    @keyframes flash-red { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 
-    /* Sacudida de sala en fallo */
-    @keyframes room-shake {
-      0%,100% { transform: translateX(0); }
-      20%      { transform: translateX(-3px) rotate(-0.3deg); }
-      40%      { transform: translateX( 3px) rotate( 0.3deg); }
-      60%      { transform: translateX(-2px); }
-      80%      { transform: translateX( 2px); }
+    .cinema-fault-flash.active {
+      animation: flash-red .45s ease forwards;
     }
-    #memory-cinema.fault-shake { animation: room-shake 0.4s ease; }
 
-    /* Flash verde en hit */
+    @keyframes flash-red {
+      0% {
+        opacity: 0
+      }
+
+      25% {
+        opacity: 1
+      }
+
+      100% {
+        opacity: 0
+      }
+    }
+
     .cinema-hit-flash {
       position: absolute;
       inset: 0;
-      background: rgba(99,198,99,0.055);
+      background: rgba(99, 198, 99, .055);
       pointer-events: none;
       opacity: 0;
-      border-radius: 16px;
     }
-    .cinema-hit-flash.active { animation: flash-green 0.4s ease forwards; }
-    @keyframes flash-green { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 
-    /* ── Pantalla de fin ── */
-    #cinema-end-screen {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: rgba(3,8,16,0.92);
-      border-radius: 16px;
-      z-index: 50;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 32px;
-      text-align: center;
+    .cinema-hit-flash.active {
+      animation: flash-green .4s ease forwards;
     }
-    .end-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 36px;
-      letter-spacing: 0.15em;
-      color: #FFD700;
-      text-shadow: 0 0 24px rgba(255,215,0,0.4);
-    }
-    .end-subtitle { font-size: 12px; color: #5A7A9A; }
-    .end-stats { display: flex; gap: 24px; }
-    .end-stat { text-align: center; }
-    .end-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #b1cfde; line-height: 1; }
-    .end-stat-val.fault { color: #FF6B6B; }
-    .end-stat-val.good  { color: #7BC67E; }
-    .end-stat-lbl { font-size: 10px; color: #3A5A7A; }
-    .end-rating { font-size: 24px; margin-top: 4px; }
-    .end-close { cursor: pointer; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #8AAAC8; border-radius: 8px; padding: 8px 20px; font-size: 12px; font-family: var(--font-sans); transition: all 0.15s; }
-    .end-close:hover { background: rgba(255,255,255,0.12); }
 
-    /* ══ Animaciones de butacas ══ */
-    @keyframes seat-shake    { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-    @keyframes seat-evict    { 0%{transform:scale(1)} 25%{transform:scale(1.1) rotate(-2deg)} 65%{transform:scale(0.95)} 100%{transform:scale(1)} }
-    @keyframes seat-hit-glow { 0%,100%{filter:drop-shadow(0 0 4px rgba(99,198,99,0.3))} 50%{filter:drop-shadow(0 0 16px rgba(99,198,99,0.7))} }
+    @keyframes flash-green {
+      0% {
+        opacity: 0
+      }
 
-    /* ══ Comparación ══ */
-    #seccion-comparacion {
-      display: none;
-      margin-top: 20px;
+      25% {
+        opacity: 1
+      }
+
+      100% {
+        opacity: 0
+      }
     }
-    .comp-card {
-      background: #000000;
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 20px;
+
+    /* Footer tira */
+    .cinema-footer {
+      background: #000;
+      border-top: 1px solid rgba(0, 207, 255, .08);
+      padding: 5px 14px 6px;
+      flex-shrink: 0;
     }
-    .comp-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .comp-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+
+    .film-strip-label {
+      font-size: 8px;
+      letter-spacing: .12em;
       text-transform: uppercase;
-      color: #4A6A8A;
+      color: rgba(0, 207, 255, .4);
+      margin-bottom: 3px;
     }
-    .comp-row {
-      display: grid;
-      grid-template-columns: 110px 1fr 160px 70px;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.05);
-      background: rgba(255,255,255,0.02);
-      margin-bottom: 6px;
-      transition: all 0.2s;
-    }
-    .comp-row:hover { background: rgba(255,255,255,0.04); }
-    .comp-best  { border-color: rgba(99,198,99,0.3) !important; background: rgba(99,198,99,0.05) !important; }
-    .comp-worst { border-color: rgba(226,75,74,0.2); background: rgba(226,75,74,0.04); }
-    .comp-nombre { font-size: 12px; font-weight: 700; color: #b1cfde; font-family: var(--font-mono); }
-    .comp-bar-wrap { height: 8px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
-    .comp-bar { height: 100%; border-radius: 99px; background: #3d687b; transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1); }
-    .comp-bar-best  { background: #7BC67E; }
-    .comp-bar-worst { background: #FF6B6B; }
-    .comp-stats { display: flex; gap: 8px; font-size: 11px; font-family: var(--font-mono); flex-wrap: wrap; }
-    .comp-faults { color: #FF8080; font-weight: 600; }
-    .comp-hits   { color: #7BC67E; }
-    .comp-rate   { color: #3A5A7A; }
-    .comp-badge  { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.04em; }
-    .comp-badge-best  { background: rgba(99,198,99,0.2); color: #7BC67E; border: 1px solid rgba(99,198,99,0.3); }
-    .comp-badge-worst { background: rgba(226,75,74,0.2); color: #FF6B6B; border: 1px solid rgba(226,75,74,0.3); }
 
-    /* ══ Métricas finales (bajo la sala) ══ */
-    .metrics-dark {
-      background: var(--surface-0);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 18px;
-      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
-    }
-    .metrics-dark-title {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
-    .metrics-dark-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 8px;
-    }
-    .mcard {
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-    .mcard-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .mcard-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--text-primary); }
-    .mcard-val.fault { color: #DC2626; }
-    .mcard-val.good  { color: #16A34A; }
-
-    /* ══ Botón comparar ══ */
-    .btn-compare {
-      width: 100%;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      transition: all 0.15s;
-      font-family: var(--font-sans);
-    }
-    .btn-compare:hover { background: var(--color-blue-50); border-color: var(--color-blue-500); color: var(--color-blue-700); }
-
-    /* placeholder text */
-    .cinema-placeholder { color: #1A3A5A; font-size: 12px; font-style: italic; text-align: center; padding: 20px 0; }
-
-    /* step btn disabled */
-    .pb-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-
-    /* ══ Tira de película — fotogramas con perforaciones ══ */
     #film-strip {
       display: flex;
       gap: 2px;
-      flex-wrap: nowrap;
       overflow-x: auto;
-      padding: 4px 0;
+      padding: 2px 0;
       scrollbar-width: none;
-      background: #000000;
+      background: #000;
     }
-    #film-strip::-webkit-scrollbar { display: none; }
+
+    #film-strip::-webkit-scrollbar {
+      display: none;
+    }
 
     .film-frame {
       display: flex;
@@ -872,127 +1172,119 @@
       align-items: center;
       flex-shrink: 0;
       cursor: pointer;
-      transition: transform 0.15s;
-      background: #000000;
+      transition: transform .15s;
     }
-    .film-frame:hover { transform: scaleY(1.06); }
+
+    .film-frame:hover {
+      transform: scaleY(1.06);
+    }
+
     .film-holes {
       display: flex;
       justify-content: space-around;
       width: 100%;
       padding: 2px 3px;
     }
-    .film-hole {
-      width: 5px; height: 5px;
-      border-radius: 1px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(0,0,0,0.6);
-    }
-    .film-frame-body {
-      width: 28px; height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: #3A5A7A;
-      background: #365670;
-      border-top: 1px solid rgba(255,255,255,0.04);
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      transition: all 0.15s;
-    }
-    .film-frame-active .film-frame-body {
-      background: rgba(61,104,123,0.75);
-      color: #b1cfde;
-      box-shadow: 0 0 10px rgba(61,104,123,0.55);
-    }
-    .film-frame-active .film-hole { background: rgba(177,207,222,0.4); }
-    .film-frame-fault .film-frame-body { background: rgba(226,75,74,0.22); color: #FF8080; }
-    .film-frame-hit   .film-frame-body { background: rgba(99,198,99,0.15); color: #7BC67E; }
 
-    /* ══ Personas en fila de espera ══ */
-    .person-bubble {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: rgba(61,104,123,0.18);
-      border: 1.5px solid rgba(61,104,123,0.25);
+    .film-hole {
+      width: 4px;
+      height: 4px;
+      border-radius: 1px;
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .film-frame-body {
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 600;
-      color: #4A6A9A;
-      flex-shrink: 0;
-      cursor: default;
-      transition: opacity 0.3s;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(0, 207, 255, .4);
+      background: rgba(0, 207, 255, .08);
+      border-top: 1px solid rgba(255, 255, 255, .04);
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      transition: all .15s;
     }
+
+    .film-frame-active .film-frame-body {
+      background: rgba(0, 207, 255, .25);
+      color: var(--cb-bright);
+      box-shadow: 0 0 8px rgba(0, 207, 255, .3);
+    }
+
+    .film-frame-fault .film-frame-body {
+      background: rgba(226, 75, 74, .22);
+      color: #FF8080;
+    }
+
+    .film-frame-hit .film-frame-body {
+      background: rgba(99, 198, 99, .15);
+      color: #7BC67E;
+    }
+
+    /* Personas */
+    .person-bubble {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0, 207, 255, .1);
+      border: 1.5px solid rgba(0, 207, 255, .2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(0, 207, 255, .6);
+      flex-shrink: 0;
+    }
+
     .person-bubble-next {
-      width: 36px; height: 36px;
-      font-size: 14px;
-      background: rgba(61,104,123,0.45);
-      border-color: rgba(177,207,222,0.65);
-      color: #b1cfde;
-      box-shadow: 0 0 12px rgba(61,104,123,0.35);
+      width: 34px;
+      height: 34px;
+      font-size: 13px;
+      background: rgba(0, 207, 255, .2);
+      border-color: var(--cb-bright);
+      color: var(--cb-bright);
       animation: person-pulse 1.6s ease-in-out infinite;
     }
+
     @keyframes person-pulse {
-      0%, 100% { box-shadow: 0 0 10px rgba(61,104,123,0.3); }
-      50%       { box-shadow: 0 0 22px rgba(61,104,123,0.6); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px rgba(0, 207, 255, .2)
+      }
+
+      50% {
+        box-shadow: 0 0 18px rgba(0, 207, 255, .5)
+      }
     }
 
-    /* ══ Entrada de butaca desde abajo ══ */
-    @keyframes seat-enter {
-      from { transform: translateY(12px); opacity: 0.4; }
-      to   { transform: translateY(0);   opacity: 1;   }
-    }
-    .seat-fault   { animation: seat-enter 0.35s ease; }
-    .seat-evicted { animation: seat-enter 0.35s ease; }
-
-    /* ══ Acomodador activo ══ */
-    .usher-figure.usher-active .usher-head {
-      box-shadow: 0 0 0 2px rgba(61,104,123,0.5), 0 0 14px rgba(61,104,123,0.3);
+    .person-bubble-icon {
+      stroke: rgba(0, 207, 255, .5);
     }
 
-    /* ══ Usher accessory SVG overrides (remove emoji) ══ */
-    .usher-lru  .usher-head::after { content: none; }
-    .usher-opt  .usher-figure::after { content: none; }
-    .usher-sc   .usher-figure::after { content: none; }
-
-    .usher-glasses-svg {
-      position: absolute;
-      top: 5px; left: 50%;
-      transform: translateX(-50%);
-    }
-    .usher-accessory-svg {
-      position: absolute;
-      right: -6px; bottom: 2px;
+    .person-bubble-next .person-bubble-icon {
+      stroke: var(--cb-bright);
     }
 
-    /* ══ Fix: iconos sobre fondo claro ══ */
-    .ctrl-section-label svg { stroke: var(--text-muted) !important; }
-    .algo-card-icon svg { stroke: var(--text-muted); }
-    .algo-card.active .algo-card-icon svg { stroke: #fff; }
-    .algo-card:hover .algo-card-icon svg { stroke: var(--color-blue-700); }
-    .queue-label svg { stroke: #3A5A7A; }
-    .seats-label svg { stroke: #3A5A7A; }
-    .btn-cine-ghost svg { stroke: var(--text-muted) !important; }
-    .btn-cine-ghost:hover svg { stroke: var(--text-primary) !important; }
-    .btn-compare svg { stroke: var(--text-muted); }
-    .btn-compare:hover svg { stroke: var(--color-blue-700); }
+    .person-bubble-num {
+      font-size: 8px;
+      font-weight: 700;
+      line-height: 1;
+    }
 
-    /* ══ Animación de entrada de butaca ══ */
-    @keyframes person-enter { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .person-bubble-next .person-bubble-num {
+      font-size: 10px;
+    }
 
-    /* ══ Persona dentro de burbuja de fila ══ */
-    .person-bubble { flex-direction: column; gap: 1px; }
-    .person-bubble-icon { pointer-events: none; flex-shrink: 0; stroke: #4A7AAA; }
-    .person-bubble-next .person-bubble-icon { stroke: #80B8FF; }
-    .person-bubble-num { font-family: var(--font-mono); font-size: 9px; font-weight: 700; line-height: 1; color: inherit; }
-    .person-bubble-next .person-bubble-num { font-size: 11px; }
-
-    /* ══ Animación de entrada de página al asiento ══ */
+    /* Walker */
     .page-walker {
       position: absolute;
       z-index: 20;
@@ -1003,909 +1295,642 @@
       gap: 2px;
       will-change: transform, opacity;
     }
-    .page-walker svg { filter: drop-shadow(0 0 4px rgba(255,120,120,0.7)); }
+
     .page-walker-num {
-      font-family: var(--font-mono);
-      font-size: 11px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
       font-weight: 700;
       color: #FF8080;
-      text-shadow: 0 0 6px rgba(255,80,80,0.6);
       line-height: 1;
     }
+
     @keyframes walker-appear {
-      from { opacity: 0; transform: scale(0.5) translateY(-8px); }
-      to   { opacity: 1; transform: scale(1)   translateY(0); }
-    }
-    @keyframes walker-vanish {
-      from { opacity: 1; transform: scale(1); }
-      to   { opacity: 0; transform: scale(0.6) translateY(4px); }
-    }
-
-    /* ══════════════════════════════════════════════════════
-       AMBIENTACIÓN CINEMATIC
-    ══════════════════════════════════════════════════════ */
-
-    /* Cinema hall background illustration */
-    .cinema-stage { overflow: hidden; }
-    .cinema-stage.walker-active { overflow: visible; }
-    .cinema-hall-bg {
-      position: absolute;
-      inset: 0; width: 100%; height: 100%;
-      z-index: 0; pointer-events: none;
-    }
-    .cinema-stage > :not(.cinema-hall-bg) { position: relative; z-index: 1; }
-    .cinema-sidebar { position: relative; z-index: 1; }
-
-    /* Spotlight en butacas activas */
-    .seat { overflow: visible; }
-    .seat-fault::before,
-    .seat-evicted::before,
-    .seat-hit::before {
-      content: '';
-      position: absolute;
-      top: -28px; left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 18px solid transparent;
-      border-right: 18px solid transparent;
-      border-top: 26px solid rgba(255,220,80,0.15);
-      pointer-events: none;
-      z-index: 4;
-    }
-    .seat-fault::before    { border-top-color: rgba(255,80,80,0.22); }
-    .seat-evicted::before  { border-top-color: rgba(255,160,60,0.22); }
-    .seat-hit::before      { border-top-color: rgba(80,220,120,0.22); }
-
-    /* Cortinas de la pantalla */
-    .screen-curtain {
-      position: absolute;
-      top: -1px; bottom: -1px;
-      width: 22px;
-      pointer-events: none;
-      z-index: 2;
-    }
-    .screen-curtain-l {
-      left: -1px;
-      background: linear-gradient(90deg, rgba(90,12,30,0.65) 0%, transparent 100%);
-      border-radius: 9px 0 0 2px;
-    }
-    .screen-curtain-r {
-      right: -1px;
-      background: linear-gradient(-90deg, rgba(90,12,30,0.65) 0%, transparent 100%);
-      border-radius: 0 9px 2px 0;
-    }
-
-    /* Siluetas de audiencia */
-    .audience-row {
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 5px;
-      padding-top: 10px;
-      margin-top: 6px;
-      border-top: 1px solid rgba(255,255,255,0.025);
-    }
-    .audience-head {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .audience-head::before {
-      content: '';
-      width: 15px; height: 15px;
-      border-radius: 50%;
-      background: #050B14;
-      border: 1px solid rgba(255,255,255,0.05);
-      display: block;
-    }
-    .audience-head::after {
-      content: '';
-      width: 22px; height: 10px;
-      background: #050B14;
-      border-radius: 40% 40% 0 0;
-      border: 1px solid rgba(255,255,255,0.05);
-      border-bottom: none;
-      margin-top: -2px;
-      display: block;
-    }
-    .audience-head.aud-tall::before { height: 18px; }
-    .audience-head.aud-small::before { width: 12px; height: 12px; }
-    .audience-head.aud-small::after  { width: 17px; }
-
-    /* ══════════════════════════════════════════════════════
-       RESPONSIVE — BREAKPOINTS
-    ══════════════════════════════════════════════════════ */
-
-    /* Tablet — cinema interior apilado */
-    @media (max-width: 720px) {
-      .cinema-interior {
-        grid-template-columns: 1fr;
-        min-height: auto;
+      from {
+        opacity: 0;
+        transform: scale(.5) translateY(-8px)
       }
-      .cinema-stage {
-        border-right: none;
-        border-bottom: 1px solid rgba(255,255,255,0.04);
-        padding-bottom: 10px;
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0)
       }
-      .cinema-sidebar {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0;
-        padding: 12px 16px;
-        min-height: 0;
-        align-items: center;
-      }
-      .sidebar-sep   { display: none; }
-      .usher-zone {
-        grid-column: 1 / -1;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        padding-bottom: 10px;
-        margin-bottom: 6px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-      }
-      .usher-name    { display: none; }
-      .usher-figure  { width: 40px; }
-      .usher-head    { width: 20px; height: 20px; }
-      .usher-body    { width: 26px; height: 22px; }
-      .usher-flashlight { width: 8px; height: 5px; right: -7px; }
-      .usher-desc    { font-size: 9px; text-align: left; }
-      .sidebar-counter { padding: 4px 8px; }
-      .sidebar-cnt-num { font-size: 28px; }
-      .current-ref-num { font-size: 24px; }
-      .cinema-interior::before { display: none; }
     }
 
-    /* Playback bar compacta */
-    @media (max-width: 640px) {
-      .playback-bar {
-        flex-wrap: wrap;
-        row-gap: 8px;
-        padding: 8px 12px;
-      }
-      .vel-row   { order: 10; width: 100%; }
-      .pb-progress { order: 11; width: 100%; margin-top: 2px; }
-      .pb-sep:last-of-type { display: none; }
-    }
-
-    /* Butacas pequeñas */
-    @media (max-width: 520px) {
-      .seat-svg  { width: 44px !important; height: 57px !important; }
-      .seat-row  { gap: 5px; }
-      #seats-grid{ gap: 7px; }
-      .person-bubble      { width: 26px; height: 26px; }
-      .person-bubble-next { width: 32px; height: 32px; }
-    }
-
-    /* Layout columna única muy estrecha */
-    @media (max-width: 420px) {
-      .cinema-sidebar { grid-template-columns: 1fr 1fr; }
-      .cinema-sidebar .current-ref-box { grid-column: 1 / -1; }
-      .marquee-title { font-size: 20px; }
-      .seat-svg  { width: 38px !important; height: 49px !important; }
-    }
-
-    /* Contenedor general en móvil */
-    @media (max-width: 640px) {
-      .page-container { padding: 14px 10px; }
-      .ctrl-panel { padding: 14px; gap: 14px; }
-      .algo-card-sub { display: none; }
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       VIEWPORT FIT — sin scroll, todo visible
-    ═══════════════════════════════════════════════════════ */
-    html, body { height: 100%; overflow: hidden; }
-
-    .page-container {
-      height: calc(100vh - 56px);
-      overflow: hidden;
-      padding: 8px 20px;
-      box-sizing: border-box;
-      max-width: none;
-    }
-
-    .two-col {
-      height: 100%;
-      overflow: hidden;
-      align-items: stretch;
-      gap: 14px;
-    }
-
-    /* Columna izquierda — scroll interno imperceptible como fallback */
-    .left-panel-col {
-      height: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(61,104,123,0.2) transparent;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .left-panel-col::-webkit-scrollbar { width: 3px; }
-    .left-panel-col::-webkit-scrollbar-thumb { background: rgba(61,104,123,0.2); border-radius: 99px; }
-
-    /* Columna derecha — cinema + métricas como unidad */
-    .right-panel-col {
-      height: 100%;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    /* Cinema ocupa todo el espacio restante */
-    .memory-cinema {
-      flex: 1 !important;
-      min-height: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      overflow: hidden !important;
-      border-radius: 14px 14px 0 0 !important;
-    }
-
-    .cinema-interior {
-      flex: 1 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-    }
-
-    .cinema-stage  { overflow: hidden !important; }
-    .cinema-sidebar{ overflow: hidden !important; }
-    .seats-zone    { overflow: hidden; }
-
-    /* Métricas pegadas al fondo del cinema */
-    #metricas-wrap {
+    /* Métricas */
+    .metrics-bar {
       flex-shrink: 0;
-      border-radius: 0 0 14px 14px !important;
-      border-top: none !important;
-      margin-top: 0 !important;
-      padding: 6px 14px 8px !important;
+      background: #000;
+      border-top: 1px solid rgba(0, 207, 255, .1);
+      padding: 6px 14px 8px;
     }
-    .metrics-dark-title { margin-bottom: 4px !important; font-size: 8px; }
-    .metrics-dark-grid  { grid-template-columns: repeat(4,1fr) !important; gap: 5px; }
-    .mcard     { padding: 5px 9px !important; }
-    .mcard-lbl { font-size: 8px !important; margin-bottom: 2px !important; }
-    .mcard-val { font-size: 14px !important; }
 
-    /* ── Compactar panel izquierdo ── */
-    .ctrl-panel          { gap: 8px !important; padding: 11px 13px !important; }
-    .ctrl-section-label  { margin-bottom: 5px !important; font-size: 8px; }
-    .ctrl-input          { padding: 7px 10px !important; font-size: 12px; }
-    .ctrl-label          { font-size: 10px; margin-bottom: 3px; }
-    .btn-cine-primary    { padding: 9px !important; font-size: 12px; }
-    .btn-cine-ghost      { padding: 7px !important; font-size: 11px; }
-
-    .algo-grid     { gap: 4px !important; }
-    .algo-card     { padding: 6px 5px 5px !important; }
-    .algo-card-icon svg { width: 14px !important; height: 14px !important; }
-    .algo-card-name { font-size: 10px !important; }
-    .algo-card-sub  { display: none !important; }
-    #algo-desc      { display: none !important; }
-
-    /* ── Compactar cinema ── */
-    .marquee-bar  { padding: 7px 16px 6px !important; }
-    .marquee-title{ font-size: 20px !important; }
-    .marquee-bulb { width: 6px !important; height: 6px !important; }
-    .narrator-bar { padding: 5px 16px !important; min-height: 28px !important; }
-    #narrator-text{ font-size: 11px; }
-    .cinema-footer{ padding: 6px 14px 7px !important; }
-    .film-strip-label { margin-bottom: 3px; font-size: 8px; }
-    #film-strip   { padding: 2px 0 !important; }
-    .audience-row { padding-top: 5px; margin-top: 3px; }
-    .audience-head::before { width: 11px !important; height: 11px !important; }
-    .audience-head::after  { width: 16px  !important; height: 7px   !important; }
-
-    /* ── Playback compacto ── */
-    #playback-bar { padding: 10px 13px !important; gap: 7px !important; }
-    .pb-btn     { width: 26px !important; height: 26px !important; }
-    .pb-play    { height: 26px !important; padding: 0 12px !important; }
-    .pb-counter { font-size: 10px; }
-    .vel-label  { font-size: 9px; }
-    .pb-progress{ height: 3px !important; }
-
-    /* ── Sección comparación — modal overlay fijo ── */
-    #seccion-comparacion {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 200;
-      background: rgba(3,8,16,0.93);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      margin: 0 !important;
-    }
-    .comp-card {
-      max-height: 82vh;
-      overflow-y: auto;
-      max-width: 860px;
-      width: 100%;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(61,104,123,0.3) transparent;
-    }
-    .comp-card::-webkit-scrollbar { width: 4px; }
-    .comp-card::-webkit-scrollbar-thumb { background: rgba(61,104,123,0.35); border-radius: 99px; }
-
-    /* ═══════════════════════════════════════════════════════
-       VISUALIZACIÓN DE THREADS — panel de comparación
-    ═══════════════════════════════════════════════════════ */
-    .thread-panel {
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(61,104,123,0.22);
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
-    }
-    .thread-panel-header {
+    .metrics-bar-title {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(0, 207, 255, .35);
+      margin-bottom: 5px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 10px;
     }
-    .thread-panel-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: #b1cfde;
-      letter-spacing: 0.06em;
-    }
-    .thread-panel-sub {
-      font-size: 9px;
-      color: #4A6A8A;
-      font-family: var(--font-mono);
-      transition: color 0.4s;
-    }
-    .thread-status-grid {
+
+    .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      margin-bottom: 9px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
     }
-    .thread-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 8px;
-      padding: 8px 5px 7px;
+
+    .mcard {
+      background: #080f18;
+      border: 1px solid rgba(0, 207, 255, .1);
+      border-radius: 6px;
+      padding: 5px 9px;
+    }
+
+    .mcard-lbl {
+      font-size: 8px;
+      color: rgba(0, 207, 255, .35);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 2px;
+    }
+
+    .mcard-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cb-mid);
+    }
+
+    .mcard-val.fault {
+      color: #DC2626;
+    }
+
+    .mcard-val.good {
+      color: #16A34A;
+    }
+
+    .cinema-placeholder {
+      color: rgba(0, 207, 255, .2);
+      font-size: 11px;
+      font-style: italic;
       text-align: center;
-      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
-    }
-    .thread-card.running {
-      border-color: rgba(61,104,123,0.6);
-      background: rgba(61,104,123,0.13);
-      box-shadow: 0 0 14px rgba(61,104,123,0.18);
-    }
-    .thread-card.done {
-      border-color: rgba(99,198,99,0.4);
-      background: rgba(99,198,99,0.07);
-    }
-    .thread-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      margin: 0 auto 5px;
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-    .thread-card.running .thread-dot {
-      background: #5090D0;
-      box-shadow: 0 0 8px rgba(80,144,208,0.7);
-      animation: tdot-pulse 0.75s ease-in-out infinite;
-    }
-    .thread-card.done .thread-dot {
-      background: #7BC67E;
-      box-shadow: 0 0 6px rgba(123,198,126,0.45);
-    }
-    @keyframes tdot-pulse {
-      0%,100% { transform: scale(1);   opacity: 1;   }
-      50%      { transform: scale(0.5); opacity: 0.3; }
-    }
-    .thread-name {
-      font-size: 10px; font-weight: 700;
-      font-family: var(--font-mono);
-      color: #3A5A7A;
-      transition: color 0.3s;
-    }
-    .thread-card.running .thread-name { color: #b1cfde; }
-    .thread-card.done    .thread-name { color: #7BC67E; }
-    .thread-id {
-      font-size: 8px; color: #1E3A54; margin-top: 2px;
-      font-family: var(--font-mono);
-      transition: color 0.3s;
-    }
-    .thread-card.running .thread-id { color: #4A7AA0; }
-    .thread-card.done    .thread-id { color: #3A6A4A; }
-    .thread-time {
-      font-size: 8px; color: #1E3A54; margin-top: 3px;
-      font-family: var(--font-mono);
-      transition: color 0.3s;
-    }
-    .thread-card.done .thread-time { color: #5A9A5A; }
-    .thread-shm-badge { text-align: center; }
-    .shm-on  { font-size: 8px; color: #7BC67E; font-family: var(--font-mono); }
-    .shm-off { font-size: 8px; color: #FF8080; font-family: var(--font-mono); }
-
-    /* Tiempo de ejecución por algoritmo en la tabla de comparación */
-    .comp-thread-time {
-      font-size: 9px; color: #3A5A7A;
-      font-family: var(--font-mono);
+      padding: 16px 0;
     }
 
-    /* Spinner en el narrador mientras el Worker calcula */
     .thread-spinner {
       display: inline-block;
-      width: 12px; height: 12px;
-      border: 2px solid rgba(80,144,208,0.25);
-      border-top-color: #5090D0;
+      width: 11px;
+      height: 11px;
+      border: 2px solid rgba(0, 207, 255, .2);
+      border-top-color: var(--cb-bright);
       border-radius: 50%;
-      animation: tspin 0.7s linear infinite;
+      animation: tspin .7s linear infinite;
       vertical-align: middle;
     }
-    @keyframes tspin { to { transform: rotate(360deg); } }
+
+    @keyframes tspin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* Comparación — stub oculto */
+    #seccion-comparacion {
+      display: none !important;
+    }
   </style>
 </head>
+
 <body>
 
-<!-- ════════════════════════════════════════════════════════
-     NAVBAR
-════════════════════════════════════════════════════════ -->
-<nav class="navbar">
-  <a href="index.html" class="navbar-logo">OS<span>im</span></a>
-  <a href="index.html"      class="navbar-item">Inicio</a>
-  <a href="scheduling.html" class="navbar-item">Scheduling</a>
-  <a href="paginacion.html" class="navbar-item active">Paginación</a>
-  <a href="metricas.html"   class="navbar-item">Métricas</a>
-</nav>
+  <nav class="navbar">
+    <a href="index.html" class="navbar-logo">OS<span>im</span></a>
+    <a href="index.html" class="navbar-item">Inicio</a>
+    <a href="scheduling.html" class="navbar-item">Scheduling</a>
+    <a href="paginacion.html" class="navbar-item active">Paginación</a>
+    <a href="metricas.html" class="navbar-item">Métricas</a>
+  </nav>
 
-<!-- ════════════════════════════════════════════════════════
-     CONTENIDO
-════════════════════════════════════════════════════════ -->
-<div class="page-container">
+  <div class="page">
 
-  <div class="two-col">
+    <!-- Marquesina -->
+    <div class="marquee-bar">
+      <div>
+        <div class="marquee-title">Memory <span>Cinema</span></div>
+        <div class="marquee-sub">Simulación visual de algoritmos de reemplazo de páginas</div>
+      </div>
+      <div class="marquee-lights">
+        <div class="marquee-bulb"></div>
+        <div class="marquee-bulb"></div>
+        <div class="marquee-bulb"></div>
+      </div>
+    </div>
 
-    <!-- ══════════════════════════════
-         PANEL IZQUIERDO — Controles
-    ══════════════════════════════ -->
-    <div class="left-panel-col">
+    <div class="main-layout">
 
-      <!-- Configuración -->
-      <div class="ctrl-panel">
-        <div>
-          <div class="ctrl-section-label">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Configuración de Memoria
+      <!-- ══════ SIDEBAR 3 TABS ══════ -->
+      <aside class="sidebar">
+
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchPagTab('pt-datos')">➕ Datos</button>
+          <button class="tab-btn" onclick="switchPagTab('pt-lista')">📋 Refs</button>
+          <button class="tab-btn" onclick="switchPagTab('pt-algo')">🧠 Algo</button>
+        </div>
+
+        <!-- TAB 1: Datos de entrada -->
+        <div class="tab-panel active" id="pt-datos">
+          <div class="section-title">⚙ Configuración</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div class="field-group">
+              <div class="input-label">Marcos</div>
+              <input id="inp-frames" type="number" class="input-cine" min="1" max="16" value="3">
+            </div>
+            <div class="field-group">
+              <div class="input-label">Pág (KB)</div>
+              <input id="inp-pagesize" type="number" class="input-cine" min="1" value="4">
+            </div>
+            <div class="field-group">
+              <div class="input-label">Mem (KB)</div>
+              <input id="inp-memoria" type="number" class="input-cine" min="1" value="64">
+            </div>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px;">
-            <div>
-              <label class="ctrl-label" for="inp-frames">Marcos</label>
-              <input id="inp-frames" type="number" class="ctrl-input" min="1" max="16" value="3" />
+
+          <div class="section-title">📋 Agregar Referencia</div>
+
+          <div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:flex-end;">
+            <div class="field-group">
+              <div class="input-label">Página</div>
+              <input id="inp-ref-single" type="number" class="input-cine" min="0" placeholder="Ej: 7">
             </div>
-            <div>
-              <label class="ctrl-label" for="inp-pagesize">Página (KB)</label>
-              <input id="inp-pagesize" type="number" class="ctrl-input" min="1" value="4" />
-            </div>
-            <div>
-              <label class="ctrl-label" for="inp-memoria">Memoria (KB)</label>
-              <input id="inp-memoria" type="number" class="ctrl-input" min="1" value="64" />
-            </div>
+            <button class="btn-cine" style="width:auto;padding:7px 14px;margin-top:0;"
+              onclick="agregarReferencia()">+</button>
+          </div>
+
+          <div class="field-group">
+            <div class="input-label">O pega toda la cadena</div>
+            <input id="inp-referencias" type="text" class="input-cine" placeholder="7 0 1 2 0 3 0 4 2 3"
+              style="font-family:'IBM Plex Mono',monospace;" oninput="sincronizarCadena()">
+          </div>
+
+          <div style="display:flex;gap:6px;">
+            <input type="file" id="file-input-memoria" accept=".txt" style="display:none"
+              onchange="onArchivoMemoriaSeleccionado(event)">
+            <button class="btn-cine secondary" style="font-size:12px;padding:7px;" onclick="cargarArchivoMemoria()">↑
+              TXT</button>
+            <button class="btn-cine secondary" style="font-size:12px;padding:7px;" onclick="resetearSimulacion()">↺
+              Reset</button>
+          </div>
+
+          <div
+            style="padding:6px 8px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:5px;font-size:9px;color:rgba(0,207,255,.35);font-family:'IBM Plex Mono',monospace;line-height:1.5;">
+            TXT: Frames=3 · PageSize=4 · Memoria=64<br>Referencias=7 0 1 2 0 3
           </div>
         </div>
 
-        <div>
-          <div class="ctrl-section-label">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-            Cadena de Referencias
+        <!-- TAB 2: Lista referencias -->
+        <div class="tab-panel" id="pt-lista">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="section-title" style="margin:0;">📋 Cadena (<span id="ref-count">0</span>)</div>
+            <button class="export-btn" onclick="exportarCSVPaginacion()">↓ CSV</button>
           </div>
-          <label class="ctrl-label" for="inp-referencias">Números separados por espacios</label>
-          <input id="inp-referencias" type="text" class="ctrl-input"
-                 placeholder="Ej: 7 0 1 2 0 3 0 4 2 3"
-                 style="font-family:var(--font-mono);" />
-          <input type="file" id="file-input-memoria" accept=".txt"
-                 style="display:none;" onchange="onArchivoMemoriaSeleccionado(event)" />
-          <button class="btn-cine-ghost" style="margin-top:8px; font-size:11px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="cargarArchivoMemoria()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            Cargar desde archivo
-          </button>
+          <div id="ref-chips" style="display:flex;flex-wrap:wrap;gap:3px;max-height:200px;overflow-y:auto;"></div>
+          <div id="ref-vacia"
+            style="font-size:11px;color:rgba(0,207,255,.2);font-family:'IBM Plex Mono',monospace;padding:12px 0;text-align:center;">
+            Sin referencias aún.</div>
+          <button class="btn-cine secondary" style="font-size:11px;padding:7px;" onclick="limpiarReferencias()">✕
+            Limpiar cadena</button>
+
+          <!-- Métricas post-sim -->
+          <div id="metricas-sidebar" style="display:none;margin-top:8px;">
+            <div class="section-title">📊 Resultado</div>
+            <div id="metricas-sidebar-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+          </div>
         </div>
 
-        <div>
-          <div class="ctrl-section-label">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-            Algoritmo de Reemplazo
-          </div>
-          <div class="algo-grid">
-            <div class="algo-card active" data-algo="fifo" onclick="seleccionarAlgoritmo('fifo')">
-              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <!-- TAB 3: Algoritmo + Simular -->
+        <div class="tab-panel" id="pt-algo">
+          <div class="section-title">🧠 Algoritmo</div>
+
+          <div class="algo-grid-pag">
+            <div class="algo-card-pag active" data-algo="fifo" onclick="seleccionarAlgoritmo('fifo')">
+              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg></span>
               <div class="algo-card-name">FIFO</div>
               <div class="algo-card-sub">Primero en entrar</div>
             </div>
-            <div class="algo-card" data-algo="lru" onclick="seleccionarAlgoritmo('lru')">
-              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <div class="algo-card-pag" data-algo="lru" onclick="seleccionarAlgoritmo('lru')">
+              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg></span>
               <div class="algo-card-name">LRU</div>
               <div class="algo-card-sub">Menos reciente</div>
             </div>
-            <div class="algo-card" data-algo="opt" onclick="seleccionarAlgoritmo('opt')">
-              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <div class="algo-card-pag" data-algo="opt" onclick="seleccionarAlgoritmo('opt')">
+              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8">
+                  <polygon
+                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg></span>
               <div class="algo-card-name">OPT</div>
               <div class="algo-card-sub">Óptimo / Belady</div>
             </div>
-            <div class="algo-card" data-algo="clock" onclick="seleccionarAlgoritmo('clock')">
-              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>
+            <div class="algo-card-pag" data-algo="clock" onclick="seleccionarAlgoritmo('clock')">
+              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg></span>
               <div class="algo-card-name">Clock</div>
-              <div class="algo-card-sub">Bit de referencia</div>
+              <div class="algo-card-sub">Bit referencia</div>
             </div>
-            <div class="algo-card" data-algo="sc" onclick="seleccionarAlgoritmo('sc')">
-              <span class="algo-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span>
+            <div class="algo-card-pag" data-algo="sc" onclick="seleccionarAlgoritmo('sc')">
+              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.8">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                  <line x1="6" y1="1" x2="6" y2="4" />
+                  <line x1="10" y1="1" x2="10" y2="4" />
+                  <line x1="14" y1="1" x2="14" y2="4" />
+                </svg></span>
               <div class="algo-card-name">2da Oport.</div>
               <div class="algo-card-sub">Segunda oportunidad</div>
             </div>
           </div>
-          <div id="algo-desc" style="margin-top:10px; font-size:11px; color:var(--text-muted); line-height:1.5; font-style:italic;">
-            Expulsa la página que lleva más tiempo en memoria (la primera que entró).
-          </div>
+
+          <div id="algo-desc">Expulsa la página que lleva más tiempo en memoria.</div>
+          <button class="btn-cine" style="margin-top:8px;" onclick="iniciarSimulacion()">▶ SIMULAR</button>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr auto; gap:7px;">
-          <button class="btn-cine-primary" onclick="iniciarSimulacion()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Simular
-          </button>
-          <button class="btn-cine-ghost" style="display:flex; align-items:center; justify-content:center; gap:5px; width:auto; padding:7px 11px;" onclick="resetearSimulacion()" title="Reiniciar">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
-          </button>
-        </div>
-      </div>
+      </aside>
 
-      <!-- Reproducción + Comparar -->
-      <div class="ctrl-panel" id="playback-bar">
-        <div class="ctrl-section-label" style="margin-bottom:0;">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Reproducción
-        </div>
-        <div style="display:flex; align-items:center; gap:5px;">
-          <button id="pb-first" class="pb-btn" onclick="primerPaso()" title="Primer paso" disabled>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
-          </button>
-          <button id="pb-prev" class="pb-btn" onclick="anteriorPaso()" title="Anterior" disabled>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="15 18 9 12 15 6 15 18"/></svg>
-          </button>
-          <span id="pb-counter" class="pb-counter">— / —</span>
-          <button id="pb-next" class="pb-btn" onclick="siguientePaso()" title="Siguiente" disabled>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 18 15 12 9 6 9 18"/></svg>
-          </button>
-          <button id="pb-last" class="pb-btn" onclick="ultimoPaso()" title="Último" disabled>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
-          </button>
-          <button id="pb-play" class="pb-btn pb-play" onclick="simularTodo()" style="flex:1; min-width:55px;">
-            <svg id="pb-play-icon" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span id="pb-play-label">Play</span>
-          </button>
-        </div>
-        <div class="vel-row">
-          <span class="vel-label">Lento</span>
-          <input type="range" class="vel-slider" id="vel-slider" min="200" max="2000" step="100" value="700" title="Velocidad" />
-          <span class="vel-label">Rápido</span>
-        </div>
-        <div class="pb-progress"><div class="pb-progress-fill" id="pb-progress-fill"></div></div>
-        <button class="btn-compare" onclick="mostrarComparacion()" style="margin-top:2px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
-          Comparar los 5 algoritmos
-        </button>
-      </div>
+      <!-- ══════ ZONA PRINCIPAL ══════ -->
+      <main style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
 
-    </div><!-- /panel izquierdo -->
-
-    <!-- ══════════════════════════════
-         MEMORY CINEMA — Zona derecha
-    ══════════════════════════════ -->
-    <div class="right-panel-col">
-
-      <div class="memory-cinema" id="memory-cinema">
-        <!-- Flash overlays -->
-        <div class="cinema-fault-flash" id="fault-flash"></div>
-        <div class="cinema-hit-flash"   id="hit-flash"></div>
-
-        <!-- End screen overlay -->
-        <div id="cinema-end-screen">
-          <div class="end-title">FIN DE LA FUNCIÓN</div>
-          <div class="end-subtitle" id="end-subtitle">Simulación completada</div>
-          <div class="end-stats" id="end-stats"></div>
-          <div class="end-rating" id="end-rating"></div>
-          <button class="end-close" onclick="cerrarEndScreen()">Ver resultados</button>
-        </div>
-
-        <!-- ── Marquesina ── -->
-        <div class="marquee-bar">
-          <div>
-            <div class="marquee-title">Memory<span>Cinema</span></div>
-          </div>
-          <div class="marquee-lights">
-            <div class="marquee-bulb"></div>
-            <div class="marquee-bulb"></div>
-            <div class="marquee-bulb"></div>
-            <div class="marquee-bulb"></div>
-            <div class="marquee-bulb"></div>
-          </div>
-        </div>
-
-        <!-- ── Narrador ── -->
-        <div class="narrator-bar">
-          <span class="narrator-icon" id="narrator-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7090B0" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </span>
-          <span id="narrator-text">Configura la memoria y presiona Simular para comenzar la función.</span>
-        </div>
-
-
-        <!-- ── Ref bits area (Clock/SC) ── -->
-        <div id="refbits-area">
-          <div style="font-size:9px; color:#2A4060; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:5px;">Bits de referencia</div>
-          <div class="refbits-row" id="refbits-row"></div>
-        </div>
-
-        <!-- ── Interior: sala + sidebar ── -->
-        <div class="cinema-interior">
-
-          <!-- Zona izquierda: pantalla + cola + asientos -->
-          <div class="cinema-stage">
-
-            <!-- ── Ilustración de sala de cine ── -->
-            <svg class="cinema-hall-bg" xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 500 380" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <defs>
-                <linearGradient id="ch-floor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#0C1D2E" stop-opacity="0.55"/>
-                  <stop offset="100%" stop-color="#040A12" stop-opacity="0.9"/>
-                </linearGradient>
-                <linearGradient id="ch-wL" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%"  stop-color="#0B1C2E" stop-opacity="0.94"/>
-                  <stop offset="82%" stop-color="#0A1825" stop-opacity="0.06"/>
-                  <stop offset="100%" stop-color="#0A1825" stop-opacity="0"/>
-                </linearGradient>
-                <linearGradient id="ch-wR" x1="1" y1="0" x2="0" y2="0">
-                  <stop offset="0%"  stop-color="#0B1C2E" stop-opacity="0.94"/>
-                  <stop offset="82%" stop-color="#0A1825" stop-opacity="0.06"/>
-                  <stop offset="100%" stop-color="#0A1825" stop-opacity="0"/>
-                </linearGradient>
-                <linearGradient id="ch-proj" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stop-color="#378ADD" stop-opacity="0.08"/>
-                  <stop offset="100%" stop-color="#378ADD" stop-opacity="0"/>
-                </linearGradient>
-                <radialGradient id="ch-sc" cx="50%" cy="25%" r="55%">
-                  <stop offset="0%"  stop-color="#FFD060" stop-opacity="0.40"/>
-                  <stop offset="100%" stop-color="#FFD060" stop-opacity="0"/>
-                </radialGradient>
-              </defs>
-
-              <!-- Base oscura -->
-              <rect width="500" height="380" fill="#050C16"/>
-
-              <!-- Piso con perspectiva -->
-              <polygon points="0,380 500,380 418,198 82,198" fill="url(#ch-floor)"/>
-              <!-- Pasillo central -->
-              <polygon points="218,198 282,198 315,380 185,380" fill="#030810" opacity="0.7"/>
-              <line x1="219" y1="198" x2="186" y2="380" stroke="#16283E" stroke-width="0.8" opacity="0.3"/>
-              <line x1="281" y1="198" x2="314" y2="380" stroke="#16283E" stroke-width="0.8" opacity="0.3"/>
-              <!-- Líneas de perspectiva del piso -->
-              <line x1="0"   y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.6" opacity="0.25"/>
-              <line x1="125" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.5" opacity="0.18"/>
-              <line x1="375" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.5" opacity="0.18"/>
-              <line x1="500" y1="380" x2="250" y2="198" stroke="#0D1E30" stroke-width="0.6" opacity="0.25"/>
-
-              <!-- Pared izquierda -->
-              <polygon points="0,0 148,0 84,380 0,380" fill="url(#ch-wL)"/>
-              <!-- Molduras verticales izq -->
-              <line x1="26"  y1="0"  x2="14"  y2="380" stroke="#163050" stroke-width="1.3" opacity="0.55"/>
-              <line x1="62"  y1="0"  x2="48"  y2="380" stroke="#163050" stroke-width="0.7" opacity="0.3"/>
-              <line x1="102" y1="0"  x2="84"  y2="380" stroke="#163050" stroke-width="0.5" opacity="0.18"/>
-              <!-- Paneles izq -->
-              <rect x="6"  y="26" width="34" height="78" rx="3" fill="none" stroke="#1B3358" stroke-width="0.9" opacity="0.45"/>
-              <rect x="6"  y="118" width="28" height="72" rx="3" fill="none" stroke="#1B3358" stroke-width="0.8" opacity="0.36"/>
-              <rect x="6"  y="205" width="22" height="65" rx="3" fill="none" stroke="#1B3358" stroke-width="0.7" opacity="0.25"/>
-              <!-- Aplique izq 1 -->
-              <rect x="9"  y="61" width="22" height="3.5" rx="1.75" fill="#2A4A6A" opacity="0.7"/>
-              <rect x="19" y="46" width="3"  height="16"  rx="1.5"  fill="#2A4A6A" opacity="0.7"/>
-              <circle cx="20.5" cy="44" r="5.5" fill="#FFD060" opacity="0.85"/>
-              <ellipse cx="20.5" cy="44" rx="26" ry="19" fill="url(#ch-sc)"/>
-              <!-- Aplique izq 2 -->
-              <rect x="7"  y="172" width="18" height="3"  rx="1.5" fill="#2A4A6A" opacity="0.62"/>
-              <rect x="15" y="159" width="2.5" height="14" rx="1.25" fill="#2A4A6A" opacity="0.62"/>
-              <circle cx="16.5" cy="157" r="4.5" fill="#FFD060" opacity="0.75"/>
-              <ellipse cx="16.5" cy="157" rx="20" ry="15" fill="url(#ch-sc)" opacity="0.85"/>
-
-              <!-- Pared derecha -->
-              <polygon points="500,0 352,0 416,380 500,380" fill="url(#ch-wR)"/>
-              <!-- Molduras verticales der -->
-              <line x1="474" y1="0"  x2="486" y2="380" stroke="#163050" stroke-width="1.3" opacity="0.55"/>
-              <line x1="438" y1="0"  x2="452" y2="380" stroke="#163050" stroke-width="0.7" opacity="0.3"/>
-              <line x1="398" y1="0"  x2="416" y2="380" stroke="#163050" stroke-width="0.5" opacity="0.18"/>
-              <!-- Paneles der -->
-              <rect x="460" y="26" width="34" height="78" rx="3" fill="none" stroke="#1B3358" stroke-width="0.9" opacity="0.45"/>
-              <rect x="466" y="118" width="28" height="72" rx="3" fill="none" stroke="#1B3358" stroke-width="0.8" opacity="0.36"/>
-              <rect x="472" y="205" width="22" height="65" rx="3" fill="none" stroke="#1B3358" stroke-width="0.7" opacity="0.25"/>
-              <!-- Aplique der 1 -->
-              <rect x="469" y="61" width="22" height="3.5" rx="1.75" fill="#2A4A6A" opacity="0.7"/>
-              <rect x="478" y="46" width="3"  height="16"  rx="1.5"  fill="#2A4A6A" opacity="0.7"/>
-              <circle cx="479.5" cy="44" r="5.5" fill="#FFD060" opacity="0.85"/>
-              <ellipse cx="479.5" cy="44" rx="26" ry="19" fill="url(#ch-sc)"/>
-              <!-- Aplique der 2 -->
-              <rect x="475" y="172" width="18" height="3"  rx="1.5" fill="#2A4A6A" opacity="0.62"/>
-              <rect x="483" y="159" width="2.5" height="14" rx="1.25" fill="#2A4A6A" opacity="0.62"/>
-              <circle cx="484" cy="157" r="4.5" fill="#FFD060" opacity="0.75"/>
-              <ellipse cx="484" cy="157" rx="20" ry="15" fill="url(#ch-sc)" opacity="0.85"/>
-
-              <!-- Haz del proyector -->
-              <polygon points="228,0 272,0 462,380 38,380" fill="url(#ch-proj)"/>
-
-              <!-- Techo + luces de techo -->
-              <rect width="500" height="16" fill="#040910"/>
-              <rect y="14" width="500" height="2" fill="#163050" opacity="0.55"/>
-              <circle cx="125" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
-              <circle cx="250" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
-              <circle cx="375" cy="7" r="4"  fill="#5A8AB0" opacity="0.55"/>
-              <ellipse cx="125" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
-              <ellipse cx="250" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
-              <ellipse cx="375" cy="7" rx="30" ry="12" fill="#4A7AAA" opacity="0.04"/>
+        <!-- Controles — igual que scheduling -->
+        <div class="sim-controls">
+          <button class="sim-btn" id="cs-play-btn" onclick="toggleCinemaPlay()" disabled>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
+            Iniciar
+          </button>
+          <button class="sim-btn step-style" onclick="siguientePaso()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 15 12 5 21 5 3" fill="currentColor" />
+              <line x1="19" y1="5" x2="19" y2="19" />
+            </svg>
+            PASO
+          </button>
+          <div class="algo-badge" id="sim-algo-badge">FIFO</div>
+          <div class="sim-clock"><span>T=</span><span id="pb-counter">—</span></div>
+          <span id="pb-first" style="display:none;"></span>
+          <span id="pb-prev" style="display:none;"></span>
+          <span id="pb-next" style="display:none;"></span>
+          <span id="pb-last" style="display:none;"></span>
+          <input type="range" id="vel-slider" style="display:none;" value="700">
+        </div>
 
-            <!-- Pantalla de proyección -->
-            <div class="cinema-screen">
-              <div class="screen-curtain screen-curtain-l" aria-hidden="true"></div>
-              <div class="screen-curtain screen-curtain-r" aria-hidden="true"></div>
-              <div class="screen-glow"></div>
-              <div style="position:relative; z-index:1;">
+        <!-- Cinema wrap -->
+        <div class="cinema-wrap" style="position:relative;">
+          <div class="cinema-fault-flash" id="fault-flash"></div>
+          <div class="cinema-hit-flash" id="hit-flash"></div>
+
+          <!-- Stubs ocultos para paginacion.js -->
+          <div id="cinema-end-screen" style="display:none!important;">
+            <div id="end-subtitle"></div>
+            <div id="end-stats"></div>
+            <div id="end-rating"></div>
+          </div>
+
+          <!-- Narrador -->
+          <div class="narrator-bar">
+            <span id="narrator-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,207,255,.5)" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </span>
+            <span id="narrator-text">Agrega referencias, elige el algoritmo y presiona Simular.</span>
+          </div>
+
+          <!-- Ref bits Clock/SC -->
+          <div id="refbits-area">
+            <div
+              style="font-size:9px;color:rgba(0,207,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">
+              Bits de referencia</div>
+            <div class="refbits-row" id="refbits-row"></div>
+          </div>
+
+          <!-- Interior -->
+          <div class="cinema-interior" style="flex:1;min-height:0;">
+
+            <div class="cinema-stage">
+              <!-- BG sala -->
+              <svg class="cinema-hall-bg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380"
+                preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ch-floor" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#0C1D2E" stop-opacity=".55" />
+                    <stop offset="100%" stop-color="#040A12" stop-opacity=".9" />
+                  </linearGradient>
+                  <linearGradient id="ch-wL" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#0B1C2E" stop-opacity=".9" />
+                    <stop offset="100%" stop-color="#0A1825" stop-opacity="0" />
+                  </linearGradient>
+                  <linearGradient id="ch-wR" x1="1" y1="0" x2="0" y2="0">
+                    <stop offset="0%" stop-color="#0B1C2E" stop-opacity=".9" />
+                    <stop offset="100%" stop-color="#0A1825" stop-opacity="0" />
+                  </linearGradient>
+                  <linearGradient id="ch-proj" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#00CFFF" stop-opacity=".06" />
+                    <stop offset="100%" stop-color="#00CFFF" stop-opacity="0" />
+                  </linearGradient>
+                  <radialGradient id="ch-sc" cx="50%" cy="25%" r="55%">
+                    <stop offset="0%" stop-color="#00CFFF" stop-opacity=".25" />
+                    <stop offset="100%" stop-color="#00CFFF" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+                <rect width="500" height="380" fill="#050C16" />
+                <polygon points="0,380 500,380 418,198 82,198" fill="url(#ch-floor)" />
+                <polygon points="218,198 282,198 315,380 185,380" fill="#030810" opacity=".7" />
+                <polygon points="0,0 148,0 84,380 0,380" fill="url(#ch-wL)" />
+                <polygon points="500,0 352,0 416,380 500,380" fill="url(#ch-wR)" />
+                <polygon points="228,0 272,0 462,380 38,380" fill="url(#ch-proj)" />
+                <circle cx="20.5" cy="44" r="5" fill="#00CFFF" opacity=".6" />
+                <ellipse cx="20.5" cy="44" rx="24" ry="17" fill="url(#ch-sc)" />
+                <circle cx="479.5" cy="44" r="5" fill="#00CFFF" opacity=".6" />
+                <ellipse cx="479.5" cy="44" rx="24" ry="17" fill="url(#ch-sc)" />
+                <rect width="500" height="16" fill="#040910" />
+                <circle cx="125" cy="7" r="4" fill="#00CFFF" opacity=".35" />
+                <circle cx="250" cy="7" r="4" fill="#00CFFF" opacity=".35" />
+                <circle cx="375" cy="7" r="4" fill="#00CFFF" opacity=".35" />
+              </svg>
+
+              <!-- Pantalla -->
+              <div class="cinema-screen-proj">
+                <div class="screen-curtain screen-curtain-l"></div>
+                <div class="screen-curtain screen-curtain-r"></div>
                 <div class="screen-algo-name" id="screen-algo-name">FIFO</div>
-                <div class="screen-algo-tagline" id="screen-algo-tagline">El acomodador saca al que lleva más tiempo sentado</div>
-              </div>
-            </div>
-
-            <!-- Fila de espera -->
-            <div class="queue-zone">
-              <div class="queue-label">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                Fila de espera — personas esperando entrar
-              </div>
-              <div id="queue-strip">
-                <div class="cinema-placeholder">Aún no hay simulación.</div>
-              </div>
-            </div>
-
-            <!-- Asientos -->
-            <div class="seats-zone">
-              <div class="seats-label">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="10" rx="2"/><path d="M6 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
-                Sala — marcos de memoria
-              </div>
-              <div id="seats-grid">
-                <div class="cinema-placeholder">Configura y presiona Simular.</div>
+                <div class="screen-algo-tagline" id="screen-algo-tagline">El acomodador saca al que lleva más tiempo
+                  sentado</div>
               </div>
 
-              <!-- Siluetas de audiencia — fondo del teatro -->
-              <div class="audience-row" aria-hidden="true">
-                <div class="audience-head aud-small"></div>
-                <div class="audience-head"></div>
-                <div class="audience-head aud-tall"></div>
-                <div class="audience-head"></div>
-                <div class="audience-head aud-small"></div>
-                <div class="audience-head aud-tall"></div>
-                <div class="audience-head"></div>
-                <div class="audience-head aud-small"></div>
-                <div class="audience-head aud-tall"></div>
-                <div class="audience-head"></div>
-              </div>
-            </div>
-
-          </div><!-- /cinema-stage -->
-
-          <!-- Sidebar: acomodador + contadores -->
-          <div class="cinema-sidebar">
-
-            <!-- Acomodador -->
-            <div class="usher-zone">
-              <div class="usher-name">El acomodador</div>
-              <div class="usher-figure" id="usher-figure">
-                <div class="usher-head" id="usher-head"></div>
-                <div class="usher-body">
-                  <div class="usher-flashlight" id="usher-flashlight"></div>
+              <!-- Fila espera -->
+              <div class="queue-zone">
+                <div class="zone-label">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                  </svg>
+                  Fila de espera
+                </div>
+                <div id="queue-strip">
+                  <div class="cinema-placeholder">Sin simulación.</div>
                 </div>
               </div>
-              <div class="usher-desc" id="usher-desc">FIFO<br>el guardián del tiempo</div>
+
+              <!-- Asientos -->
+              <div class="seats-zone">
+                <div class="zone-label">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="8" width="20" height="10" rx="2" />
+                    <path d="M6 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  Marcos de memoria
+                </div>
+                <div id="seats-grid">
+                  <div class="cinema-placeholder">Configura y presiona Simular.</div>
+                </div>
+                <div class="audience-row" aria-hidden="true">
+                  <div class="audience-head aud-small"></div>
+                  <div class="audience-head"></div>
+                  <div class="audience-head aud-tall"></div>
+                  <div class="audience-head"></div>
+                  <div class="audience-head aud-small"></div>
+                  <div class="audience-head aud-tall"></div>
+                  <div class="audience-head"></div>
+                  <div class="audience-head aud-small"></div>
+                </div>
+              </div>
             </div>
 
-            <div class="sidebar-sep"></div>
-
-            <!-- Referencia actual -->
-            <div class="current-ref-box">
-              <div class="current-ref-lbl">Referencia</div>
-              <div class="current-ref-num" id="current-ref-num">—</div>
-              <div id="current-ref-badge"></div>
+            <!-- Acomodador + contadores -->
+            <div class="cinema-sidebar">
+              <div class="usher-zone">
+                <div class="usher-name">Acomodador</div>
+                <div class="usher-figure" id="usher-figure">
+                  <div class="usher-head" id="usher-head"></div>
+                  <div class="usher-body">
+                    <div class="usher-flashlight" id="usher-flashlight"></div>
+                  </div>
+                </div>
+                <div class="usher-desc" id="usher-desc">FIFO<br>guardián del tiempo</div>
+              </div>
+              <div class="sidebar-sep"></div>
+              <div class="current-ref-box">
+                <div class="current-ref-lbl">Ref</div>
+                <div class="current-ref-num" id="current-ref-num">—</div>
+                <div id="current-ref-badge"></div>
+              </div>
+              <div class="sidebar-sep"></div>
+              <div class="sidebar-counter">
+                <div class="sidebar-cnt-num fault-color" id="cnt-faults">0</div>
+                <div class="sidebar-cnt-lbl">Fallos</div>
+                <div class="sidebar-cnt-sub">acomodador<br>actuó</div>
+              </div>
+              <div class="sidebar-sep"></div>
+              <div class="sidebar-counter">
+                <div class="sidebar-cnt-num hit-color" id="cnt-hits">0</div>
+                <div class="sidebar-cnt-lbl">Hits</div>
+                <div class="sidebar-cnt-sub">ya estaban<br>adentro</div>
+              </div>
             </div>
 
-            <div class="sidebar-sep"></div>
+          </div><!-- /cinema-interior -->
 
-            <!-- Contador fallos -->
-            <div class="sidebar-counter">
-              <div class="sidebar-cnt-num fault-color" id="cnt-faults">0</div>
-              <div class="sidebar-cnt-lbl">Fallos</div>
-              <div class="sidebar-cnt-sub">veces que el<br>acomodador actuó</div>
+          <!-- Tira de película -->
+          <div class="cinema-footer">
+            <div class="film-strip-label">Tira de referencia — clic para saltar</div>
+            <div id="film-strip">
+              <div class="cinema-placeholder" style="padding:2px 0;">Sin referencias.</div>
             </div>
-
-            <div class="sidebar-sep"></div>
-
-            <!-- Contador hits -->
-            <div class="sidebar-counter">
-              <div class="sidebar-cnt-num hit-color" id="cnt-hits">0</div>
-              <div class="sidebar-cnt-lbl">Hits</div>
-              <div class="sidebar-cnt-sub">páginas que ya<br>estaban adentro</div>
-            </div>
-
-          </div><!-- /cinema-sidebar -->
-
-        </div><!-- /cinema-interior -->
-
-        <!-- ── Tira de película (footer) ── -->
-        <div class="cinema-footer">
-          <div class="film-strip-label">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-            Tira de referencia — clic para saltar al paso
           </div>
-          <div id="film-strip">
-            <div class="cinema-placeholder" style="padding:4px 0;">Sin referencias.</div>
+
+          <!-- Barra de progreso -->
+          <div style="height:3px;background:rgba(0,207,255,.08);flex-shrink:0;">
+            <div id="pb-progress-fill" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;">
+            </div>
+          </div>
+
+        </div><!-- /cinema-wrap -->
+
+        <!-- Métricas -->
+        <div class="metrics-bar" id="metricas-wrap">
+          <div class="metrics-bar-title">
+            <span>Métricas de la simulación</span>
+            <button class="export-btn" onclick="exportarCSVPaginacion()">↓ CSV</button>
+          </div>
+          <div class="metrics-grid" id="metricas-paginacion">
+            <div class="mcard">
+              <div class="mcard-lbl">Page Faults</div>
+              <div class="mcard-val">—</div>
+            </div>
+            <div class="mcard">
+              <div class="mcard-lbl">Page Hits</div>
+              <div class="mcard-val">—</div>
+            </div>
+            <div class="mcard">
+              <div class="mcard-lbl">Tasa fallos</div>
+              <div class="mcard-val">—</div>
+            </div>
+            <div class="mcard">
+              <div class="mcard-lbl">Marcos usados</div>
+              <div class="mcard-val">—</div>
+            </div>
           </div>
         </div>
 
-      </div><!-- /memory-cinema -->
+      </main>
 
-      <!-- Métricas finales -->
-      <div class="metrics-dark" id="metricas-wrap">
-        <div class="metrics-dark-title" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
-            Métricas de la simulación
-          </span>
-          <button class="btn-cine-ghost" style="padding:3px 10px;font-size:10px;width:auto;"
-                  onclick="exportarCSVPaginacion()">
-            ↓ CSV
-          </button>
-        </div>
-        <div class="metrics-dark-grid" id="metricas-paginacion">
-          <div class="mcard"><div class="mcard-lbl">Page Faults</div><div class="mcard-val">—</div></div>
-          <div class="mcard"><div class="mcard-lbl">Page Hits</div><div class="mcard-val">—</div></div>
-          <div class="mcard"><div class="mcard-lbl">Tasa fallos</div><div class="mcard-val">—</div></div>
-          <div class="mcard"><div class="mcard-lbl">Marcos usados</div><div class="mcard-val">—</div></div>
-        </div>
-      </div>
-
-    </div><!-- /columna derecha -->
-
-  </div><!-- /two-col -->
-
-
-</div><!-- /page-container -->
-
-<!-- ════════════════════════════════════════════════════════
-     COMPARACIÓN — modal overlay fijo (fuera del contenedor)
-════════════════════════════════════════════════════════ -->
-<div id="seccion-comparacion">
-  <div class="comp-card">
-    <div class="comp-header">
-      <div class="comp-title">Comparación de los 5 algoritmos — misma cadena, mismos marcos</div>
-      <button class="btn-cine-ghost" style="width:auto; padding:6px 14px; font-size:11px;"
-              onclick="document.getElementById('seccion-comparacion').style.display='none'">Cerrar</button>
     </div>
+  </div>
+
+  <!-- Stub para paginacion.js -->
+  <div id="seccion-comparacion" style="display:none!important;">
     <div id="comparacion-tabla"></div>
   </div>
-</div>
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPTS
-════════════════════════════════════════════════════════ -->
-<script src="js/ui.js"></script>
-<script src="js/client.js"></script>
-<script src="js/paginacion.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/client.js"></script>
+  <script src="js/paginacion.js"></script>
+
+  <script>
+    /* ── Tabs ── */
+    function switchPagTab(id) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      ['pt-datos', 'pt-lista', 'pt-algo'].forEach((tid, i) => {
+        if (tid === id) document.querySelectorAll('.tab-btn')[i].classList.add('active');
+      });
+    }
+
+    /* ── Chips de referencia ── */
+    let _refList = [];
+
+    function agregarReferencia() {
+      const inp = document.getElementById('inp-ref-single');
+      const val = parseInt(inp.value);
+      if (isNaN(val) || val < 0) { inp.focus(); return; }
+      _refList.push(val);
+      inp.value = '';
+      inp.focus();
+      _syncFromList();
+      switchPagTab('pt-lista');
+    }
+
+    function sincronizarCadena() {
+      const txt = document.getElementById('inp-referencias').value;
+      _refList = txt.trim().split(/\s+/).map(Number).filter(n => !isNaN(n) && n >= 0);
+      _renderChips();
+    }
+
+    function _syncFromList() {
+      document.getElementById('inp-referencias').value = _refList.join(' ');
+      _renderChips();
+    }
+
+    function _renderChips() {
+      const chips = document.getElementById('ref-chips');
+      const vacia = document.getElementById('ref-vacia');
+      const count = document.getElementById('ref-count');
+      if (!chips) return;
+      if (count) count.textContent = _refList.length;
+      vacia.style.display = _refList.length ? 'none' : 'block';
+      chips.innerHTML = _refList.map((r, i) =>
+        `<span class="ref-chip-item" onclick="quitarRef(${i})" title="Quitar">${r} ×</span>`
+      ).join('');
+    }
+
+    function quitarRef(idx) {
+      _refList.splice(idx, 1);
+      _syncFromList();
+    }
+
+    function limpiarReferencias() {
+      _refList = [];
+      document.getElementById('inp-referencias').value = '';
+      _renderChips();
+    }
+
+    /* ── Patches sobre paginacion.js (aplicar después de que cargue) ── */
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* Enter en campo página */
+      document.getElementById('inp-ref-single')?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') agregarReferencia();
+      });
+
+      /* Algo cards visual */
+      document.querySelector('.algo-card-pag[data-algo="fifo"]')?.classList.add('active');
+
+      /* seleccionarAlgoritmo: añadir sync de badge y cards */
+      const _origSel = window.seleccionarAlgoritmo;
+      window.seleccionarAlgoritmo = function (nombre) {
+        document.querySelectorAll('.algo-card-pag').forEach(c => c.classList.toggle('active', c.dataset.algo === nombre));
+        const badge = document.getElementById('sim-algo-badge');
+        if (badge) badge.textContent = nombre.toUpperCase();
+        if (_origSel) _origSel(nombre);
+      };
+
+      /* Sin vibración */
+      window.triggerFaultFlash = function () {
+        const el = document.getElementById('fault-flash');
+        if (el) { el.classList.remove('active'); void el.offsetWidth; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 450); }
+      };
+
+      /* Sin pantalla final */
+      window.mostrarEndScreen = function () { };
+      window.cerrarEndScreen = function () { };
+      window.mostrarComparacion = function () { };
+
+      /* Al aplicar resultado → ir a tab Refs con métricas */
+      const _origAplicar = window._aplicarResultadoSimulacion;
+      window._aplicarResultadoSimulacion = function (resultado, numFrames, elapsed) {
+        if (_origAplicar) _origAplicar(resultado, numFrames, elapsed);
+        /* Mostrar métricas en sidebar */
+        if (resultado) {
+          const total = resultado.faults + resultado.hits;
+          const tasa = total > 0 ? (resultado.faults / total * 100).toFixed(1) : '0.0';
+          const panel = document.getElementById('metricas-sidebar');
+          const list = document.getElementById('metricas-sidebar-list');
+          if (panel && list) {
+            panel.style.display = 'block';
+            list.innerHTML = [
+              ['Fallos', resultado.faults, '#FF6B6B'],
+              ['Hits', resultado.hits, '#7BC67E'],
+              ['Tasa', tasa + '%', 'var(--cb-mid)'],
+            ].map(([l, v, c]) => `
+          <div style="display:flex;justify-content:space-between;padding:4px 7px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:4px;">
+            <span style="font-size:10px;color:rgba(0,207,255,.5);font-family:'IBM Plex Mono',monospace;">${l}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${c};">${v}</span>
+          </div>`).join('');
+          }
+        }
+        switchPagTab('pt-lista');
+      };
+    });
+  </script>
 
 </body>
+
 </html>

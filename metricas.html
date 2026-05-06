@@ -4,13 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OSim — Metrics</title>
+  <title>OSim — Métricas</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap"
     rel="stylesheet">
-
   <style>
     :root {
       --cb-bright: #00CFFF;
@@ -23,12 +22,15 @@
     body {
       height: 100%;
       overflow: hidden;
+      margin: 0;
+      padding: 0;
     }
 
+    /* ── Layout ── */
     .page {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 56px);
+      height: calc(100vh - 44px);
       overflow: hidden;
     }
 
@@ -36,7 +38,7 @@
     .marquee-bar {
       flex-shrink: 0;
       background: #000;
-      padding: 10px 24px 9px;
+      padding: 9px 20px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -52,15 +54,15 @@
       right: 0;
       height: 2px;
       background: repeating-linear-gradient(90deg, var(--cb-bright) 0px, var(--cb-bright) 8px, transparent 8px, transparent 16px);
-      opacity: .55;
+      opacity: .45;
     }
 
     .marquee-title {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 24px;
+      font-size: 22px;
       letter-spacing: .15em;
-      color: var(--cb-bright);
-      text-shadow: 0 0 20px var(--cb-glow);
+      color: var(--color-blue-500);
+      text-shadow: 0 0 18px var(--cb-glow);
       line-height: 1;
     }
 
@@ -70,40 +72,31 @@
 
     .marquee-sub {
       font-size: 10px;
-      color: rgba(0, 207, 255, .5);
+      color: rgba(0, 207, 255, .45);
       font-style: italic;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .marquee-lights {
       display: flex;
       gap: 6px;
-      align-items: center;
     }
 
     .marquee-bulb {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--cb-bright);
       box-shadow: 0 0 6px var(--cb-bright);
-      animation: bulb-blink 1.4s ease-in-out infinite;
+      animation: bulb-blink 1.8s ease-in-out infinite;
     }
 
     .marquee-bulb:nth-child(2) {
-      animation-delay: .28s
+      animation-delay: .6s;
     }
 
     .marquee-bulb:nth-child(3) {
-      animation-delay: .56s
-    }
-
-    .marquee-bulb:nth-child(4) {
-      animation-delay: .84s
-    }
-
-    .marquee-bulb:nth-child(5) {
-      animation-delay: 1.12s
+      animation-delay: 1.2s;
     }
 
     @keyframes bulb-blink {
@@ -114,24 +107,25 @@
       }
 
       50% {
-        opacity: .15
+        opacity: .2
       }
     }
 
+    /* Botón comparar */
     .btn-compara {
       display: flex;
       align-items: center;
       gap: 7px;
-      padding: 8px 20px;
-      border-radius: 10px;
+      padding: 8px 18px;
+      border-radius: 8px;
       background: linear-gradient(135deg, var(--cb-deep), var(--cb-mid));
       color: #fff;
       font-weight: 700;
       font-size: 13px;
       border: 1px solid rgba(0, 207, 255, .3);
       cursor: pointer;
-      font-family: var(--font-sans);
-      box-shadow: 0 2px 14px rgba(0, 207, 255, .18);
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: .06em;
       opacity: .35;
       pointer-events: none;
       transition: all .18s;
@@ -160,6 +154,7 @@
       }
     }
 
+    /* Validadores */
     .val-row {
       display: flex;
       gap: 10px;
@@ -194,7 +189,7 @@
       box-shadow: 0 0 5px var(--cb-bright);
     }
 
-    /* ── Layout principal ── */
+    /* ── Main row ── */
     .main-row {
       display: flex;
       flex: 1;
@@ -206,17 +201,18 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      padding: 12px 10px 12px 16px;
-      gap: 12px;
+      padding: 12px 10px 12px 14px;
+      gap: 10px;
     }
 
     .screens-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex: 1;
       overflow: hidden;
     }
 
+    /* Pantallas de boletos */
     .screen {
       flex: 1;
       min-width: 0;
@@ -224,15 +220,15 @@
       flex-direction: column;
       background: #000;
       border: 1px solid rgba(0, 207, 255, .15);
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, .55);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
     }
 
     .screen-head {
       flex-shrink: 0;
       background: #000;
-      padding: 10px 16px 9px;
+      padding: 10px 14px 9px;
       border-bottom: 1px solid rgba(0, 207, 255, .12);
       position: relative;
     }
@@ -245,7 +241,7 @@
       right: 0;
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--cb-mid), transparent);
-      opacity: .6;
+      opacity: .5;
     }
 
     .screen-label {
@@ -267,7 +263,7 @@
       font-size: 20px;
       letter-spacing: .1em;
       color: var(--cb-bright);
-      text-shadow: 0 0 16px var(--cb-glow);
+      text-shadow: 0 0 14px var(--cb-glow);
       line-height: 1;
     }
 
@@ -278,12 +274,12 @@
     }
 
     .screen-count {
-      font-family: var(--font-mono);
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 12px;
       color: rgba(0, 207, 255, .6);
     }
 
-    .btn-clear {
+    .btn-clear-sm {
       font-size: 9px;
       color: rgba(255, 255, 255, .25);
       background: none;
@@ -291,26 +287,24 @@
       border-radius: 4px;
       padding: 2px 7px;
       cursor: pointer;
-      font-family: var(--font-sans);
       transition: all .15s;
     }
 
-    .btn-clear:hover {
+    .btn-clear-sm:hover {
       color: #ff6b6b;
       border-color: rgba(255, 107, 107, .3);
     }
 
-    /* tickets area */
+    /* Tickets area */
     .tickets-area {
       flex: 1;
       overflow-y: auto;
-      overflow-x: hidden;
       padding: 10px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 8px;
       align-content: start;
-      background: linear-gradient(180deg, #365670 0%, #000 100%);
+      background: linear-gradient(180deg, rgba(0, 31, 53, .6) 0%, #000 100%);
       scrollbar-width: thin;
       scrollbar-color: rgba(0, 207, 255, .2) transparent;
     }
@@ -324,7 +318,7 @@
       border-radius: 4px
     }
 
-    /* ── Ticket boleto ── */
+    /* Ticket */
     .ticket {
       position: relative;
       cursor: pointer;
@@ -375,7 +369,7 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: linear-gradient(180deg, #365670, #000);
+      background: linear-gradient(180deg, rgba(0, 31, 53, .6), #000);
       z-index: 3;
     }
 
@@ -455,7 +449,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       color: #fff;
-      font-family: var(--font-mono);
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     .ticket-meta {
@@ -477,7 +471,7 @@
     .ticket-seat {
       font-size: 8px;
       color: rgba(0, 207, 255, .6);
-      font-family: var(--font-mono);
+      font-family: 'IBM Plex Mono', monospace;
       margin-top: 2px;
     }
 
@@ -486,14 +480,13 @@
       right: 10px;
       bottom: 8px;
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
+      font-size: 26px;
       line-height: 1;
-      color: rgba(0, 207, 255, .15);
-      letter-spacing: .05em;
+      color: rgba(0, 207, 255, .12);
     }
 
     .ticket.selected .ticket-num {
-      color: rgba(0, 207, 255, .3);
+      color: rgba(0, 207, 255, .28);
     }
 
     .empty-screen {
@@ -509,18 +502,13 @@
       padding: 20px;
     }
 
-    .empty-icon {
-      font-size: 32px;
-      opacity: .4;
-    }
-
     .empty-hint {
       font-size: 10px;
       color: rgba(255, 255, 255, .2);
       line-height: 1.5;
     }
 
-    /* ── Clapperboards ── */
+    /* Clapperboards */
     .algo-section {
       flex-shrink: 0;
       border-top: 1px solid rgba(0, 207, 255, .12);
@@ -566,7 +554,7 @@
 
     .clapper-base {
       height: 14px;
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      border-radius: 4px 4px 0 0;
       overflow: hidden;
       border: 1.5px solid rgba(0, 207, 255, .3);
       border-bottom: none;
@@ -590,7 +578,7 @@
       transform-origin: top center;
       transform: scaleY(.18) translateY(-2px);
       transition: transform .3s cubic-bezier(.25, .46, .45, .94);
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      border-radius: 4px 4px 0 0;
       border: 1.5px solid rgba(0, 207, 255, .45);
       border-bottom: 2px solid rgba(0, 207, 255, .6);
       z-index: 3;
@@ -608,7 +596,7 @@
     }
 
     .clapper-body {
-      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      border-radius: 0 0 4px 4px;
       padding: 5px 4px 6px;
       border: 1.5px solid rgba(0, 207, 255, .2);
       border-top: none;
@@ -659,156 +647,347 @@
       display: flex;
     }
 
-    /* ── Panel resultados ── */
-    .results-col {
-      width: 300px;
-      flex-shrink: 0;
-      border-left: 1px solid rgba(0, 207, 255, .1);
+    /* ═══════════════════════════════════════════════════
+       MODAL DE COMPARACIÓN
+    ═══════════════════════════════════════════════════ */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 5, 15, .88);
+      backdrop-filter: blur(12px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: min(1100px, 96vw);
+      height: min(82vh, 700px);
+      background: #000;
+      border: 1px solid rgba(0, 207, 255, .2);
+      border-radius: 16px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      background: #000;
-      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .8), 0 0 0 1px rgba(0, 207, 255, .12);
+      animation: modal-in .25s ease;
     }
 
-    .results-head {
+    @keyframes modal-in {
+      from {
+        opacity: 0;
+        transform: scale(.95)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .modal-head {
       flex-shrink: 0;
-      padding: 14px 16px 10px;
-      border-bottom: 1px solid rgba(0, 207, 255, .1);
+      background: #000;
+      padding: 12px 18px 11px;
+      border-bottom: 1px solid rgba(0, 207, 255, .15);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .results-head-title {
+    .modal-head::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--cb-bright) 0px, var(--cb-bright) 8px, transparent 8px, transparent 16px);
+      opacity: .4;
+    }
+
+    .modal-title {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
+      font-size: 20px;
       letter-spacing: .12em;
       color: var(--cb-bright);
-      text-shadow: 0 0 12px var(--cb-glow);
+      text-shadow: 0 0 14px var(--cb-glow);
     }
 
-    .results-head-sub {
+    .modal-sub {
       font-size: 10px;
-      color: rgba(0, 207, 255, .4);
-      margin-top: 2px;
+      color: rgba(0, 207, 255, .45);
+      margin-top: 1px;
     }
 
-    .results-body {
+    .modal-close {
+      background: none;
+      border: 1px solid rgba(0, 207, 255, .2);
+      color: rgba(0, 207, 255, .6);
+      border-radius: 6px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      transition: all .15s;
+    }
+
+    .modal-close:hover {
+      color: var(--cb-bright);
+      border-color: var(--cb-bright);
+    }
+
+    .modal-open-tab {
+      background: var(--cb-deep);
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 14px;
+      cursor: pointer;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: .06em;
+      transition: background .15s;
+    }
+
+    .modal-open-tab:hover {
+      background: var(--cb-mid);
+    }
+
+    .modal-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .modal-section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 14px;
+      gap: 10px;
+      border-right: 1px solid rgba(0, 207, 255, .08);
+    }
+
+    .modal-section:last-child {
+      border-right: none;
+    }
+
+    .modal-section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: .1em;
+      color: var(--cb-bright);
+      border-bottom: 1px solid rgba(0, 207, 255, .15);
+      padding-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Gráficas de barras */
+    .chart-wrap {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       scrollbar-width: thin;
       scrollbar-color: rgba(0, 207, 255, .15) transparent;
     }
 
-    .results-body::-webkit-scrollbar {
-      width: 3px
-    }
-
-    .results-body::-webkit-scrollbar-thumb {
-      background: rgba(0, 207, 255, .15);
-      border-radius: 4px
-    }
-
-    .results-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 10px;
-      color: rgba(0, 207, 255, .3);
-      font-size: 12px;
-      text-align: center;
-    }
-
-    .rc-section-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: rgba(0, 207, 255, .35);
-      margin: 8px 0 6px;
-    }
-
-    .result-card {
-      background: rgba(0, 207, 255, .04);
-      border: 1px solid rgba(0, 207, 255, .12);
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 8px;
-    }
-
-    .rc-header {
+    .chart-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 9px;
+      gap: 8px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all .15s;
     }
 
-    .rc-title {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
+    .chart-row:hover {
+      background: rgba(0, 207, 255, .05);
+      border-color: rgba(0, 207, 255, .15);
+    }
+
+    .chart-row.winner {
+      background: rgba(0, 207, 255, .07);
+      border-color: rgba(0, 207, 255, .25);
+    }
+
+    .chart-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: rgba(255, 255, 255, .7);
+      min-width: 80px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 160px;
     }
 
-    .rc-badge {
+    .chart-bar-wrap {
+      flex: 1;
+      height: 20px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chart-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .6s cubic-bezier(.34, 1.1, .64, 1);
+      display: flex;
+      align-items: center;
+      padding-left: 6px;
+    }
+
+    .chart-bar-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      color: rgba(255, 255, 255, .9);
+      white-space: nowrap;
+    }
+
+    .chart-winner-badge {
       font-size: 9px;
       font-weight: 700;
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
-      letter-spacing: .04em;
+      background: rgba(0, 207, 255, .15);
+      color: var(--cb-bright);
+      border: 1px solid rgba(0, 207, 255, .3);
+      white-space: nowrap;
     }
 
-    .rc-grid {
+    /* Cards de ganadores */
+    .winners-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 5px;
+      gap: 8px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 207, 255, .15) transparent;
     }
 
-    .rc-stat {
-      background: rgba(0, 0, 0, .35);
-      border: 1px solid rgba(255, 255, 255, .06);
-      border-radius: 7px;
-      padding: 6px 8px;
+    .winner-card {
+      background: rgba(0, 207, 255, .05);
+      border: 1px solid rgba(0, 207, 255, .15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all .15s;
     }
 
-    .rc-stat-lbl {
-      font-size: 8px;
+    .winner-card:hover {
+      background: rgba(0, 207, 255, .1);
+      border-color: var(--cb-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 207, 255, .15);
+    }
+
+    .winner-metric {
+      font-size: 9px;
       color: rgba(0, 207, 255, .5);
       text-transform: uppercase;
-      letter-spacing: .06em;
+      letter-spacing: .08em;
       margin-bottom: 3px;
     }
 
-    .rc-stat-val {
-      font-family: var(--font-mono);
+    .winner-algo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      color: var(--cb-bright);
+      text-shadow: 0 0 10px var(--cb-glow);
+      line-height: 1;
+    }
+
+    .winner-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: rgba(255, 255, 255, .6);
+      margin-top: 2px;
+    }
+
+    .winner-crown {
+      font-size: 16px;
+      float: right;
+      margin-top: -2px;
+    }
+
+    /* Slide navigation */
+    .slide-wrap {
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .slide {
+      height: 100%;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 207, 255, .15) transparent;
+    }
+
+    .slide-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 0 4px;
+      flex-shrink: 0;
+    }
+
+    .slide-arrow {
+      background: none;
+      border: 1px solid rgba(0, 207, 255, .2);
+      color: rgba(0, 207, 255, .6);
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
       font-size: 14px;
-      font-weight: 700;
-      color: #fff;
+      line-height: 1;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .rc-stat-val.good {
-      color: #7BC67E;
+    .slide-arrow:hover {
+      color: var(--cb-bright);
+      border-color: var(--cb-bright);
     }
 
-    .rc-stat-val.fault {
-      color: #FF6B6B;
+    .slide-dots {
+      display: flex;
+      gap: 5px;
     }
 
-    .rc-sep {
-      height: 1px;
-      background: rgba(0, 207, 255, .08);
-      margin: 10px 0 8px;
+    .slide-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(0, 207, 255, .2);
+      cursor: pointer;
+      transition: all .15s;
     }
 
-    .rc-error {
-      color: #FF8080;
-      font-size: 10px;
-      padding: 4px 0;
+    .slide-dot.active {
+      background: var(--cb-bright);
+      box-shadow: 0 0 6px var(--cb-bright);
     }
 
+    /* Spinner */
     .spinner {
       display: inline-block;
       width: 14px;
@@ -825,6 +1004,11 @@
         transform: rotate(360deg)
       }
     }
+
+    /* ═══════════════════════════════════════════════════
+       VENTANA DE REPLAY (nueva pestaña)
+    ═══════════════════════════════════════════════════ */
+    /* (se abre como popup/nueva pestaña — no necesita CSS aquí) */
   </style>
 </head>
 
@@ -840,14 +1024,15 @@
 
   <div class="page">
 
+    <!-- Marquesina -->
     <div class="marquee-bar">
       <div>
-        <div class="marquee-title">Metrics</div>
-        <div class="marquee-sub">Escoge tus boletos y selecciona los algoritmos para comparar</div>
+        <div class="marquee-title">Metrics <span>Cinema</span></div>
+        <div class="marquee-sub">Escoge tus boletos, selecciona algoritmos y compara resultados</div>
       </div>
       <div style="display:flex;align-items:center;gap:18px;">
         <div>
-          <button class="btn-compara" id="btn-compara" onclick="ejecutar()">🎥 Comparar salas →</button>
+          <button class="btn-compara" id="btn-compara" onclick="abrirModal()">🎥 COMPARAR SALAS →</button>
           <div class="val-row" style="margin-top:6px;justify-content:flex-end;">
             <div class="v-item" id="v-sched">
               <div class="v-dot"></div><span>1 prueba Sched.</span>
@@ -867,14 +1052,12 @@
           <div class="marquee-bulb"></div>
           <div class="marquee-bulb"></div>
           <div class="marquee-bulb"></div>
-          <div class="marquee-bulb"></div>
-          <div class="marquee-bulb"></div>
         </div>
       </div>
     </div>
 
+    <!-- Main -->
     <div class="main-row">
-
       <div class="screens-col">
         <div class="screens-row">
 
@@ -886,7 +1069,7 @@
                 <div class="screen-title">Scheduling</div>
                 <div class="screen-actions">
                   <div class="screen-count" id="cnt-s">0/0</div>
-                  <button class="btn-clear" onclick="clearTests('s')">✕ limpiar</button>
+                  <button class="btn-clear-sm" onclick="clearTests('s')">✕ limpiar</button>
                 </div>
               </div>
             </div>
@@ -905,7 +1088,7 @@
                 <div class="screen-title">Paginación</div>
                 <div class="screen-actions">
                   <div class="screen-count" id="cnt-p">0/0</div>
-                  <button class="btn-clear" onclick="clearTests('p')">✕ limpiar</button>
+                  <button class="btn-clear-sm" onclick="clearTests('p')">✕ limpiar</button>
                 </div>
               </div>
             </div>
@@ -918,28 +1101,34 @@
 
         </div>
       </div>
-
-      <!-- Resultados -->
-      <div class="results-col">
-        <div class="results-head">
-          <div class="results-head-title">Resultados</div>
-          <div class="results-head-sub">Re-ejecuta algoritmos en vivo</div>
-        </div>
-        <div class="results-body" id="results-body">
-          <div class="results-empty">
-            <div style="font-size:28px;opacity:.3">🎬</div>
-            <div>Selecciona pruebas y algoritmos,<br>luego presiona Comparar.</div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
-  <!-- scheduling.js contiene ejecutarAlgoritmo() que necesitamos re-usar -->
+  <!-- ═══════════════════════════════════════════════════════
+     MODAL DE COMPARACIÓN
+═══════════════════════════════════════════════════════ -->
+  <div id="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="modal-title">Comparación de Salas</div>
+          <div class="modal-sub" id="modal-sub">Resultados en tiempo real</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="modal-close" onclick="cerrarModal()">✕ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div
+          style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(0,207,255,.5);font-size:13px;">
+          <span class="spinner"></span> Calculando...
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/scheduling.js"></script>
   <script src="js/store.js"></script>
-
   <script>
     /* ══════════════════════════════════════════════════════
        CATÁLOGO
@@ -957,7 +1146,7 @@
       { key: 'lru', label: 'LRU', color: '#1D9E75', sub: 'Least Recent' },
       { key: 'opt', label: 'OPT', color: '#7F77DD', sub: 'Óptimo' },
       { key: 'clock', label: 'Clock', color: '#BA7517', sub: 'Reloj' },
-      { key: 'sc', label: '2da Op', color: '#D4537E', sub: '2da Oportunidad' },
+      { key: 'sc', label: '2da Op.', color: '#D4537E', sub: '2da Oportunidad' },
     ];
     const aInfo = (list, key) => list.find(a => a.key === key) || { label: key, color: '#0EA5D4' };
 
@@ -966,10 +1155,11 @@
     ══════════════════════════════════════════════════════ */
     let sTests = [], pTests = [];
     let selS = new Set(), selP = new Set();
-    let sChip = null, pChip = null;
+    let sChips = new Set(), pChips = new Set(); // multi-select algoritmos
+    let _lastResults = null;
 
     /* ══════════════════════════════════════════════════════
-       ALGORITMOS DE PAGINACIÓN (inline — no necesita paginacion.js)
+       ALGORITMOS PAGINACIÓN (inline)
     ══════════════════════════════════════════════════════ */
     function _runPag(algo, refs, frames) {
       if (algo === 'fifo') {
@@ -1000,11 +1190,7 @@
           faults++;
           if (mem.length < frames) { mem.push(r); continue; }
           let victim = null, farthest = -1;
-          for (const p of mem) {
-            const nxt = refs.indexOf(p, i + 1);
-            const fi = nxt === -1 ? Infinity : nxt;
-            if (fi > farthest) { farthest = fi; victim = p; }
-          }
+          for (const p of mem) { const nxt = refs.indexOf(p, i + 1); const fi = nxt === -1 ? Infinity : nxt; if (fi > farthest) { farthest = fi; victim = p; } }
           mem.splice(mem.indexOf(victim), 1); mem.push(r);
         }
         return { faults, hits, total: refs.length };
@@ -1035,14 +1221,11 @@
       return null;
     }
 
-    /* ══════════════════════════════════════════════════════
-       RE-EJECUTAR SCHEDULING (usa ejecutarAlgoritmo de scheduling.js)
-    ══════════════════════════════════════════════════════ */
     function _runSched(algo, processes, quantum) {
       try {
-        const procs = processes.map(p => ({ ...p }));
+        const procs = processes.map(p => ({ ...p, state: 'ready' }));
         const res = ejecutarAlgoritmo(algo, procs, quantum);
-        return res ? res.metricas : null;
+        return res ? { metricas: res.metricas, segments: res.segments, procesos: res.procesos, contextSwitches: res.contextSwitches } : null;
       } catch (e) { return null; }
     }
 
@@ -1055,15 +1238,13 @@
       const algos = type === 's' ? SA : PA;
       document.getElementById('cnt-' + type).textContent = `${sel.size}/${tests.length}`;
       if (!tests.length) {
-        el.innerHTML = `<div class="empty-screen"><div class="empty-icon">🎟</div><div>Sin pruebas guardadas</div><div class="empty-hint">Corre simulaciones en Scheduling o Paginación<br>y aparecerán aquí automáticamente.</div></div>`;
+        el.innerHTML = `<div class="empty-screen"><div style="font-size:28px;opacity:.3">🎟</div><div>Sin pruebas guardadas</div><div class="empty-hint">Corre simulaciones en Scheduling o Paginación<br>y aparecerán aquí automáticamente.</div></div>`;
         return;
       }
       el.innerHTML = tests.map((t, i) => {
         const on = sel.has(t.id);
         const info = aInfo(algos, t.algo);
-        const meta = type === 's'
-          ? `${t.processes?.length || 0} proc · q=${t.quantum || 2}`
-          : `${t.refs?.length || 0} refs · ${t.frames}F`;
+        const meta = type === 's' ? `${t.processes?.length || 0} proc · q=${t.quantum || 2}` : `${t.refs?.length || 0} refs · ${t.frames}F`;
         const date = new Date(t.ts || 0).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
         const sn = String(i + 1).padStart(2, '0');
         return `<div class="ticket${on ? ' selected' : ''}" onclick="togTest('${type}','${t.id}')">
@@ -1085,21 +1266,18 @@
       }).join('');
     }
 
-    /* ══════════════════════════════════════════════════════
-       RENDER CLAPPERS
-    ══════════════════════════════════════════════════════ */
-    function renderClappers(id, algos, selKey) {
+    function renderClappers(id, algos, selSet) {
       document.getElementById(id).innerHTML = algos.map(a => {
-        const on = selKey === a.key;
+        const on = selSet.has(a.key);
         return `<div class="clapper${on ? ' sel' : ''}" onclick="togChip('${id}','${a.key}')">
-      <div class="clapper-check">✓</div>
-      <div class="clapper-base"></div>
-      <div class="clapper-flap-wrap"></div>
-      <div class="clapper-body" style="background:linear-gradient(160deg,${a.color}ee,${a.color}88)">
-        <div class="clapper-label">${a.label}</div>
-        <div class="clapper-sub">${a.sub}</div>
-      </div>
-    </div>`;
+  <div class="clapper-check">✓</div>
+  <div class="clapper-base"></div>
+  <div class="clapper-flap-wrap"></div>
+  <div class="clapper-body" style="background:linear-gradient(160deg,${a.color}ee,${a.color}88)">
+    <div class="clapper-label">${a.label}</div>
+    <div class="clapper-sub">${a.sub}</div>
+  </div>
+</div>`;
       }).join('');
     }
 
@@ -1112,8 +1290,8 @@
       renderAll();
     }
     function togChip(id, key) {
-      if (id === 'cs') sChip = (sChip === key ? null : key);
-      else pChip = (pChip === key ? null : key);
+      const set = id === 'cs' ? sChips : pChips;
+      set.has(key) ? set.delete(key) : set.add(key);
       renderAll();
     }
     function delTest(type, id) {
@@ -1130,78 +1308,405 @@
       renderAll();
     }
     function validate() {
-      const ok = {
-        'v-sched': selS.size > 0, 'v-pag': selP.size > 0,
-        'v-salg': sChip !== null, 'v-palg': pChip !== null,
-      };
+      const ok = { 'v-sched': selS.size > 0, 'v-pag': selP.size > 0, 'v-salg': sChips.size > 0, 'v-palg': pChips.size > 0 };
       for (const [id, v] of Object.entries(ok)) document.getElementById(id)?.classList.toggle('ok', v);
       document.getElementById('btn-compara').classList.toggle('active', Object.values(ok).every(Boolean));
     }
     function renderAll() {
       renderTickets('ts', sTests, 's'); renderTickets('tp', pTests, 'p');
-      renderClappers('cs', SA, sChip); renderClappers('cp', PA, pChip);
+      renderClappers('cs', SA, sChips); renderClappers('cp', PA, pChips);
       validate();
     }
 
     /* ══════════════════════════════════════════════════════
-       EJECUTAR Y MOSTRAR RESULTADOS
+       MODAL — ABRIR / CERRAR
     ══════════════════════════════════════════════════════ */
-    function ejecutar() {
-      const rb = document.getElementById('results-body');
-      rb.innerHTML = `<div class="results-empty"><span class="spinner"></span><div style="margin-top:10px;color:rgba(0,207,255,.5)">Ejecutando…</div></div>`;
+    function abrirModal() {
+      document.getElementById('modal-overlay').classList.add('open');
+      ejecutarComparacion();
+    }
+    function cerrarModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+    document.getElementById('modal-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) cerrarModal();
+    });
+
+    /* ══════════════════════════════════════════════════════
+       EJECUTAR COMPARACIÓN
+    ══════════════════════════════════════════════════════ */
+    function ejecutarComparacion() {
+      const body = document.getElementById('modal-body');
+      body.style.gridTemplateColumns = '1fr';
+      body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:12px;color:rgba(0,207,255,.5);font-size:13px;grid-column:1/-1;"><span class="spinner"></span> Calculando en vivo...</div>`;
+
       setTimeout(() => {
-        let html = '';
-        const si = aInfo(SA, sChip);
-        const pi = aInfo(PA, pChip);
-
-        /* Scheduling */
-        html += `<div class="rc-section-label">📽 Scheduling · ${si.label}</div>`;
-        for (const id of selS) {
-          const t = sTests.find(x => x.id === id); if (!t) continue;
-          const m = _runSched(sChip, t.processes, t.quantum || 2);
-          html += _card(t, si, m ? [
-            { lbl: 'Avg Waiting', val: m.avgWaiting, cls: '' },
-            { lbl: 'Avg Turnaround', val: m.avgTurnaround, cls: '' },
-            { lbl: 'Avg Response', val: m.avgResponse, cls: '' },
-            { lbl: 'CPU Util.', val: m.cpuUtilization, cls: 'good' },
-          ] : null);
+        // Correr cada combinación prueba × algoritmo
+        // sResults: [{test, algo, algoInfo, metricas, segments, procesos}]
+        const sResults = [];
+        for (const tid of selS) {
+          const t = sTests.find(x => x.id === tid); if (!t) continue;
+          for (const ak of sChips) {
+            const ai = aInfo(SA, ak);
+            const r = _runSched(ak, t.processes, t.quantum || 2);
+            if (r) sResults.push({ test: t, algo: ak, algoInfo: ai, metricas: r.metricas, segments: r.segments, procesos: r.procesos });
+          }
+        }
+        const pResults = [];
+        for (const tid of selP) {
+          const t = pTests.find(x => x.id === tid); if (!t) continue;
+          for (const ak of pChips) {
+            const ai = aInfo(PA, ak);
+            const r = _runPag(ak, t.refs, t.frames);
+            if (r) pResults.push({ test: t, algo: ak, algoInfo: ai, result: r });
+          }
         }
 
-        html += `<div class="rc-sep"></div>`;
+        _lastResults = { sResults, pResults };
 
-        /* Paginación */
-        html += `<div class="rc-section-label">🎞 Paginación · ${pi.label}</div>`;
-        for (const id of selP) {
-          const t = pTests.find(x => x.id === id); if (!t) continue;
-          const r = _runPag(pChip, t.refs, t.frames);
-          html += _card(t, pi, r ? [
-            { lbl: 'Page Faults', val: r.faults, cls: 'fault' },
-            { lbl: 'Page Hits', val: r.hits, cls: 'good' },
-            { lbl: 'Tasa Fallos', val: (r.faults / r.total * 100).toFixed(1) + '%', cls: '' },
-            { lbl: 'Total Refs', val: r.total, cls: '' },
-          ] : null);
-        }
+        body.style.gridTemplateColumns = '1fr 1fr';
+        body.innerHTML = `
+      ${renderModalSection('sched', sResults)}
+      ${renderModalSection('pag', pResults)}
+    `;
 
-        rb.innerHTML = html || `<div class="results-empty">Sin resultados.</div>`;
-      }, 80);
+        // Animar barras
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            document.querySelectorAll('.chart-bar[data-w]').forEach(b => {
+              b.style.width = b.getAttribute('data-w') + '%';
+            });
+          }, 30);
+        });
+      }, 120);
     }
 
-    function _card(test, info, stats) {
-      if (!stats) return `<div class="result-card">
-    <div class="rc-header"><div class="rc-title">${test.name}</div>
-    <span class="rc-badge" style="background:${info.color}28;color:${info.color}">${info.label}</span></div>
-    <div class="rc-error">⚠ No se pudo ejecutar "${info.label}" con estos parámetros.</div>
-  </div>`;
-      const grid = stats.map(s => `<div class="rc-stat">
-    <div class="rc-stat-lbl">${s.lbl}</div>
-    <div class="rc-stat-val ${s.cls}">${s.val}</div>
-  </div>`).join('');
-      return `<div class="result-card">
-    <div class="rc-header"><div class="rc-title">${test.name}</div>
-    <span class="rc-badge" style="background:${info.color}28;color:${info.color};border:1px solid ${info.color}44">${info.label}</span></div>
-    <div class="rc-grid">${grid}</div>
+    /* ══════════════════════════════════════════════════════
+       RENDER MODAL SECTION — gráficas con slide
+    ══════════════════════════════════════════════════════ */
+    function renderModalSection(type, results) {
+      const isSched = type === 'sched';
+      const title = isSched ? 'Scheduling' : 'Paginación';
+
+      if (!results.length) return `<div class="modal-section"><div class="modal-section-title">${title}</div><div style="color:rgba(0,207,255,.3);font-size:12px;padding:20px;">Sin datos.</div></div>`;
+
+      const uid = type + '_' + Date.now();
+
+      // Definición de métricas por tipo
+      const metricDefs = isSched ? [
+        { key: 'avgWaiting', label: 'Avg Waiting', good: 'low', color: 'rgba(0,207,255,.55)', fmt: v => v },
+        { key: 'avgTurnaround', label: 'Avg Turnaround', good: 'low', color: 'rgba(0,207,255,.55)', fmt: v => v },
+        { key: 'avgResponse', label: 'Avg Response', good: 'low', color: 'rgba(14,165,212,.7)', fmt: v => v },
+        { key: 'cpuUtilization', label: 'CPU Util.', good: 'high', color: 'rgba(99,198,99,.6)', fmt: v => v },
+        { key: 'makespan', label: 'Makespan', good: 'low', color: 'rgba(239,159,39,.6)', fmt: v => v },
+      ] : [
+        { key: 'faults', label: 'Page Faults', good: 'low', color: 'rgba(226,75,74,.6)', fmt: (v, r) => r.result.faults },
+        { key: 'hits', label: 'Page Hits', good: 'high', color: 'rgba(99,198,99,.6)', fmt: (v, r) => r.result.hits },
+        { key: 'rate', label: 'Hit Rate %', good: 'high', color: 'rgba(0,207,255,.55)', fmt: (v, r) => (r.result.hits / r.result.total * 100).toFixed(1) + '%' },
+      ];
+
+      // Generar slides (una por métrica)
+      const slides = metricDefs.map((md, slideIdx) => {
+        const vals = results.map(r => {
+          if (isSched) return parseFloat(r.metricas[md.key]) || 0;
+          if (md.key === 'faults') return r.result.faults;
+          if (md.key === 'hits') return r.result.hits;
+          return parseFloat(r.result.hits / r.result.total * 100) || 0;
+        });
+        const maxV = Math.max(...vals, 0.1);
+        const minV = Math.min(...vals);
+        const maxV2 = Math.max(...vals);
+
+        const rows = results.map((r, i) => {
+          const v = vals[i];
+          const pct = (v / maxV * 100).toFixed(1);
+          const isWinner = md.good === 'low' ? v === minV : v === maxV2;
+          const label = `${r.test.name.substring(0, 12)} · ${r.algoInfo.label}`;
+          const displayV = isSched ? v : md.fmt(v, r);
+          return `<div class="chart-row${isWinner ? ' winner' : ''}" onclick="mostrarReplay(${i},'${type}')">
+        <div class="chart-label" title="${label}">${label}</div>
+        <div class="chart-bar-wrap">
+          <div class="chart-bar" data-w="${pct}" style="width:0%;background:${isWinner ? md.color : 'rgba(255,255,255,.12)'}">
+            <span class="chart-bar-val">${displayV}</span>
+          </div>
+        </div>
+        ${isWinner ? `<div class="chart-winner-badge">🏆</div>` : ''}
+      </div>`;
+        }).join('');
+
+        return `<div class="slide" id="${uid}_s${slideIdx}" style="display:${slideIdx === 0 ? 'block' : 'none'}">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.45);margin-bottom:6px;">${md.label}</div>
+      ${rows}
+    </div>`;
+      }).join('');
+
+      // Ganadores
+      let winnersHTML = '';
+      if (results.length > 1) {
+        const wDefs = isSched ? [
+          { key: 'avgWaiting', label: 'Menor espera', good: 'low', icon: '⏱' },
+          { key: 'avgTurnaround', label: 'Menor TAT', good: 'low', icon: '🔄' },
+          { key: 'cpuUtilization', label: 'Mejor CPU', good: 'high', icon: '💻' },
+        ] : [
+          { key: 'faults', label: 'Menos fallos', good: 'low', icon: '🏆' },
+          { key: 'hits', label: 'Más hits', good: 'high', icon: '✅' },
+        ];
+        winnersHTML = wDefs.map(d => {
+          const vals2 = results.map(r => {
+            if (isSched) return parseFloat(r.metricas[d.key]) || 0;
+            if (d.key === 'faults') return r.result.faults;
+            return r.result.hits;
+          });
+          const bestIdx = d.good === 'low'
+            ? vals2.indexOf(Math.min(...vals2))
+            : vals2.indexOf(Math.max(...vals2));
+          const best = results[bestIdx];
+          const val = isSched ? best.metricas[d.key] : (d.key === 'faults' ? best.result.faults : best.result.hits);
+          const lbl = `${best.test.name.substring(0, 10)} · ${best.algoInfo.label}`;
+          return `<div class="winner-card" onclick="mostrarReplay(${bestIdx},'${type}')">
+        <div class="winner-metric">${d.icon} ${d.label}</div>
+        <div class="winner-algo">${lbl}</div>
+        <div class="winner-val">${val}</div>
+      </div>`;
+        }).join('');
+      }
+
+      const dots = metricDefs.map((_, i) =>
+        `<div class="slide-dot${i === 0 ? ' active' : ''}" onclick="goSlide('${uid}',${i},${metricDefs.length})" id="${uid}_d${i}"></div>`
+      ).join('');
+
+      return `<div class="modal-section">
+    <div class="modal-section-title">${title}</div>
+    <div class="slide-wrap" id="${uid}_wrap">${slides}</div>
+    <div class="slide-nav">
+      <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)-1,${metricDefs.length})">‹</button>
+      <div class="slide-dots" id="${uid}_dots">${dots}</div>
+      <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)+1,${metricDefs.length})">›</button>
+    </div>
+    ${winnersHTML ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.4);margin:8px 0 5px;">🏆 Ganadores</div><div class="winners-grid">${winnersHTML}</div>` : ''}
+    <div style="font-size:9px;color:rgba(0,207,255,.25);margin-top:6px;text-align:center;">Click en fila o ganador para ver replay ↓</div>
   </div>`;
     }
+
+    /* Slide navigation */
+    const _slideIdx = {};
+    function goSlide(uid, rawIdx, total) {
+      const idx = ((rawIdx % total) + total) % total;
+      _slideIdx[uid] = idx;
+      const wrap = document.getElementById(uid + '_wrap');
+      if (!wrap) return;
+      wrap.querySelectorAll('.slide').forEach((s, i) => s.style.display = i === idx ? 'block' : 'none');
+      const dots = document.getElementById(uid + '_dots');
+      if (dots) dots.querySelectorAll('.slide-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+      // Animar barras del slide activo
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          wrap.querySelectorAll(`#${uid}_s${idx} .chart-bar[data-w]`).forEach(b => {
+            b.style.width = b.getAttribute('data-w') + '%';
+          });
+        }, 30);
+      });
+    }
+    // Inicializar índice
+    function initSlideIdx(uid) { _slideIdx[uid] = 0; }
+
+    /* ══════════════════════════════════════════════════════
+       REPLAY — inline en el modal (panel inferior)
+    ══════════════════════════════════════════════════════ */
+    let _replayTimer = null, _replayT = 0, _replayMax = 0, _replayPlaying = false;
+    let _replayPayload = null;
+
+    function mostrarReplay(idx, type) {
+      if (!_lastResults) return;
+      const isSched = type === 'sched';
+      const results = isSched ? _lastResults.sResults : _lastResults.pResults;
+      const data = results[idx]; if (!data) return;
+
+      // Detener replay anterior
+      if (_replayTimer) { clearInterval(_replayTimer); _replayTimer = null; _replayPlaying = false; }
+      _replayT = 0;
+
+      const payload = isSched ? {
+        type: 'sched',
+        testName: `${data.test.name} · ${data.algoInfo.label}`,
+        color: data.algoInfo.color,
+        processes: data.procesos,
+        segments: data.segments,
+      } : {
+        type: 'pag',
+        testName: `${data.test.name} · ${data.algoInfo.label}`,
+        color: data.algoInfo.color,
+        refs: data.test.refs,
+        frames: data.test.frames,
+      };
+
+      _replayPayload = payload;
+      _replayMax = isSched
+        ? (payload.segments?.length ? Math.max(...payload.segments.map(s => s.end)) : 0)
+        : (payload.refs?.length || 0);
+
+      // Cambiar modal a 3 filas (head + comparación + replay)
+      const box = document.querySelector('.modal-box');
+      box.style.height = 'min(92vh,860px)';
+      box.style.gridTemplateRows = undefined;
+
+      // Insertar/actualizar panel replay
+      let rp = document.getElementById('replay-panel');
+      if (!rp) {
+        rp = document.createElement('div');
+        rp.id = 'replay-panel';
+        rp.style.cssText = 'flex-shrink:0;border-top:1px solid rgba(0,207,255,.15);background:#000;display:flex;flex-direction:column;overflow:hidden;max-height:260px;';
+        box.appendChild(rp);
+      }
+
+      const COLORS = ['#3d687b', '#639922', '#EF9F27', '#E24B4A', '#8B77D4', '#1DB884', '#FF6B6B', '#4ECDC4'];
+      const pids = isSched ? [...new Set((payload.segments || []).map(s => s.pid))] : [];
+      const pidColor = {};
+      pids.forEach((pid, i) => pidColor[pid] = COLORS[i % COLORS.length]);
+
+      const ganttRows = isSched ? pids.map(pid => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:rgba(0,207,255,.6);min-width:32px;">${pid}</div>
+      <div style="flex:1;height:22px;background:rgba(0,207,255,.05);border-radius:4px;overflow:hidden;border:1px solid rgba(0,207,255,.08);">
+        <div id="rpgf-${pid}" style="height:100%;width:0%;background:${pidColor[pid]};border-radius:4px;transition:width .35s ease;display:flex;align-items:center;padding-left:5px;font-family:'Bebas Neue',sans-serif;font-size:10px;color:rgba(255,255,255,.9);"></div>
+      </div>
+    </div>`).join('')
+        : `<div style="font-size:10px;color:rgba(0,207,255,.4);font-family:'IBM Plex Mono',monospace;">Ref ${isSched ? '' : 'actual'}: <span id="rp-ref-cur">—</span> &nbsp;|&nbsp; Paso: <span id="rp-step-num">0</span> / ${payload.refs?.length || 0}</div>`;
+
+      const stateNodes = isSched ? `
+    <div id="rpdn-new"      style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">NEW</div>
+    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
+    <div id="rpdn-ready"    style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">READY</div>
+    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
+    <div id="rpdn-running"  style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">RUNNING</div>
+    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
+    <div id="rpdn-terminated" style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">TERMINATED</div>
+  ` : `
+    <div id="rpdn-running"  style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">PROCESANDO</div>
+    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
+    <div id="rpdn-terminated" style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">COMPLETO</div>
+  `;
+
+      rp.innerHTML = `
+    <!-- Head del replay -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(0,207,255,.1);flex-shrink:0;">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.1em;color:${payload.color};text-shadow:0 0 10px ${payload.color}88;">▶ REPLAY — ${payload.testName}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="rpToggle()" id="rp-play-btn" style="background:var(--cb-mid);border:none;color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">▶ INICIAR</button>
+        <button onclick="rpStep()"  style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">⏭ PASO</button>
+        <button onclick="rpReset()" style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:rgba(0,207,255,.6);padding:5px 10px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">↺</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--cb-bright);letter-spacing:.1em;"><span style="font-size:10px;color:rgba(0,207,255,.5);">T=</span><span id="rp-t">0</span></div>
+      </div>
+    </div>
+    <!-- Diagrama de estados -->
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,207,255,.08);">
+      ${stateNodes}
+    </div>
+    <!-- Timeline / gantt -->
+    <div style="flex:1;padding:8px 14px;overflow-y:auto;min-height:0;">
+      ${ganttRows}
+    </div>
+    <!-- Progress bar -->
+    <div style="height:2px;background:rgba(0,207,255,.1);flex-shrink:0;">
+      <div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div>
+    </div>
+  `;
+
+      rpRenderT();
+    }
+
+    function rpRenderT() {
+      if (!_replayPayload) return;
+      const t = _replayT;
+      const max = _replayMax;
+      const prog = document.getElementById('rp-prog');
+      if (prog) prog.style.width = max > 0 ? (t / max * 100) + '%' : '0%';
+      const tEl = document.getElementById('rp-t');
+      if (tEl) tEl.textContent = t;
+
+      if (_replayPayload.type === 'sched') {
+        const segs = _replayPayload.segments || [];
+        const procs = _replayPayload.processes || [];
+        const pids = [...new Set(segs.map(s => s.pid))];
+
+        // Gantt bars — width proporcional a tiempo ejecutado hasta t, posición desde startTime
+        pids.forEach(pid => {
+          const fill = document.getElementById('rpgf-' + pid);
+          if (!fill) return;
+          const pidSegs = segs.filter(s => s.pid === pid);
+          // tiempo ejecutado acumulado hasta t
+          const exec = pidSegs.reduce((acc, s) => acc + Math.max(0, Math.min(s.end, t) - s.start), 0);
+          // startTime real del proceso (primer segmento)
+          const startT = Math.min(...pidSegs.map(s => s.start));
+          const pct = max > 0 ? (exec / max * 100) : 0;
+          // offset = startTime/max * 100
+          const off = max > 0 ? (startT / max * 100) : 0;
+          fill.parentElement.style.position = 'relative';
+          fill.style.position = 'absolute';
+          fill.style.left = off + '%';
+          fill.style.width = pct + '%';
+          fill.textContent = pct > 4 ? pid : '';
+        });
+
+        // Diagrama de estados
+        const runSeg = segs.find(s => s.start < t && t <= s.end);
+        const runPid = runSeg ? runSeg.pid : null;
+        ['new', 'ready', 'running', 'terminated'].forEach(s => {
+          const el = document.getElementById('rpdn-' + s);
+          if (el) { el.style.color = 'rgba(0,207,255,.35)'; el.style.borderColor = 'rgba(0,207,255,.15)'; el.style.boxShadow = 'none'; el.style.transform = 'scale(1)'; }
+        });
+        const activate = (id, color, shadow) => {
+          const el = document.getElementById(id); if (!el) return;
+          el.style.color = color; el.style.borderColor = color; el.style.boxShadow = `0 0 12px ${shadow}`; el.style.transform = 'scale(1.08)';
+        };
+        if (t === 0 || procs.some(p => (p.arrivalTime || 0) >= t)) activate('rpdn-new', 'rgba(0,207,255,.9)', 'rgba(0,207,255,.4)');
+        if (procs.some(p => (p.arrivalTime || 0) < t && (p.finishTime || 0) > t && p.pid !== runPid)) activate('rpdn-ready', 'var(--cb-bright)', 'rgba(0,207,255,.4)');
+        if (runPid) activate('rpdn-running', '#7BC67E', 'rgba(106,170,26,.5)');
+        if (procs.some(p => (p.finishTime || 0) <= t && t > 0)) activate('rpdn-terminated', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.15)');
+
+      } else {
+        // Paginación
+        const refs = _replayPayload.refs || [];
+        const cur = document.getElementById('rp-ref-cur');
+        const step = document.getElementById('rp-step-num');
+        if (cur) cur.textContent = t > 0 && t <= refs.length ? refs[t - 1] : '—';
+        if (step) step.textContent = t;
+        const activate = (id, color, shadow) => {
+          const el = document.getElementById(id); if (!el) return;
+          el.style.color = color; el.style.borderColor = color; el.style.boxShadow = `0 0 12px ${shadow}`; el.style.transform = 'scale(1.08)';
+        };
+        const deact = id => {
+          const el = document.getElementById(id); if (!el) return;
+          el.style.color = 'rgba(0,207,255,.35)'; el.style.borderColor = 'rgba(0,207,255,.15)'; el.style.boxShadow = 'none'; el.style.transform = 'scale(1)';
+        };
+        deact('rpdn-running'); deact('rpdn-terminated');
+        if (t > 0 && t <= refs.length) activate('rpdn-running', '#7BC67E', 'rgba(106,170,26,.5)');
+        if (t >= refs.length && t > 0) activate('rpdn-terminated', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.15)');
+      }
+    }
+
+    function rpStep() {
+      if (_replayT < _replayMax) { _replayT++; rpRenderT(); }
+      if (_replayT >= _replayMax && _replayPlaying) rpStop();
+    }
+    function rpToggle() {
+      if (_replayPlaying) { rpStop(); } else { rpStart(); }
+    }
+    function rpStart() {
+      if (_replayT >= _replayMax) { _replayT = 0; rpRenderT(); }
+      _replayPlaying = true;
+      const btn = document.getElementById('rp-play-btn');
+      if (btn) btn.textContent = '⏸ PAUSAR';
+      _replayTimer = setInterval(() => { _replayT++; rpRenderT(); if (_replayT >= _replayMax) { rpStop(); } }, 650);
+    }
+    function rpStop() {
+      clearInterval(_replayTimer); _replayTimer = null; _replayPlaying = false;
+      const btn = document.getElementById('rp-play-btn');
+      if (btn) btn.textContent = '▶ INICIAR';
+    }
+    function rpReset() { rpStop(); _replayT = 0; rpRenderT(); }
 
     /* ══════════════════════════════════════════════════════
        INIT
@@ -1209,6 +1714,50 @@
     window.addEventListener('DOMContentLoaded', () => {
       sTests = Store.getScheduling();
       pTests = Store.getPaginacion();
+
+      /* ── Datos de prueba default si no hay nada guardado ── */
+      if (!sTests.length) {
+        const _uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        sTests = [
+          {
+            id: _uid(), ts: Date.now(), algo: 'fcfs', quantum: 2,
+            name: 'FCFS · Demo A',
+            processes: [
+              { pid: 1, arrivalTime: 0, burstTime: 5, priority: 2, state: 'ready' },
+              { pid: 2, arrivalTime: 1, burstTime: 3, priority: 1, state: 'ready' },
+              { pid: 3, arrivalTime: 2, burstTime: 8, priority: 3, state: 'ready' },
+              { pid: 4, arrivalTime: 3, burstTime: 2, priority: 1, state: 'ready' },
+            ],
+          },
+          {
+            id: _uid(), ts: Date.now() - 60000, algo: 'rr', quantum: 3,
+            name: 'RR · Demo B',
+            processes: [
+              { pid: 1, arrivalTime: 0, burstTime: 6, priority: 1, state: 'ready' },
+              { pid: 2, arrivalTime: 2, burstTime: 4, priority: 2, state: 'ready' },
+              { pid: 3, arrivalTime: 4, burstTime: 7, priority: 1, state: 'ready' },
+              { pid: 4, arrivalTime: 5, burstTime: 3, priority: 3, state: 'ready' },
+            ],
+          },
+        ];
+      }
+
+      if (!pTests.length) {
+        const _uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        pTests = [
+          {
+            id: _uid(), ts: Date.now(), algo: 'fifo', frames: 3,
+            name: 'FIFO · Demo A',
+            refs: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2],
+          },
+          {
+            id: _uid(), ts: Date.now() - 60000, algo: 'lru', frames: 4,
+            name: 'LRU · Demo B',
+            refs: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5, 6],
+          },
+        ];
+      }
+
       renderAll();
     });
   </script>
