@@ -1781,28 +1781,41 @@
         ? `<tr><th>PID</th><th>Arr</th><th>Burst</th><th>Start</th><th>Fin</th><th>Wait</th><th>TAT</th><th>Estado</th></tr>`
         : `<tr><th>#</th><th>Ref</th><th>Estado</th></tr>`;
 
-      // Gantt tracks
-      const ganttTracks = isSched ? pids.map(pid => {
-        // Buscamos los datos de este proceso en los segmentos para saber su duración total
-        const mySegments = (payload.segments || []).filter(s => s.pid === pid);
-        const totalDuration = mySegments.length > 0 ? Math.max(...mySegments.map(s => s.end)) : 0;
-        const startTime = mySegments.length > 0 ? Math.min(...mySegments.map(s => s.start)) : 0;
+      // Gantt — segmentos individuales + regla de tiempo
+      const ganttMax = _replayMax || 1;
+      const tickStep = Math.ceil(ganttMax / 8) || 1;
+      const ticksArr = [];
+      for (let tk = 0; tk <= ganttMax; tk += tickStep) ticksArr.push(tk);
 
-        return `
-  <div style="display:flex; align-items:center; gap:12px; margin-bottom:28px; cursor:pointer;" onclick="console.log('PID ${pid}')">
-    <div style="font-family:'Bebas Neue',sans-serif; font-size:16px; color:${pidColor[pid]}; min-width:45px; text-align:right;">P${pid}</div>
-    <div style="flex:1; height:45px; background:rgba(255,255,255,.03); border-radius:6px; position:relative; border:1px solid rgba(255,255,255,.08); overflow:visible;">
-      
-      <div id="rpgf-${pid}" data-max="${totalDuration}" style="position:absolute; top:0; height:100%; left:0; width:0%; background:${pidColor[pid]}; border-radius:5px; transition: width 0.1s linear; pointer-events:none; display:flex; align-items:center; justify-content:center;">
-        
-        <span style="position:absolute; bottom:-22px; left:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cb-bright);">${startTime}</span>
-        
-        <span id="rptime-end-${pid}" style="position:absolute; bottom:-22px; right:0; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cb-bright); opacity:0;">0</span>
-      </div>
+      const rulerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid rgba(0,207,255,.08);">
+        <div style="min-width:45px;"></div>
+        <div style="flex:1;position:relative;height:16px;">
+          ${ticksArr.map(tk => `<span style="position:absolute;left:${(tk / ganttMax * 100).toFixed(2)}%;transform:translateX(-50%);font-size:9px;color:rgba(0,207,255,.4);font-family:'IBM Plex Mono',monospace;">${tk}</span>`).join('')}
+        </div>
+      </div>`;
 
-    </div>
-  </div>`;
+      const ganttRowsHTML = isSched ? pids.map(pid => {
+        const pidSegs = (payload.segments || []).filter(s => s.pid === pid);
+        const blocks = pidSegs.map(seg => {
+          const left = (seg.start / ganttMax * 100).toFixed(3);
+          const maxW = ((seg.end - seg.start) / ganttMax * 100).toFixed(3);
+          return `<div id="rpgb-${pid}-${seg.start}"
+            data-maxw="${maxW}"
+            style="position:absolute;top:1px;height:calc(100% - 2px);
+              left:${left}%;width:0%;
+              background:${pidColor[pid]};border-radius:3px;overflow:hidden;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Bebas Neue',sans-serif;font-size:11px;color:rgba(255,255,255,.95);"></div>`;
+        }).join('');
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${pidColor[pid]};min-width:45px;text-align:right;">P${pid}</div>
+          <div style="flex:1;height:22px;background:rgba(255,255,255,.04);border-radius:5px;position:relative;border:1px solid rgba(255,255,255,.07);">
+            ${blocks}
+          </div>
+        </div>`;
       }).join('') : '';
+
+      const ganttTracks = isSched ? (rulerHTML + ganttRowsHTML) : '';
 
       const stateNodes = isSched ? `
         <div id="rpdn-new"        class="rp-snode">NEW</div><div class="rp-sarr">→</div>
@@ -1821,8 +1834,8 @@
         st.textContent = `
           .rp-screen2 { position:absolute;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94); }
           .rp-screen2.active { transform:translateX(0); }
-          .rp-snode { padding:12px 28px;border-radius:24px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.08em;border:2px solid rgba(0,207,255,.18);color:rgba(0,207,255,.35);transition:all .25s;white-space:nowrap; }
-          .rp-sarr  { color:rgba(0,207,255,.3);font-size:24px; }
+          .rp-snode { padding:6px 16px;border-radius:16px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.18);color:rgba(0,207,255,.35);transition:all .25s;white-space:nowrap; }
+          .rp-sarr  { color:rgba(0,207,255,.3);font-size:16px; }
           .rp-table { width:100%;border-collapse:collapse;font-size:11px; }
           .rp-table th { padding:5px 6px;text-align:left;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:.06em;color:rgba(0,207,255,.4);border-bottom:1px solid rgba(0,207,255,.1); }
           .rp-table td { padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;font-size:11px; }
@@ -1872,17 +1885,13 @@
   </div>
 
   <div style="flex-shrink:0; height:250px; display:flex; align-items:center; justify-content:center; gap:60px; padding:0 24px; border-bottom:1px solid rgba(0,207,255,0.15); background:rgba(0,207,255,0.04); font-size:150px;">
-    ${stateNodes}
-  </div>
+  ${stateNodes}
+</div>
 
-  <div style="display:grid; grid-template-columns:2.5fr 1.5fr; flex:1; overflow:hidden; min-height:0;">
-  <div style="padding:20px 16px; border-right:1px solid rgba(0,207,255,0.08); overflow-x:auto; overflow-y:hidden; display:flex; flex-direction:column;">
-    <div style="font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:.1em; color:rgba(0,207,255,0.45); margin-bottom:20px;">TIMELINE</div>
-    <div style="flex:1; display:flex; align-items:center; min-height:100px;">
-      <div style="display:flex; width:100%; align-items:flex-end; gap:2px;">
-        ${_ganttContent}
-      </div>
-    </div>
+  <div style="display:grid;grid-template-columns:2.5fr 1.5fr;flex:1;overflow:hidden;min-height:0;">
+  <div style="padding:12px 16px;border-right:1px solid rgba(0,207,255,.08);overflow-y:auto;display:flex;flex-direction:column;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.1em;color:rgba(0,207,255,.45);margin-bottom:8px;">TIMELINE</div>
+    <div style="flex:1;">${_ganttContent}</div>
   </div>
 
   <div style="overflow-y:auto; padding:12px 16px; background:rgba(0,0,0,0.1);">
@@ -2016,34 +2025,46 @@
     }
 
     function rpTick() {
-      _replayT++; // Incrementar tiempo actual
-      if (_replayT > _replayMax) { clearInterval(_replayTimer); return; }
+      _replayT++;
+      if (_replayT > _replayMax) {
+        clearInterval(_replayTimer);
+        _replayPlaying = false;
+        document.getElementById('rp-play-btn').innerText = '▶ REINICIAR';
+        return;
+      }
 
-      // Actualizar etiqueta de tiempo general
+      // 1. Actualizar el contador de tiempo en pantalla
       document.getElementById('rp-t').innerText = _replayT;
 
-      // ACTUALIZAR BARRAS DEL GANTT
-      _replayPayload.segments.forEach(seg => {
-        if (_replayT >= seg.start) {
-          const bar = document.getElementById(`rpgf-${seg.pid}`);
-          const timeEndLabel = document.getElementById(`rptime-end-${seg.pid}`);
+      // 2. Actualizar barra de progreso superior
+      const globalProg = (_replayT / _replayMax) * 100;
+      document.getElementById('rp-prog').style.width = globalProg + '%';
 
-          if (bar) {
-            // Calculamos qué porcentaje de este segmento ya pasó
-            // Si el tiempo actual es mayor al fin del segmento, queda en 100%
-            const progress = Math.min(100, ((_replayT - seg.start) / (seg.end - seg.start)) * 100);
+      // 3. ACTUALIZAR CADA BARRA DE PROCESO
+      _replayPayload.processes.forEach(p => {
+        const bar = document.getElementById(`rpgf-${p.pid}`);
+        const timeEnd = document.getElementById(`rptime-end-${p.pid}`);
 
-            // Si es planificación por filas, usamos una lógica simple de "si ya llegó a su tiempo"
-            if (_replayT >= seg.end) {
-              bar.style.width = "100%";
-              timeEndLabel.style.opacity = "1";
-              timeEndLabel.innerText = seg.end;
-            } else {
-              bar.style.width = progress + "%";
+        if (bar) {
+          const start = parseInt(bar.getAttribute('data-start'));
+          const end = parseInt(bar.getAttribute('data-end'));
+
+          if (_replayT >= start) {
+            // Calcular cuánto debe medir la barra respecto al total de la pantalla
+            // El ancho es: (tiempo_actual - inicio) / maximo_total * 100
+            let currentWidth = ((Math.min(_replayT, end) - start) / _replayMax) * 100;
+            bar.style.width = currentWidth + '%';
+
+            // Si el proceso ya terminó en este tiempo, mostramos el número de fin
+            if (_replayT >= end) {
+              timeEnd.style.opacity = '1';
             }
           }
         }
       });
+
+      // 4. Actualizar estados (Lógica que ya tienes para READY/RUNNING...)
+      actualizarEstadosNodos(_replayT);
     }
 
     function rpStop() {
@@ -2103,4 +2124,12 @@
   </script>
 </body>
 
-</html>
+</html // Gantt — animar segmentos individuales (segs).forEach(seg=> {
+const el = document.getElementById(`rpgb-${seg.pid}-${seg.start}`);
+if (!el) return;
+if (t <= seg.start) { el.style.width='0%' ; el.textContent='' ; return; } const filled=Math.min(seg.end, t) - seg.start;
+  const maxW=parseFloat(el.dataset.maxw); const pct=(filled / (seg.end - seg.start)) * maxW;
+  el.style.width=pct.toFixed(3) + '%' ; el.textContent=pct> 2 ? String(seg.pid) : '';
+  });
+
+  // Diagrama de estados>
