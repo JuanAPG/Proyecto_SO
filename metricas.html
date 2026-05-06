@@ -1186,12 +1186,35 @@
           <div class="modal-title" id="modal-title">Comparación de Salas</div>
           <div class="modal-sub" id="modal-sub">Resultados en tiempo real</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="modal-close" onclick="cerrarModal()"
-            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(0,207,255,.35);background:rgba(0,207,255,.07);color:rgba(0,207,255,.9);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
-            <span style="font-size:16px;line-height:1;">✕</span> Cerrar
-          </button>
-        </div>
+        <div style="display:flex; justify-content:flex-end; align-items:center; padding: 10px;">
+  <button class="modal-close" onclick="cerrarModal()"
+    style="
+      display: flex !important; 
+      flex-direction: row !important;
+      align-items: center !important; 
+      justify-content: center !important;
+      gap: 8px; 
+      padding: 6px 14px; 
+      border-radius: 6px; 
+      border: 1.5px solid #00CFFF; 
+      background: rgba(0,207,255,0.1); 
+      color: #00CFFF; 
+      font-family: 'Bebas Neue', sans-serif; 
+      font-size: 14px; 
+      letter-spacing: 1px; 
+      cursor: pointer; 
+      outline: none; 
+      text-transform: uppercase;
+      /* ESTO ES LO MÁS IMPORTANTE: */
+      width: auto !important;
+      min-width: max-content !important;
+      overflow: visible !important;
+      line-height: normal;
+    ">
+    <span style="font-family: sans-serif; font-weight: bold; font-size: 14px; line-height: 1;">✕</span>
+    <span style="line-height: 1;">CERRAR</span>
+  </button>
+</div>
       </div>
       <div class="modal-body" id="modal-body">
         <div
