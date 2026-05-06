@@ -685,15 +685,24 @@ function _setPlayState(playing) {
   const btn = document.getElementById("pb-play");
   const icon = document.getElementById("pb-play-icon");
   const label = document.getElementById("pb-play-label");
-  if (!btn) return;
-  if (playing) {
-    btn.classList.add("playing");
-    if (icon) icon.innerHTML = `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`;
-    if (label) label.textContent = "Stop";
-  } else {
-    btn.classList.remove("playing");
-    if (icon) icon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"/>`;
-    if (label) label.textContent = "Play";
+  if (btn) {
+    if (playing) {
+      btn.classList.add("playing");
+      if (icon) icon.innerHTML = `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`;
+      if (label) label.textContent = "Stop";
+    } else {
+      btn.classList.remove("playing");
+      if (icon) icon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"/>`;
+      if (label) label.textContent = "Play";
+    }
+  }
+  // Sincronizar botón superior
+  const topBtn = document.getElementById('cs-play-btn');
+  if (topBtn) {
+    topBtn.innerHTML = playing
+      ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pausar`
+      : `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Iniciar`;
+    topBtn.classList.toggle('cs-playing', playing);
   }
 }
 
@@ -841,11 +850,19 @@ function _aplicarResultadoSimulacion(resultado, numFrames, elapsedLabel) {
   const ultimo = resultado.pasos[resultado.pasos.length - 1];
   const usados = ultimo ? ultimo.frames.filter(p => p !== null).length : 0;
 
+  const hitRate = fmt(100 - tasa, 1);
+  const eficiencia = numFrames > 0 ? fmt((usados / numFrames) * 100, 1) : "0.0";
+  const faultsPorRef = total > 0 ? fmt(resultado.faults / total, 3) : "0.000";
+
   _renderMetricasDark([
     { lbl: "Page Faults", val: resultado.faults, cls: "fault" },
     { lbl: "Page Hits", val: resultado.hits, cls: "good" },
-    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%", cls: "" },
+    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%", cls: tasa > 50 ? "fault" : "" },
+    { lbl: "Tasa de hits", val: hitRate + "%", cls: parseFloat(hitRate) > 50 ? "good" : "" },
     { lbl: "Marcos usados", val: `${usados}/${numFrames}`, cls: "" },
+    { lbl: "Uso de marcos", val: eficiencia + "%", cls: "" },
+    { lbl: "Total referencias", val: total, cls: "" },
+    { lbl: "Fallos/referencia", val: faultsPorRef, cls: "" },
   ]);
 
   ["pb-first", "pb-prev", "pb-next", "pb-last"].forEach(id => {

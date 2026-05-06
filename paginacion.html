@@ -347,11 +347,12 @@
       cursor: pointer;
     }
 
-    /* ── Sim controls (igual que scheduling) ── */
+    /* Controles de sim */
     .sim-controls {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
       background: #000;
       border-bottom: 1px solid rgba(0, 207, 255, .12);
       padding: 10px 14px;
@@ -383,8 +384,12 @@
       cursor: not-allowed;
     }
 
-    .sim-btn.playing {
+    .sim-btn.cs-playing {
       background: #1a5c30;
+    }
+
+    .sim-btn.cs-playing:hover {
+      background: #1e7038;
     }
 
     .sim-btn.step-style {
@@ -394,17 +399,6 @@
 
     .sim-btn.step-style:hover {
       background: #1e3a50;
-    }
-
-    .algo-badge {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 12px;
-      letter-spacing: .1em;
-      color: #fff;
-      background: rgba(0, 207, 255, .1);
-      border: 1px solid rgba(0, 207, 255, .2);
-      padding: 3px 10px;
-      border-radius: 4px;
     }
 
     .sim-clock {
@@ -420,13 +414,58 @@
       margin-right: 2px;
     }
 
+    .algo-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: .1em;
+      color: #fff;
+      background: rgba(0, 207, 255, .1);
+      border: 1px solid rgba(0, 207, 255, .2);
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .speed-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .speed-wrap label {
+      font-size: 10px;
+      color: rgba(0, 207, 255, .5);
+      text-transform: uppercase;
+    }
+
+    .speed-wrap input[type=range] {
+      width: 80px;
+      accent-color: var(--cb-bright);
+    }
+
+    .export-btn {
+      background: none;
+      border: 1px solid rgba(0, 207, 255, .25);
+      border-radius: 4px;
+      color: rgba(0, 207, 255, .6);
+      font-size: 10px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .export-btn:hover {
+      color: var(--cb-bright);
+      border-color: var(--cb-bright);
+    }
+
     /* ── Zona derecha: cinema ── */
     .cinema-wrap {
       display: flex;
       flex-direction: column;
       flex: 1;
-      overflow: hidden;
       min-height: 0;
+      overflow: hidden;
       background: radial-gradient(ellipse at top, #06111a 0%, #000 70%);
     }
 
@@ -459,7 +498,8 @@
       flex-direction: column;
       gap: 10px;
       background: rgba(0, 0, 0, .2);
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     /* Narrador */
@@ -1322,6 +1362,14 @@
       background: #000;
       border-top: 1px solid rgba(0, 207, 255, .1);
       padding: 6px 14px 8px;
+      height: 80px;
+      overflow-y: auto;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 5px;
     }
 
     .metrics-bar-title {
@@ -1334,12 +1382,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-    }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
     }
 
     .mcard {
@@ -1575,28 +1617,27 @@
       <!-- ══════ ZONA PRINCIPAL ══════ -->
       <main style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
 
-        <!-- Controles — igual que scheduling -->
+        <!-- Controles de simulación -->
         <div class="sim-controls">
-          <button class="sim-btn" id="cs-play-btn" onclick="toggleCinemaPlay()" disabled>
+          <button class="sim-btn" id="cs-play-btn" onclick="simularTodo()">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
             Iniciar
           </button>
-          <button class="sim-btn step-style" onclick="siguientePaso()">
+          <button class="sim-btn step-style" id="cs-step-btn" onclick="siguientePaso()">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="5 3 15 12 5 21 5 3" fill="currentColor" />
               <line x1="19" y1="5" x2="19" y2="19" />
             </svg>
-            PASO
+            Paso
           </button>
           <div class="algo-badge" id="sim-algo-badge">FIFO</div>
           <div class="sim-clock"><span>T=</span><span id="pb-counter">—</span></div>
-          <span id="pb-first" style="display:none;"></span>
-          <span id="pb-prev" style="display:none;"></span>
-          <span id="pb-next" style="display:none;"></span>
-          <span id="pb-last" style="display:none;"></span>
-          <input type="range" id="vel-slider" style="display:none;" value="700">
+          <div class="speed-wrap">
+            <label>Vel.</label>
+            <input type="range" id="vel-slider" min="100" max="2000" value="700">
+          </div>
         </div>
 
         <!-- Cinema wrap -->
@@ -1772,32 +1813,6 @@
 
         </div><!-- /cinema-wrap -->
 
-        <!-- Métricas -->
-        <div class="metrics-bar" id="metricas-wrap">
-          <div class="metrics-bar-title">
-            <span>Métricas de la simulación</span>
-            <button class="export-btn" onclick="exportarCSVPaginacion()">↓ CSV</button>
-          </div>
-          <div class="metrics-grid" id="metricas-paginacion">
-            <div class="mcard">
-              <div class="mcard-lbl">Page Faults</div>
-              <div class="mcard-val">—</div>
-            </div>
-            <div class="mcard">
-              <div class="mcard-lbl">Page Hits</div>
-              <div class="mcard-val">—</div>
-            </div>
-            <div class="mcard">
-              <div class="mcard-lbl">Tasa fallos</div>
-              <div class="mcard-val">—</div>
-            </div>
-            <div class="mcard">
-              <div class="mcard-lbl">Marcos usados</div>
-              <div class="mcard-val">—</div>
-            </div>
-          </div>
-        </div>
-
       </main>
 
     </div>
@@ -1907,26 +1922,45 @@
       const _origAplicar = window._aplicarResultadoSimulacion;
       window._aplicarResultadoSimulacion = function (resultado, numFrames, elapsed) {
         if (_origAplicar) _origAplicar(resultado, numFrames, elapsed);
-        /* Mostrar métricas en sidebar */
         if (resultado) {
           const total = resultado.faults + resultado.hits;
           const tasa = total > 0 ? (resultado.faults / total * 100).toFixed(1) : '0.0';
+          const hitRate = total > 0 ? (resultado.hits / total * 100).toFixed(1) : '0.0';
+          const ultimo = resultado.pasos?.[resultado.pasos.length - 1];
+          const usados = ultimo ? ultimo.frames.filter(p => p !== null).length : 0;
+          const usoMarcos = numFrames > 0 ? ((usados / numFrames) * 100).toFixed(1) : '0.0';
+          const faultsPorRef = total > 0 ? (resultado.faults / total).toFixed(3) : '0.000';
+
           const panel = document.getElementById('metricas-sidebar');
           const list = document.getElementById('metricas-sidebar-list');
           if (panel && list) {
             panel.style.display = 'block';
             list.innerHTML = [
-              ['Fallos', resultado.faults, '#FF6B6B'],
-              ['Hits', resultado.hits, '#7BC67E'],
-              ['Tasa', tasa + '%', 'var(--cb-mid)'],
+              ['Page Faults', resultado.faults, '#FF6B6B'],
+              ['Page Hits', resultado.hits, '#7BC67E'],
+              ['Tasa de fallos', tasa + '%', tasa > 50 ? '#FF6B6B' : 'var(--cb-mid)'],
+              ['Tasa de hits', hitRate + '%', hitRate > 50 ? '#7BC67E' : 'var(--cb-mid)'],
+              ['Marcos usados', `${usados}/${numFrames}`, 'var(--cb-mid)'],
+              ['Uso de marcos', usoMarcos + '%', 'var(--cb-mid)'],
+              ['Total referencias', total, 'var(--cb-mid)'],
+              ['Fallos/referencia', faultsPorRef, 'var(--cb-mid)'],
             ].map(([l, v, c]) => `
-          <div style="display:flex;justify-content:space-between;padding:4px 7px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:4px;">
-            <span style="font-size:10px;color:rgba(0,207,255,.5);font-family:'IBM Plex Mono',monospace;">${l}</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${c};">${v}</span>
-          </div>`).join('');
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 7px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:4px;">
+          <span style="font-size:10px;color:rgba(0,207,255,.5);font-family:'IBM Plex Mono',monospace;">${l}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${c};">${v}</span>
+        </div>`).join('');
           }
         }
         switchPagTab('pt-lista');
+
+        // Sincronizar botón cs-play-btn de la barra superior
+        const topBtn = document.getElementById('cs-play-btn');
+        if (topBtn) {
+          topBtn.innerHTML = playing
+            ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pausar`
+            : `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Iniciar`;
+        }
+
       };
     });
   </script>
