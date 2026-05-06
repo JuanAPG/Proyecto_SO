@@ -12,11 +12,43 @@
     rel="stylesheet">
 
   <style>
+<<<<<<< HEAD
     :root {
       --cb-bright: #00CFFF;
       --cb-mid: #0EA5D4;
       --cb-deep: #0769A8;
       --cb-glow: rgba(0, 207, 255, 0.35);
+=======
+    /* ============================================================
+       OVERRIDE: corregir overflow y scroll bloqueados por styles.css
+       ============================================================ */
+    html, body {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      height: auto !important;
+      background: #F4F6F9 !important;
+    }
+
+    /* ============================================================
+       LAYOUT PRINCIPAL
+       ============================================================ */
+    .scheduling-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+      background: #F4F6F9;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    /* Columna derecha: min-width: 0 evita desbordamiento en CSS Grid */
+    .scheduling-main {
+      min-width: 0;
+      overflow-x: visible;
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
     }
 
     html,
@@ -39,6 +71,7 @@
       position: relative;
     }
 
+<<<<<<< HEAD
     .marquee-bar::before {
       content: '';
       position: absolute;
@@ -48,6 +81,13 @@
       height: 2px;
       background: repeating-linear-gradient(90deg, var(--cb-bright) 0px, var(--cb-bright) 8px, transparent 8px, transparent 16px);
       opacity: .45;
+=======
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      align-items: flex-end;
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
     }
 
     .marquee-title {
@@ -165,7 +205,166 @@
       flex-direction: column;
       gap: 6px;
       padding: 12px;
+<<<<<<< HEAD
       overflow-y: auto;
+=======
+      background: var(--surface-2);
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+    }
+
+    .quantum-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .quantum-input {
+      width: 60px;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    /* ============================================================
+       CONFIG MULTILEVEL (MLQ / MLFQ)
+       ============================================================ */
+    .mlq-config {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .mlq-config-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    .queue-config-block {
+      padding: 8px 10px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .queue-config-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .queue-algo-select {
+      width: 100%;
+      padding: 5px 8px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-0);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-family: var(--font-base);
+    }
+    .queue-quantum-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .queue-quantum-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn-run {
+      background: var(--color-running);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-run:hover {
+      background: #5a8000;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-clear {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+      border-color: var(--color-fault);
+      color: var(--color-fault);
+    }
+
+    .btn-upload {
+      background: var(--color-blue-700);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-upload:hover {
+      background: var(--color-blue-500);
+      transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       QUEUE VISUALIZATION
+       ============================================================ */
+    .queue-visualization {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--color-blue-50);
+      border: 1px solid var(--color-blue-200);
+      border-radius: var(--radius-lg);
+      margin-top: 16px;
+    }
+
+    .queue-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      min-width: 80px;
+    }
+
+    .queue-items {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
       flex: 1;
     }
 
@@ -220,7 +419,215 @@
       margin-bottom: 2px;
     }
 
+<<<<<<< HEAD
     .field-group {
+=======
+    /* Diagrama de estados */
+    .state-machine { display: flex; flex-direction: column; gap: 0; width: fit-content; margin-bottom: 20px; }
+    .smd-top { display: flex; align-items: flex-start; gap: 6px; }
+    .smd-node {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      font-family: var(--font-mono); white-space: nowrap; text-align: center;
+      min-width: 80px;
+    }
+    .smd-new        { background: #e8e8e6; color: #555; border: 1.5px solid #ccc; }
+    .smd-ready      { background: var(--color-blue-50); color: var(--color-blue-700); border: 1.5px solid var(--color-blue-200); }
+    .smd-running    { background: #EAF3DE; color: #27500A; border: 1.5px solid #C0DD97; }
+    .smd-waiting    { background: var(--color-waiting-bg); color: #633806; border: 1.5px solid #FAC775; }
+    .smd-terminated { background: #f0f0f0; color: #555; border: 1.5px dashed #bbb; }
+    .smd-arr { font-size: 16px; color: var(--text-muted); line-height: 34px; padding: 0 2px; }
+    .smd-running-group { display: flex; flex-direction: column; align-items: center; }
+    .smd-branch { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 4px; }
+    .smd-branch-arr { font-size: 14px; color: var(--text-muted); line-height: 1; }
+    .smd-back-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Cards de estado de proceso */
+    .psc-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .psc-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      min-width: 140px;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: border-color 0.3s ease, border-width 0.3s ease;
+    }
+    .psc-pid { font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); }
+    .psc-state-badge { line-height: 1; }
+    .psc-metrics { display: flex; gap: 8px; flex-wrap: wrap; }
+    .psc-metric { font-size: 11px; color: var(--text-secondary); }
+    .psc-metric strong { color: var(--text-primary); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    /* Badge de tipo: fork / thread */
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+    .type-fork   { background: #FFF3E0; color: #BF360C; border: 1px solid #FFCC80; }
+    .type-thread { background: #EDE7F6; color: #4A148C; border: 1px solid #CE93D8; }
+
+    @media (max-width: 1024px) {
+      .scheduling-container {
+        grid-template-columns: 1fr;
+      }
+      .scheduling-sidebar {
+        position: static;
+        max-height: none;
+      }
+      .input-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .execution-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .input-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .scheduling-container {
+        padding: 16px;
+      }
+      .input-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .table-container {
+        overflow-x: auto;
+      }
+      .input-actions {
+        grid-column: 1 / -1;
+        flex-wrap: wrap;
+      }
+      .algo-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .gantt-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .gantt-controls {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .cs-controls {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .cs-speed-wrap {
+        width: 100%;
+        justify-content: center;
+      }
+      .cs-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .queue-visualization {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .scheduling-container {
+        padding: 12px;
+        gap: 16px;
+        width: 100%;
+        overflow-x: hidden;
+      }
+      .scheduling-sidebar {
+        padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .input-panel,
+      .processes-panel,
+      .execution-panel,
+      .states-panel,
+      .cs-panel {
+        padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
+      }
+      .input-grid {
+        grid-template-columns: 1fr;
+        width: 100%;
+      }
+      .algo-list {
+        grid-template-columns: 1fr;
+      }
+      .form-input {
+        width: 100%;
+        min-width: 0;
+      }
+      .algo-item {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .gantt-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .gantt-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .state-machine {
+        overflow-x: auto;
+        width: 100%;
+      }
+      .smd-top {
+        min-width: 360px;
+      }
+      .psc-grid {
+        gap: 8px;
+      }
+      .psc-card {
+        min-width: 120px;
+      }
+      .metrics-panel {
+        gap: 10px;
+      }
+      input[type=range].cs-speed-slider {
+        width: 100%;
+      }
+      .btn-run,
+      .btn-clear,
+      .btn-upload,
+      .btn-animate {
+        font-size: 11px;
+        padding: 8px 10px;
+      }
+    }
+
+    /* ============================================================
+       LA TAQUILLA DEL CINE — Cinema Scheduling Simulator
+       ============================================================ */
+    .cs-panel {
+      background: var(--surface-0);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(4,44,83,0.08), 0 1px 3px rgba(4,44,83,0.05);
+      display: none;
+    }
+
+    .cs-panel-header {
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
       display: flex;
       flex-direction: column;
     }
@@ -820,8 +1227,116 @@
 
     <div class="main-layout">
 
+<<<<<<< HEAD
       <!-- ══════════ SIDEBAR 3-TAB ══════════ -->
       <aside class="sidebar">
+=======
+    <!-- Control de Núm. de Cores (siempre visible) -->
+    <div class="quantum-control" id="coresControl" style="margin-top:8px; background:var(--color-blue-50); border:1px solid var(--color-blue-200);">
+      <label class="quantum-label" style="color:var(--color-blue-700);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>
+        Cores:
+      </label>
+      <input type="number" class="quantum-input" id="coresValue" value="1" min="1" max="8" title="Número de cores de CPU (1-8)" />
+      <span class="quantum-label" style="font-size:10px;font-weight:400;">/8</span>
+    </div>
+
+    <!-- Config Multilevel Queue -->
+    <div class="mlq-config" id="mlqConfig" style="display:none;">
+      <div class="mlq-config-header">Configuración de Colas</div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q0 — Mayor prioridad (priority ≤ 1)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ0">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ0Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ0" value="2" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q1 — Prioridad media (priority = 2)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ1">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ1Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ1" value="4" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q2 — Menor prioridad (priority ≥ 3)</div>
+        <select class="queue-algo-select" id="mlqAlgoQ2">
+          <option value="fcfs" selected>FCFS</option>
+          <option value="rr">Round Robin</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlqQuantumQ2Row" style="display:none;">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlqQuantumQ2" value="8" min="1" max="50" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Config Multilevel Feedback Queue -->
+    <div class="mlq-config" id="mlfqConfig" style="display:none;">
+      <div class="mlq-config-header">Configuración de Colas</div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q0 — Entrada de procesos</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ0">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ0Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ0" value="2" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q1 — Degradados de Q0</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ1">
+          <option value="rr" selected>Round Robin</option>
+          <option value="fcfs">FCFS</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ1Row">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ1" value="4" min="1" max="50" />
+        </div>
+      </div>
+
+      <div class="queue-config-block">
+        <div class="queue-config-label">Q2 — Degradados de Q1</div>
+        <select class="queue-algo-select" id="mlfqAlgoQ2">
+          <option value="fcfs" selected>FCFS</option>
+          <option value="rr">Round Robin</option>
+          <option value="sjf">SJF</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="queue-quantum-row" id="mlfqQuantumQ2Row" style="display:none;">
+          <label class="queue-quantum-label">Quantum:</label>
+          <input type="number" class="quantum-input" id="mlfqQuantumQ2" value="8" min="1" max="50" />
+        </div>
+      </div>
+    </div>
+
+  </aside>
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
         <!-- Tab Bar -->
         <div class="tab-bar">
@@ -829,11 +1344,49 @@
           <button class="tab-btn" onclick="switchTab('tab-lista')">📋 Lista</button>
           <button class="tab-btn" onclick="switchTab('tab-config')">⚙ Config</button>
         </div>
+<<<<<<< HEAD
+=======
+        <div class="form-group">
+          <label class="form-label">Arrival</label>
+          <input type="number" class="form-input" id="inputArrival" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Burst</label>
+          <input type="number" class="form-input" id="inputBurst" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <input type="number" class="form-input" id="inputPriority" min="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-input" id="inputType">
+            <option value="fork">Fork</option>
+            <option value="thread">Thread</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pages</label>
+          <input type="number" class="form-input" id="inputPages" min="1" />
+        </div>
+        <div class="input-actions">
+          <button class="btn-run" id="btnAddProcess">Agregar</button>
+          <button class="btn-clear" id="btnCancelEdit" style="display:none; border-color:var(--color-waiting); color:var(--color-waiting);">✕ Cancelar</button>
+          <button class="btn-clear" id="btnClearAll">Limpiar</button>
+          <label class="btn-upload" style="margin:0; cursor:pointer;">
+            Cargar
+            <input type="file" id="fileInput" accept=".txt" style="display:none;" />
+          </label>
+        </div>
+      </div>
+    </section>
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
         <!-- ── TAB 1: Agregar Proceso ── -->
         <div class="tab-panel active" id="tab-proceso">
           <div class="section-title">🎟 Taquilla</div>
 
+<<<<<<< HEAD
           <div class="field-group">
             <div class="input-label">Nombre / PID</div>
             <input type="text" id="inputName" class="input-cine" placeholder="Ej: P1, Chrome">
@@ -850,6 +1403,27 @@
             <div class="input-label">Prioridad (1 = mayor)</div>
             <input type="number" id="inputPriority" class="input-cine" placeholder="1" value="1" min="1">
           </div>
+=======
+      <div class="table-container">
+        <table id="processTable">
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>Arrival</th>
+              <th>Burst</th>
+              <th>Priority</th>
+              <th>Pages</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="processTableBody">
+            <!-- Se rellena dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
           <button class="btn-cine" id="btnAgregar">+ AGREGAR A LA FILA</button>
 
@@ -890,11 +1464,39 @@
         <div class="tab-panel" id="tab-config">
           <div class="section-title">🎬 Algoritmo</div>
 
+<<<<<<< HEAD
           <div style="display:flex;flex-direction:column;gap:4px;">
             <div class="algo-category-title">Non-Preemptive</div>
             <button class="algo-item-cine active" data-algo="fcfs">FCFS</button>
             <button class="algo-item-cine" data-algo="sjf">SJF</button>
             <button class="algo-item-cine" data-algo="hrrn">HRRN</button>
+=======
+    <!-- ============================================================
+         PANEL 3b: Vista por Cores (multi-core Gantt)
+         ============================================================ -->
+    <section class="execution-panel" id="coreViewPanel" style="display:none;">
+      <div class="gantt-container" style="grid-column:1/-1;">
+        <div class="gantt-header">
+          <div class="gantt-title" id="coreViewTitle">Vista por Cores</div>
+          <div class="gantt-controls">
+            <span style="font-size:11px;color:var(--text-muted);padding:4px 10px;background:var(--color-blue-50);border:1px solid var(--color-blue-200);border-radius:var(--radius-md);">
+              Cada fila = 1 Core CPU físico
+            </span>
+          </div>
+        </div>
+        <div id="coreGanttChart" style="border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-1);padding:16px 12px 8px;overflow-x:auto;"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PANEL 4: Diagrama de estados + cards de proceso
+         ============================================================ -->
+    <section class="states-panel" id="statesPanel" style="display:none;">
+      <div class="panel-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Diagrama de Estados
+      </div>
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
             <div class="algo-category-title" style="margin-top:6px;">Preemptive</div>
             <button class="algo-item-cine" data-algo="rr">Round Robin</button>

@@ -19,6 +19,7 @@ let editandoIdx = -1; // índice del proceso en edición (-1 = sin edición)
  * Obtiene los valores del formulario y crea un proceso
  * @returns {Object|null} Proceso válido o null si hay error
  */
+<<<<<<< HEAD
 function obtenerProcesoDesdeFormula() {
   const nombreInput = document.getElementById("inputName").value.trim();
   const pid = nombreInput || ("P" + procesoIdCounter);
@@ -26,18 +27,37 @@ function obtenerProcesoDesdeFormula() {
   const arrivalTime = parseInt(document.getElementById("inputArrival").value) || 0;
   const burstTime = parseInt(document.getElementById("inputBurst").value);
   const priority = parseInt(document.getElementById("inputPriority").value) || 1;
+=======
+function obtenerProcesoDesdeFórmula() {
+  const pid = parseInt(document.getElementById("inputPid")?.value) || procesoIdCounter;
+  const arrivalTime = parseInt(document.getElementById("inputArrival")?.value) || 0;
+  const burstTime = parseInt(document.getElementById("inputBurst")?.value);
+  const priority = parseInt(document.getElementById("inputPriority")?.value) || 1;
+  const type = document.getElementById("inputType")?.value || "fork";
+  const pages = parseInt(document.getElementById("inputPages")?.value) || 1;
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
 
   if (isNaN(burstTime) || burstTime <= 0) {
     alert("Por favor, ingresa un tiempo de ráfaga (Burst) válido.");
     return null;
   }
 
+<<<<<<< HEAD
   const proceso = {
     pid: pid, // Aquí guardamos el nombre
     arrivalTime: arrivalTime,
     burstTime: burstTime,
     remainingTime: burstTime, // Para la animación
     priority: priority,
+=======
+  const proceso = crearProceso({
+    pid,
+    arrivalTime,
+    burstTime,
+    priority,
+    type,
+    pages,
+>>>>>>> d55c422901118b9a12edccf98d00bdad7648cac3
     state: "new",
     color: GANTT_COLORS[procesoIdCounter % GANTT_COLORS.length]
   };
@@ -63,6 +83,7 @@ function editarProceso(idx) {
   document.getElementById("inputArrival").value  = p.arrivalTime;
   document.getElementById("inputBurst").value    = p.burstTime;
   document.getElementById("inputPriority").value = p.priority;
+  document.getElementById("inputType").value     = p.type || "fork";
   document.getElementById("inputPages").value    = p.pages;
 
   const btn = document.getElementById("btnAddProcess");
@@ -144,6 +165,8 @@ function limpiarFormulario() {
   document.getElementById("inputArrival").value = "0";
   document.getElementById("inputBurst").value = "";
   document.getElementById("inputPriority").value = "1";
+  const typeEl = document.getElementById("inputType");
+  if (typeEl) typeEl.value = "fork";
   document.getElementById("inputPages").value = "1";
   document.getElementById("inputPid").focus();
 }
@@ -176,7 +199,7 @@ function renderizarTablaProcesos() {
 
   if (procesosGlobales.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Sin procesos. Agrega uno arriba.</td></tr>';
+      '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Sin procesos. Agrega uno arriba.</td></tr>';
     return;
   }
 
@@ -191,6 +214,7 @@ function renderizarTablaProcesos() {
       <td class="td-center">${proceso.burstTime}</td>
       <td class="td-center">${proceso.priority}</td>
       <td class="td-center">${proceso.pages}</td>
+      <td>${badgeTipo(proceso.type || "fork")}</td>
       <td>${badgeEstado(proceso.state)}</td>
       <td style="white-space:nowrap;">
         <button class="btn-edit" onclick="editarProceso(${idx})" title="Editar proceso">✎</button>
@@ -241,12 +265,15 @@ function cargarDesdearchivo(file) {
         const partes = lineas[i].split(",").map((p) => p.trim());
         if (partes.length < 5) continue;
 
+        const rawType = (partes[5] || "fork").trim().toLowerCase();
+        const type = rawType === "thread" ? "thread" : "fork";
         const proceso = crearProceso({
           pid: parseInt(partes[0]),
           arrivalTime: parseInt(partes[1]),
           burstTime: parseInt(partes[2]),
           priority: parseInt(partes[3]),
           pages: parseInt(partes[4]),
+          type,
           state: "new",
         });
 
