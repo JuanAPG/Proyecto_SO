@@ -135,6 +135,14 @@ function ejecutarSimulacion() {
         n
       ));
   }
+  
+  if (resultadoActual) {
+    Store.saveScheduling(
+      algoritmoSeleccionado,
+      procesosGlobales,
+      parseInt(document.getElementById("quantum")?.value || 2)
+    );
+  }
 }
 
 /* ----------------------------------------------------------

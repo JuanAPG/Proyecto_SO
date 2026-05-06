@@ -2328,3 +2328,19 @@ body {
     flex-wrap: wrap;
   }
 }
+
+.process-card {
+  min-width: 60px;
+  height: 60px;
+  background: var(--cb-deep);
+  border: 2px solid var(--cb-bright);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--cb-glow);
+  font-size: 14px;
+}

@@ -1,33 +1,31 @@
 /* ============================================================
    OSim — La Taquilla del Cine (Cinema Scheduling Simulator)
    Archivo: cinema-scheduling.js
-   Motor de simulación visual tick-by-tick para CPU Scheduling.
    ============================================================ */
 
-/* ----------------------------------------------------------
-   ESTADO GLOBAL DEL SIMULADOR
-   ---------------------------------------------------------- */
 const CS = {
-  tick:             0,
-  processes:        [],   // copia profunda con remainingTime, startTime, etc.
-  arriving:         [],   // procesos pendientes de llegar
-  readyQueue:       [],   // PIDs en fila (orden importa)
-  running:          null, // { pid, remainingTime, burstTime, quantumUsed, ... }
-  done:             [],   // procesos terminados
-  quantumMax:       2,
-  interval:         null,
-  speed:            700,  // ms por tick
-  algorithm:        'fcfs',
-  paused:           true,
+  tick: 0,
+  processes: [],
+  arriving: [],
+  readyQueue: [],
+  running: null,
+  done: [],
+  gantt: [],   // [{pid, color, tick}]
+  quantumMax: 2,
+  interval: null,
+  speed: 700,
+  algorithm: 'fcfs',
+  paused: true,
 };
 
 const COLORS = [
-  '#3d687b','#639922','#EF9F27','#E24B4A',
-  '#8B77D4','#1DB884','#e06c75','#61AFEF',
+  '#3d687b', '#639922', '#EF9F27', '#E24B4A',
+  '#8B77D4', '#1DB884', '#e06c75', '#61AFEF',
+  '#c678dd', '#56b6c2',
 ];
 
 /* ----------------------------------------------------------
-   INICIALIZAR — llamado cuando se hace clic en "Ver Simulación"
+   INICIALIZAR
    ---------------------------------------------------------- */
 function initCinemaScheduling() {
   const panel = document.getElementById('cs-panel');
@@ -41,27 +39,36 @@ function initCinemaScheduling() {
 
   resetCinema(false);
 
-  // Crear copia profunda con estado extendido
   CS.processes = procs.map((p, i) => ({
-    pid:           p.pid,
-    arrivalTime:   p.arrivalTime  ?? 0,
-    burstTime:     p.burstTime    ?? 1,
-    priority:      p.priority     ?? 1,
-    remainingTime: p.burstTime    ?? 1,
-    color:         COLORS[i % COLORS.length],
-    startTime:     null,
-    finishTime:    null,
-    quantumUsed:   0,
+    pid: p.pid,
+    arrivalTime: p.arrivalTime ?? 0,
+    burstTime: p.burstTime ?? 1,
+    priority: p.priority ?? 1,
+    remainingTime: p.burstTime ?? 1,
+    color: COLORS[i % COLORS.length],
+    startTime: null,
+    finishTime: null,
+    turnaroundTime: null,
+    waitingTime: null,
+    quantumUsed: 0,
   }));
 
-  CS.arriving   = [...CS.processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+  CS.arriving = [...CS.processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
   CS.readyQueue = [];
-  CS.running    = null;
-  CS.done       = [];
-  CS.tick       = 0;
-  CS.paused     = true;
-  CS.algorithm  = algoritmoSeleccionado || 'fcfs';
+  CS.running = null;
+  CS.done = [];
+  CS.gantt = [];
+  CS.tick = 0;
+  CS.paused = true;
+  CS.algorithm = (typeof algoritmoSeleccionado !== 'undefined' ? algoritmoSeleccionado : null) || 'fcfs';
   CS.quantumMax = parseInt(document.getElementById('quantumValue')?.value) || 2;
+
+  // ── FIX: mover al CPU/queue los procesos con arrivalTime=0 inmediatamente ──
+  _processArrivals(0);
+  if (!CS.running && CS.readyQueue.length) {
+    sortQueueForAlgo(0);
+    dispatch();
+  }
 
   renderCS();
   updateCSControls();
@@ -74,9 +81,10 @@ function initCinemaScheduling() {
 function resetCinema(rerenderOnly = false) {
   clearInterval(CS.interval);
   CS.interval = null;
-  CS.paused   = true;
+  CS.paused = true;
   if (!rerenderOnly) {
-    CS.tick = 0; CS.readyQueue = []; CS.running = null; CS.done = [];
+    CS.tick = 0; CS.readyQueue = []; CS.running = null;
+    CS.done = []; CS.gantt = [];
     CS.arriving = []; CS.processes = [];
   }
   renderCS();
@@ -117,35 +125,43 @@ function startCinemaInterval() {
   }, CS.speed);
 }
 
-/* ----------------------------------------------------------
-   PASO MANUAL
-   ---------------------------------------------------------- */
+/* ── Paso manual ── */
 function stepCinema() {
   if (CS.paused) tickCinema();
 }
 
 /* ----------------------------------------------------------
-   TICK — corazón del simulador (1 ciclo de reloj)
+   HELPER: procesar llegadas hasta tick t
    ---------------------------------------------------------- */
-function tickCinema() {
-  const t = CS.tick;
-
-  // 1. Llegadas: procesos cuyo arrivalTime === t entran a la fila
+function _processArrivals(t) {
   while (CS.arriving.length && CS.arriving[0].arrivalTime <= t) {
     const p = CS.arriving.shift();
     CS.readyQueue.push(p.pid);
     animateArrival(p.pid);
   }
+}
 
-  // 2. Si CPU libre, seleccionar siguiente proceso según algoritmo
+/* ----------------------------------------------------------
+   TICK
+   ---------------------------------------------------------- */
+function tickCinema() {
+  const t = CS.tick;
+
+  // 1. Llegadas
+  _processArrivals(t);
+
+  // 2. CPU libre → despachar
   if (!CS.running && CS.readyQueue.length) {
+    sortQueueForAlgo(t);
     dispatch();
   }
 
-  // 3. Ejecutar proceso activo
+  // 3. Ejecutar
   if (CS.running) {
     const p = getProc(CS.running.pid);
     if (p.startTime === null) p.startTime = t;
+
+    CS.gantt.push({ pid: p.pid, color: p.color, tick: t });
 
     p.remainingTime--;
     CS.running.remainingTime--;
@@ -153,20 +169,19 @@ function tickCinema() {
 
     updateRunningBar(p);
 
-    // ¿Terminó?
     if (p.remainingTime <= 0) {
       p.finishTime = t + 1;
-      CS.done.push(CS.running.pid);
+      p.turnaroundTime = p.finishTime - p.arrivalTime;
+      p.waitingTime = p.turnaroundTime - p.burstTime;
+      CS.done.push(p.pid);
       animateDone(CS.running.pid);
       CS.running = null;
 
-    // ¿Round Robin: quantum agotado?
     } else if (CS.algorithm === 'rr' && CS.running.quantumUsed >= CS.quantumMax) {
       CS.readyQueue.push(CS.running.pid);
       animatePreempt(CS.running.pid);
       CS.running = null;
 
-    // ¿SRTF: llegó alguien con menor remaining?
     } else if (CS.algorithm === 'srtf' && CS.readyQueue.length) {
       const shortest = shortestInQueue();
       const sp = getProc(shortest);
@@ -174,23 +189,24 @@ function tickCinema() {
         CS.readyQueue.push(CS.running.pid);
         animatePreempt(CS.running.pid);
         CS.running = null;
-        dispatch(); // inmediatamente despacha al más corto
+        sortQueueForAlgo(t);
+        dispatch();
       }
     }
+  } else {
+    CS.gantt.push({ pid: null, color: null, tick: t });
   }
 
-  // 4. Re-ordenar fila si corresponde (SJF, Priority, HRRN no preemptivo)
   sortQueueForAlgo(t + 1);
 
   CS.tick++;
   renderCS();
 
-  // ¿Terminó todo?
   return CS.done.length === CS.processes.length && CS.processes.length > 0;
 }
 
 /* ----------------------------------------------------------
-   DISPATCH — selecciona quién entra al CPU
+   DISPATCH
    ---------------------------------------------------------- */
 function dispatch() {
   if (!CS.readyQueue.length) return;
@@ -200,7 +216,7 @@ function dispatch() {
 }
 
 /* ----------------------------------------------------------
-   ORDENAR FILA SEGÚN ALGORITMO
+   ORDENAR FILA
    ---------------------------------------------------------- */
 function sortQueueForAlgo(currentTick) {
   if (!CS.readyQueue.length) return;
@@ -212,11 +228,7 @@ function sortQueueForAlgo(currentTick) {
       CS.readyQueue.sort((a, b) => getProc(a).priority - getProc(b).priority);
       break;
     case 'hrrn':
-      CS.readyQueue.sort((a, b) => {
-        const ra = hrrnRatio(a, currentTick);
-        const rb = hrrnRatio(b, currentTick);
-        return rb - ra; // mayor ratio primero
-      });
+      CS.readyQueue.sort((a, b) => hrrnRatio(b, currentTick) - hrrnRatio(a, currentTick));
       break;
   }
 }
@@ -234,25 +246,24 @@ function shortestInQueue() {
   }, CS.readyQueue[0]);
 }
 
-/* ----------------------------------------------------------
-   HELPER
-   ---------------------------------------------------------- */
 function getProc(pid) {
   return CS.processes.find(p => p.pid === pid);
 }
 
 /* ----------------------------------------------------------
-   RENDER PRINCIPAL — actualiza toda la UI del cine
+   RENDER PRINCIPAL
    ---------------------------------------------------------- */
 function renderCS() {
   renderArriving();
   renderQueue();
   renderCPU();
+  renderGantt();
   renderDone();
   const clockEl = document.getElementById('cs-clock');
   if (clockEl) clockEl.textContent = CS.tick;
 }
 
+/* ── Próximos estrenos ── */
 function renderArriving() {
   const zone = document.getElementById('cs-arriving');
   if (!zone) return;
@@ -262,6 +273,7 @@ function renderArriving() {
   ).join('') + (pending.length > 4 ? `<div class="cs-more">+${pending.length - 4}</div>` : '');
 }
 
+/* ── Ready Queue ── */
 function renderQueue() {
   const zone = document.getElementById('cs-queue-items');
   if (!zone) return;
@@ -271,6 +283,7 @@ function renderQueue() {
   }).join('');
 }
 
+/* ── CPU ── */
 function renderCPU() {
   const zone = document.getElementById('cs-cpu-slot');
   if (!zone) return;
@@ -294,7 +307,7 @@ function renderCPU() {
           <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
         </svg>
       </div>
-      <div class="cs-pid">P${p.pid}</div>
+      <div class="cs-pid">${p.pid}</div>
       <div class="cs-burst-bar" title="Tiempo restante: ${p.remainingTime}/${p.burstTime}">
         <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
       </div>
@@ -306,20 +319,119 @@ function renderCPU() {
     </div>`;
 }
 
+/* ----------------------------------------------------------
+   RENDER: GANTT DIAGRAM
+   ---------------------------------------------------------- */
+function renderGantt() {
+  const zone = document.getElementById('cs-gantt');
+  if (!zone) return;
+  if (!CS.gantt.length) {
+    zone.innerHTML = '';
+    return;
+  }
+
+  const total = CS.gantt.length;
+
+  // Compactar en segmentos contiguos del mismo PID
+  const segs = [];
+  let cur = { pid: CS.gantt[0].pid, color: CS.gantt[0].color, startTick: 0, count: 1 };
+  for (let i = 1; i < total; i++) {
+    const g = CS.gantt[i];
+    if (g.pid === cur.pid) {
+      cur.count++;
+    } else {
+      segs.push({ ...cur });
+      cur = { pid: g.pid, color: g.color, startTick: i, count: 1 };
+    }
+  }
+  segs.push({ ...cur });
+
+  // Barra de colores
+  const bars = segs.map(s => {
+    const pct = ((s.count / total) * 100).toFixed(2);
+    const bg = s.color || 'rgba(255,255,255,0.07)';
+    const lbl = s.pid !== null ? s.pid : '';
+    return `<div class="cs-gantt-seg"
+      style="width:${pct}%;background:${bg};min-width:${s.count < 3 ? 12 : 0}px"
+      title="${s.pid ?? 'Idle'} · t${s.startTick}–t${s.startTick + s.count}">
+      ${s.count >= 2 ? `<span class="cs-gantt-lbl">${lbl}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  // Etiquetas de tick en los bordes de segmentos
+  let timeHtml = '';
+  let cumTicks = 0;
+  segs.forEach(s => {
+    const pct = ((cumTicks / total) * 100).toFixed(2);
+    timeHtml += `<div class="cs-gantt-tick" style="left:${pct}%">${cumTicks}</div>`;
+    cumTicks += s.count;
+  });
+  timeHtml += `<div class="cs-gantt-tick" style="left:100%;transform:translateX(-100%)">${total}</div>`;
+
+  zone.innerHTML = `
+    <div class="cs-gantt-bar">${bars}</div>
+    <div class="cs-gantt-ticks">${timeHtml}</div>`;
+}
+
+/* ----------------------------------------------------------
+   RENDER: COMPLETADOS — tabla con métricas
+   ---------------------------------------------------------- */
 function renderDone() {
   const zone = document.getElementById('cs-done-list');
   if (!zone) return;
-  zone.innerHTML = CS.done.map(pid => {
+
+  if (!CS.done.length) {
+    zone.innerHTML = '';
+    return;
+  }
+
+  const rows = CS.done.map(pid => {
     const p = getProc(pid);
-    return p ? `<div class="cs-done-chip" style="border-color:${p.color};color:${p.color}">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${p.color}" stroke-width="3" stroke-linecap="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      P${p.pid}
-    </div>` : '';
+    if (!p) return '';
+    const tat = p.turnaroundTime ?? (p.finishTime - p.arrivalTime);
+    const wt = p.waitingTime ?? (tat - p.burstTime);
+    return `<tr>
+      <td style="padding:5px 10px;">
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <span style="width:9px;height:9px;border-radius:50%;background:${p.color};flex-shrink:0;"></span>
+          <strong style="color:#fff;">${p.pid}</strong>
+        </span>
+      </td>
+      <td style="padding:5px 10px;text-align:center;">${p.arrivalTime}</td>
+      <td style="padding:5px 10px;text-align:center;">${p.burstTime}</td>
+      <td style="padding:5px 10px;text-align:center;color:#7BC67E;font-weight:600;">${tat}</td>
+      <td style="padding:5px 10px;text-align:center;color:#EF9F27;font-weight:600;">${wt}</td>
+    </tr>`;
   }).join('');
+
+  const doneProcs = CS.done.map(pid => getProc(pid)).filter(Boolean);
+  const n = doneProcs.length;
+  const avgTAT = (doneProcs.reduce((s, p) => s + (p.turnaroundTime ?? 0), 0) / n).toFixed(2);
+  const avgWT = (doneProcs.reduce((s, p) => s + (p.waitingTime ?? 0), 0) / n).toFixed(2);
+
+  zone.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(255,255,255,.8);">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(0,207,255,.2);">
+          <th style="padding:5px 10px;text-align:left;color:rgba(0,207,255,.55);font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;">Nombre</th>
+          <th style="padding:5px 10px;text-align:center;color:rgba(0,207,255,.55);font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;">Arrival</th>
+          <th style="padding:5px 10px;text-align:center;color:rgba(0,207,255,.55);font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;">Burst</th>
+          <th style="padding:5px 10px;text-align:center;color:#7BC67E;font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;">TAT</th>
+          <th style="padding:5px 10px;text-align:center;color:#EF9F27;font-weight:500;font-size:10px;letter-spacing:.09em;text-transform:uppercase;">WT</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr style="border-top:1px solid rgba(0,207,255,.15);background:rgba(0,207,255,.04);">
+          <td colspan="3" style="padding:6px 10px;color:rgba(0,207,255,.45);font-size:10px;letter-spacing:.09em;text-transform:uppercase;">Avg</td>
+          <td style="padding:6px 10px;text-align:center;color:#7BC67E;font-weight:700;font-size:13px;">${avgTAT}</td>
+          <td style="padding:6px 10px;text-align:center;color:#EF9F27;font-weight:700;font-size:13px;">${avgWT}</td>
+        </tr>
+      </tfoot>
+    </table>`;
 }
 
+/* ── Tarjeta de proceso ── */
 function customerCard(p, state, subtitle = '') {
   const pct = Math.round((p.remainingTime / p.burstTime) * 100);
   return `
@@ -329,7 +441,7 @@ function customerCard(p, state, subtitle = '') {
           <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
         </svg>
       </div>
-      <div class="cs-pid">P${p.pid}</div>
+      <div class="cs-pid">${p.pid}</div>
       <div class="cs-burst-bar">
         <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
       </div>
@@ -338,61 +450,45 @@ function customerCard(p, state, subtitle = '') {
     </div>`;
 }
 
-/* ----------------------------------------------------------
-   ACTUALIZAR BARRA DEL PROCESO EN CPU (sin re-render total)
-   ---------------------------------------------------------- */
+/* ── Actualizar barra sin re-render ── */
 function updateRunningBar(p) {
   const card = document.getElementById(`cs-card-${p.pid}`);
   if (!card) return;
   const fill = card.querySelector('.cs-burst-fill');
-  const rem  = card.querySelector('.cs-remaining');
-  const qf   = card.querySelector('.cs-quantum-fill');
-  const pct  = Math.round((p.remainingTime / p.burstTime) * 100);
+  const rem = card.querySelector('.cs-remaining');
+  const qf = card.querySelector('.cs-quantum-fill');
+  const pct = Math.round((p.remainingTime / p.burstTime) * 100);
   if (fill) fill.style.width = pct + '%';
-  if (rem)  rem.textContent  = p.remainingTime;
+  if (rem) rem.textContent = p.remainingTime;
   if (qf && CS.running) {
     const qpct = Math.round((CS.running.quantumUsed / CS.quantumMax) * 100);
     qf.style.width = qpct + '%';
   }
 }
 
-/* ----------------------------------------------------------
-   ANIMACIONES DE TRANSICIÓN
-   ---------------------------------------------------------- */
+/* ── Animaciones ── */
 function animateArrival(pid) {
-  // La tarjeta aparece con fade-in tras el render
   requestAnimationFrame(() => {
     const el = document.getElementById(`cs-card-${pid}`);
-    if (el) {
-      el.style.animation = 'cs-pop-in 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards';
-    }
+    if (el) el.style.animation = 'cs-pop-in 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards';
   });
 }
-
 function animateDispatch(pid) {
   requestAnimationFrame(() => {
     const el = document.getElementById(`cs-card-${pid}`);
     if (el) el.style.animation = 'cs-dispatch 0.35s ease forwards';
   });
 }
-
 function animatePreempt(pid) {
   const el = document.getElementById(`cs-card-${pid}`);
-  if (el) {
-    el.style.animation = 'cs-preempt 0.3s ease forwards';
-  }
+  if (el) el.style.animation = 'cs-preempt 0.3s ease forwards';
 }
-
 function animateDone(pid) {
   const el = document.getElementById(`cs-card-${pid}`);
-  if (el) {
-    el.style.animation = 'cs-done-anim 0.35s ease forwards';
-  }
+  if (el) el.style.animation = 'cs-done-anim 0.35s ease forwards';
 }
 
-/* ----------------------------------------------------------
-   CONTROLES DE UI
-   ---------------------------------------------------------- */
+/* ── Controles ── */
 function updateCSControls() {
   const playBtn = document.getElementById('cs-play-btn');
   if (!playBtn) return;
@@ -403,24 +499,17 @@ function updateCSControls() {
     playBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pausar`;
     playBtn.classList.add('cs-playing');
   }
-
   const stepBtn = document.getElementById('cs-step-btn');
   if (stepBtn) stepBtn.disabled = !CS.paused;
 
-  // Etiqueta del algoritmo en el panel
   const algoLbl = document.getElementById('cs-algo-label');
   if (algoLbl) {
-    const names = {
-      fcfs:'FCFS', sjf:'SJF', hrrn:'HRRN', rr:'Round Robin',
-      srtf:'SRTF', priority:'Priority', mlq:'MLQ', mlfq:'MLFQ',
-    };
+    const names = { fcfs: 'FCFS', sjf: 'SJF', hrrn: 'HRRN', rr: 'Round Robin', srtf: 'SRTF', priority: 'Priority', mlq: 'MLQ', mlfq: 'MLFQ' };
     algoLbl.textContent = names[CS.algorithm] || CS.algorithm.toUpperCase();
   }
 }
 
-/* ----------------------------------------------------------
-   SPEED SLIDER
-   ---------------------------------------------------------- */
+/* ── Speed ── */
 function setCinemaSpeed(val) {
   CS.speed = Math.max(100, 2200 - parseInt(val));
   if (!CS.paused && CS.interval) {
@@ -429,9 +518,7 @@ function setCinemaSpeed(val) {
   }
 }
 
-/* ----------------------------------------------------------
-   TOAST SIMPLE PARA EL PANEL
-   ---------------------------------------------------------- */
+/* ── Toast ── */
 function mostrarToastCS(msg, type) {
   if (typeof mostrarToast === 'function') { mostrarToast(msg, type); return; }
   console.log(`[CinemaCS] ${type}: ${msg}`);

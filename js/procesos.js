@@ -19,33 +19,35 @@ let editandoIdx = -1; // índice del proceso en edición (-1 = sin edición)
  * Obtiene los valores del formulario y crea un proceso
  * @returns {Object|null} Proceso válido o null si hay error
  */
-function obtenerProcesoDesdeFórmula() {
-  const pid = parseInt(document.getElementById("inputPid")?.value) || procesoIdCounter;
-  const arrivalTime = parseInt(document.getElementById("inputArrival")?.value) || 0;
-  const burstTime = parseInt(document.getElementById("inputBurst")?.value);
-  const priority = parseInt(document.getElementById("inputPriority")?.value) || 1;
-  const pages = parseInt(document.getElementById("inputPages")?.value) || 1;
+function obtenerProcesoDesdeFormula() {
+  const nombreInput = document.getElementById("inputName").value.trim();
+  const pid = nombreInput || ("P" + procesoIdCounter);
+  
+  const arrivalTime = parseInt(document.getElementById("inputArrival").value) || 0;
+  const burstTime = parseInt(document.getElementById("inputBurst").value);
+  const priority = parseInt(document.getElementById("inputPriority").value) || 1;
 
-  if (!burstTime || burstTime <= 0) {
-    alert("Burst Time es requerido y debe ser > 0");
+  if (isNaN(burstTime) || burstTime <= 0) {
+    alert("Por favor, ingresa un tiempo de ráfaga (Burst) válido.");
     return null;
   }
 
-  const proceso = crearProceso({
-    pid,
-    arrivalTime,
-    burstTime,
-    priority,
-    pages,
+  const proceso = {
+    pid: pid, // Aquí guardamos el nombre
+    arrivalTime: arrivalTime,
+    burstTime: burstTime,
+    remainingTime: burstTime, // Para la animación
+    priority: priority,
     state: "new",
-  });
+    color: GANTT_COLORS[procesoIdCounter % GANTT_COLORS.length]
+  };
 
-  const validacion = validarProceso(proceso);
-  if (!validacion.valido) {
-    alert("Error en proceso:\n" + validacion.errores.join("\n"));
-    return null;
-  }
-
+  procesosGlobales.push(proceso);
+  if (!nombreInput) procesoIdCounter++; // Solo aumenta si no hubo nombre manual
+  
+  document.getElementById("inputBurst").value = "";
+  document.getElementById("inputName").value = "";
+  
   return proceso;
 }
 
@@ -96,7 +98,7 @@ function cancelarEdicion() {
 function agregarProceso() {
   // — Modo edición: actualizar proceso existente
   if (editandoIdx >= 0) {
-    const proceso = obtenerProcesoDesdeFórmula();
+    const proceso = obtenerProcesoDesdeFormula();
     if (!proceso) return;
     proceso.pid   = procesosGlobales[editandoIdx].pid; // PID no cambia
     proceso.state = procesosGlobales[editandoIdx].state;
@@ -106,7 +108,7 @@ function agregarProceso() {
     return;
   }
 
-  const proceso = obtenerProcesoDesdeFórmula();
+  const proceso = obtenerProcesoDesdeFormula();
   if (!proceso) return;
 
   // Verificar que el PID no exista
