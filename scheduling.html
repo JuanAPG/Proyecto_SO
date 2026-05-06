@@ -34,7 +34,7 @@
     /* Columna derecha: min-width: 0 evita desbordamiento en CSS Grid */
     .scheduling-main {
       min-width: 0;
-      overflow-x: hidden;
+      overflow-x: visible;
     }
 
     /* Panel lateral izquierdo */
@@ -137,7 +137,7 @@
 
     .input-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       align-items: flex-end;
     }
@@ -787,6 +787,9 @@
       }
       .input-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+      .table-container {
+        overflow-x: auto;
       }
       .input-actions {
         grid-column: 1 / -1;
