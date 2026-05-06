@@ -1805,7 +1805,7 @@
               left:${left}%;width:0%;
               background:${pidColor[pid]};border-radius:3px;overflow:hidden;
               display:flex;align-items:center;justify-content:center;
-              font-family:'Bebas Neue',sans-serif;font-size:11px;color:rgba(255,255,255,.95);"></div>`;
+              font-family:'Bebas Neue',sans-serif;font-size:11px;color:rgba(255,255,255,.95);transition:width .35s linear;"></div>`;
         }).join('');
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${pidColor[pid]};min-width:45px;text-align:right;">P${pid}</div>
@@ -1834,8 +1834,8 @@
         st.textContent = `
           .rp-screen2 { position:absolute;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94); }
           .rp-screen2.active { transform:translateX(0); }
-          .rp-snode { padding:6px 16px;border-radius:16px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.18);color:rgba(0,207,255,.35);transition:all .25s;white-space:nowrap; }
-          .rp-sarr  { color:rgba(0,207,255,.3);font-size:16px; }
+          .rp-snode { padding:14px 32px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.1em;border:2px solid rgba(0,207,255,.22);color:rgba(0,207,255,.35);transition:all .25s;white-space:nowrap; }
+          .rp-sarr  { color:rgba(0,207,255,.35);font-size:28px;font-weight:bold; }
           .rp-table { width:100%;border-collapse:collapse;font-size:11px; }
           .rp-table th { padding:5px 6px;text-align:left;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:.06em;color:rgba(0,207,255,.4);border-bottom:1px solid rgba(0,207,255,.1); }
           .rp-table td { padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;font-size:11px; }
@@ -1884,7 +1884,7 @@
     <div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div>
   </div>
 
-  <div style="flex-shrink:0; height:250px; display:flex; align-items:center; justify-content:center; gap:60px; padding:0 24px; border-bottom:1px solid rgba(0,207,255,0.15); background:rgba(0,207,255,0.04); font-size:150px;">
+  <div style="flex-shrink:0; height:130px; display:flex; align-items:center; justify-content:center; gap:24px; padding:0 24px; border-bottom:1px solid rgba(0,207,255,0.15); background:rgba(0,207,255,0.04);">
   ${stateNodes}
 </div>
 
@@ -1929,20 +1929,16 @@
         const procs = _replayPayload.processes || [];
         const pids = [...new Set(segs.map(s => s.pid))];
 
-        // ── Gantt: left = startTime proporcional, width = hasta dónde llegó ──
-        pids.forEach(pid => {
-          const fill = document.getElementById('rpgf-' + pid);
-          if (!fill) return;
-          const pidSegs = segs.filter(s => s.pid === pid);
-          const startT = Math.min(...pidSegs.map(s => s.start));
-          if (t <= startT) { fill.style.left = '0%'; fill.style.width = '0%'; fill.textContent = ''; return; }
-          // endT = hasta dónde ha avanzado este proceso en el tiempo t
-          const endT = pidSegs.reduce((acc, s) => s.start < t ? Math.max(acc, Math.min(s.end, t)) : acc, startT);
-          const off = max > 0 ? (startT / max * 100) : 0;
-          const wPct = max > 0 ? ((endT - startT) / max * 100) : 0;
-          fill.style.left = off + '%';
-          fill.style.width = Math.min(wPct, 100 - off) + '%';
-          fill.textContent = wPct > 3 ? String(pid) : '';
+        // ── Gantt: animar segmentos individuales ──
+        segs.forEach(seg => {
+          const el = document.getElementById(`rpgb-${seg.pid}-${seg.start}`);
+          if (!el) return;
+          if (t <= seg.start) { el.style.width = '0%'; el.textContent = ''; return; }
+          const filled = Math.min(seg.end, t) - seg.start;
+          const maxW = parseFloat(el.dataset.maxw);
+          const pct = (filled / (seg.end - seg.start)) * maxW;
+          el.style.width = pct.toFixed(3) + '%';
+          el.textContent = pct > 2 ? 'P' + String(seg.pid) : '';
         });
 
         // ── Diagrama de estados ──
@@ -2021,7 +2017,7 @@
       _replayPlaying = true;
       const btn = document.getElementById('rp-play-btn');
       if (btn) btn.textContent = '⏸ PAUSAR';
-      _replayTimer = setInterval(() => { _replayT++; rpRenderT(); if (_replayT >= _replayMax) { rpStop(); } }, 650);
+      _replayTimer = setInterval(() => { _replayT++; rpRenderT(); if (_replayT >= _replayMax) { rpStop(); } }, 700);
     }
 
     function rpTick() {
