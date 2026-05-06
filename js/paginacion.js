@@ -8,37 +8,37 @@
 /* ----------------------------------------------------------
    VARIABLES GLOBALES
    ---------------------------------------------------------- */
-let marcos            = [];
-let historial         = [];
-let pasoActual        = 0;
-let configMemoria     = {};
+let marcos = [];
+let historial = [];
+let pasoActual = 0;
+let configMemoria = {};
 let cadenaReferencias = [];
-let algoritmoActivo   = "fifo";
-let autoPlayInterval  = null;
-let _audioCtx         = null;
+let algoritmoActivo = "fifo";
+let autoPlayInterval = null;
+let _audioCtx = null;
 
 /* ----------------------------------------------------------
    ALGORITMOS DE REEMPLAZO
    ---------------------------------------------------------- */
 function simularPaginacion(referencias, numFrames, algoritmo) {
   switch (algoritmo) {
-    case "lru":   return algoritmoLRU(referencias, numFrames);
-    case "opt":   return algoritmoOPT(referencias, numFrames);
+    case "lru": return algoritmoLRU(referencias, numFrames);
+    case "opt": return algoritmoOPT(referencias, numFrames);
     case "clock": return algoritmoClock(referencias, numFrames);
-    case "sc":    return simularSegundaOportunidad(referencias, numFrames);
-    default:      return algoritmoFIFO(referencias, numFrames);
+    case "sc": return simularSegundaOportunidad(referencias, numFrames);
+    default: return algoritmoFIFO(referencias, numFrames);
   }
 }
 
 /* FIFO */
 function algoritmoFIFO(referencias, numFrames) {
   const frames = new Array(numFrames).fill(null);
-  const cola   = [];
-  const pasos  = [];
+  const cola = [];
+  const pasos = [];
   let faults = 0, hits = 0;
   for (let i = 0; i < referencias.length; i++) {
     const pagina = referencias[i];
-    const esHit  = frames.includes(pagina);
+    const esHit = frames.includes(pagina);
     let paginaExpulsada = null;
     if (esHit) { hits++; } else {
       faults++;
@@ -57,13 +57,13 @@ function algoritmoFIFO(referencias, numFrames) {
 
 /* LRU */
 function algoritmoLRU(referencias, numFrames) {
-  const frames    = new Array(numFrames).fill(null);
+  const frames = new Array(numFrames).fill(null);
   const ultimoUso = {};
-  const pasos     = [];
+  const pasos = [];
   let faults = 0, hits = 0;
   for (let i = 0; i < referencias.length; i++) {
     const pagina = referencias[i];
-    const esHit  = frames.includes(pagina);
+    const esHit = frames.includes(pagina);
     let paginaExpulsada = null;
     if (esHit) { hits++; } else {
       faults++;
@@ -86,11 +86,11 @@ function algoritmoLRU(referencias, numFrames) {
 /* OPT */
 function algoritmoOPT(referencias, numFrames) {
   const frames = new Array(numFrames).fill(null);
-  const pasos  = [];
+  const pasos = [];
   let faults = 0, hits = 0;
   for (let i = 0; i < referencias.length; i++) {
     const pagina = referencias[i];
-    const esHit  = frames.includes(pagina);
+    const esHit = frames.includes(pagina);
     let paginaExpulsada = null;
     if (esHit) { hits++; } else {
       faults++;
@@ -112,15 +112,15 @@ function algoritmoOPT(referencias, numFrames) {
 
 /* CLOCK */
 function algoritmoClock(referencias, numFrames) {
-  const frames  = new Array(numFrames).fill(null);
-  const refBit  = new Array(numFrames).fill(0);
+  const frames = new Array(numFrames).fill(null);
+  const refBit = new Array(numFrames).fill(0);
   let manecilla = 0;
-  const pasos   = [];
+  const pasos = [];
   let faults = 0, hits = 0;
   for (let i = 0; i < referencias.length; i++) {
     const pagina = referencias[i];
     const idxHit = frames.indexOf(pagina);
-    const esHit  = idxHit !== -1;
+    const esHit = idxHit !== -1;
     let paginaExpulsada = null;
     if (esHit) { hits++; refBit[idxHit] = 1; } else {
       faults++;
@@ -137,13 +137,13 @@ function algoritmoClock(referencias, numFrames) {
 /* SEGUNDA OPORTUNIDAD */
 function simularSegundaOportunidad(referencias, numFrames) {
   const frames = new Array(numFrames).fill(null);
-  const cola   = [];
-  const pasos  = [];
+  const cola = [];
+  const pasos = [];
   let faults = 0, hits = 0;
   for (let i = 0; i < referencias.length; i++) {
     const pagina = referencias[i];
     const idxHit = frames.indexOf(pagina);
-    const esHit  = idxHit !== -1;
+    const esHit = idxHit !== -1;
     let paginaExpulsada = null;
     if (esHit) {
       hits++;
@@ -189,18 +189,18 @@ function construirMarcos(frames, framesPrev, fault, refActual) {
    SVG DE BUTACA — ilustración real de asiento de cine
    ---------------------------------------------------------- */
 const SEAT_C = {
-  empty:   { arm:'#0A1620', back:'#0D1C2C', hr:'#1A3550', fold:'#060F18', cush:'#0A1620', pers:null,     num:null      },
-  used:    { arm:'#152D55', back:'#1A3A6A', hr:'#25508A', fold:'#102550', cush:'#152D58', pers:'#5A8ACC', num:'#90B8F0' },
-  fault:   { arm:'#4A1515', back:'#5C1A1A', hr:'#7A2020', fold:'#3A1010', cush:'#4A1515', pers:'#FF8080', num:'#FF8080' },
-  evicted: { arm:'#4A2D00', back:'#5C3800', hr:'#7A4A00', fold:'#3A2200', cush:'#4A2D00', pers:'#FFB060', num:'#FFB060' },
-  hit:     { arm:'#152D55', back:'#1A3A6A', hr:'#25508A', fold:'#102550', cush:'#152D58', pers:'#7BC67E', num:'#7BC67E' },
+  empty: { arm: '#0A1620', back: '#0D1C2C', hr: '#1A3550', fold: '#060F18', cush: '#0A1620', pers: null, num: null },
+  used: { arm: '#152D55', back: '#1A3A6A', hr: '#25508A', fold: '#102550', cush: '#152D58', pers: '#5A8ACC', num: '#90B8F0' },
+  fault: { arm: '#4A1515', back: '#5C1A1A', hr: '#7A2020', fold: '#3A1010', cush: '#4A1515', pers: '#FF8080', num: '#FF8080' },
+  evicted: { arm: '#4A2D00', back: '#5C3800', hr: '#7A4A00', fold: '#3A2200', cush: '#4A2D00', pers: '#FFB060', num: '#FFB060' },
+  hit: { arm: '#152D55', back: '#1A3A6A', hr: '#25508A', fold: '#102550', cush: '#152D58', pers: '#7BC67E', num: '#7BC67E' },
 };
 
 function seatSVG(estado, pagina, refBit, esPtr) {
   const c = SEAT_C[estado] || SEAT_C.used;
   const isEmpty = estado === 'empty';
 
-  const ptrEl  = esPtr
+  const ptrEl = esPtr
     ? `<polygon points="29,0 23,-11 35,-11" fill="#378ADD" stroke="none"/>`
     : '';
 
@@ -209,13 +209,13 @@ function seatSVG(estado, pagina, refBit, esPtr) {
        <path d="M17 35 Q17 26 29 26 Q41 26 41 35" fill="${c.pers}" opacity="0.75" stroke="none"/>`
     : '';
 
-  const numEl  = pagina !== null && pagina !== undefined
+  const numEl = pagina !== null && pagina !== undefined
     ? `<text x="29" y="41" text-anchor="middle" dominant-baseline="middle"
              font-family="IBM Plex Mono,monospace" font-size="11" font-weight="700"
              fill="${c.num}" letter-spacing="0">${pagina}</text>`
     : '';
 
-  const refEl  = refBit !== undefined
+  const refEl = refBit !== undefined
     ? `<text x="29" y="51" text-anchor="middle" dominant-baseline="middle"
              font-family="IBM Plex Mono,monospace" font-size="7"
              fill="${refBit === 1 ? '#5090D0' : '#2A4060'}">R:${refBit}</text>`
@@ -263,14 +263,14 @@ function renderSala(marcos, paso) {
 
   grid.innerHTML = filas.map((fila) => {
     const tienePasillo = fila.length > 2;
-    const left  = tienePasillo ? fila.slice(0, 2) : fila;
-    const right = tienePasillo ? fila.slice(2)    : [];
+    const left = tienePasillo ? fila.slice(0, 2) : fila;
+    const right = tienePasillo ? fila.slice(2) : [];
 
     const renderSeat = (m) => {
       const usherEl = (esClockSC && manecilla === m.indice)
         ? `<div class="usher-pointer">▼ aquí</div>` : "";
       const refBit = (paso && paso.refBits && esClockSC) ? paso.refBits[m.indice] : undefined;
-      const esPtr  = esClockSC && manecilla === m.indice;
+      const esPtr = esClockSC && manecilla === m.indice;
       return `
         <div class="seat seat-${m.estado}">
           ${usherEl}
@@ -305,8 +305,8 @@ function renderQueueStrip(idxActual) {
   const BUBBLE_PERSON = `<svg class="person-bubble-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/></svg>`;
 
   strip.innerHTML = upcoming.map((ref, i) => {
-    const isNext  = i === 0;
-    const alpha   = Math.max(0.18, 1 - i * 0.075);
+    const isNext = i === 0;
+    const alpha = Math.max(0.18, 1 - i * 0.075);
     return `<div class="person-bubble ${isNext ? "person-bubble-next" : ""}" style="opacity:${alpha}" title="Próxima: página ${ref}">${BUBBLE_PERSON}<span class="person-bubble-num">${ref}</span></div>`;
   }).join("");
 }
@@ -322,7 +322,7 @@ function renderFilmStrip(idxActual) {
 
   strip.innerHTML = cadenaReferencias.map((ref, i) => {
     let cls = "film-frame";
-    if (i === idxActual)    cls += " film-frame-active";
+    if (i === idxActual) cls += " film-frame-active";
     else if (i < idxActual) cls += historial[i]?.fault ? " film-frame-fault" : " film-frame-hit";
     return `<div class="${cls}" onclick="mostrarPaso(${i})" title="Paso ${i + 1}">${HOLES}<div class="film-frame-body">${ref}</div>${HOLES}</div>`;
   }).join("");
@@ -336,13 +336,13 @@ function renderFilmStrip(idxActual) {
    ---------------------------------------------------------- */
 function renderRefBits(paso) {
   const area = document.getElementById("refbits-area");
-  const row  = document.getElementById("refbits-row");
+  const row = document.getElementById("refbits-row");
   if (!area || !row) return;
 
   if (paso && paso.refBits && (algoritmoActivo === "clock" || algoritmoActivo === "sc")) {
     area.style.display = "block";
     const bits = paso.refBits;
-    const man  = paso.manecilla;
+    const man = paso.manecilla;
     row.innerHTML = bits.map((b, i) => `
       <div class="refbit-cell refbit-${b === 1 ? "on" : "off"} ${man === i ? "refbit-ptr" : ""}">
         <div class="refbit-idx">#${i}</div>
@@ -358,34 +358,34 @@ function renderRefBits(paso) {
    ---------------------------------------------------------- */
 const NARRATIVAS = {
   fifo: {
-    fault_evict:  (p, exp) => `La página ${p} quiere entrar... no hay lugar. El acomodador saca a la página ${exp}, que lleva más tiempo sentada.`,
-    fault_free:   (p)      => `La página ${p} entra al primer asiento libre. ¡Bienvenida!`,
-    hit:          (p, m)   => `La página ${p} ya está sentada en el asiento ${m}. El acomodador no tiene que hacer nada.`,
+    fault_evict: (p, exp) => `La página ${p} quiere entrar... no hay lugar. El acomodador saca a la página ${exp}, que lleva más tiempo sentada.`,
+    fault_free: (p) => `La página ${p} entra al primer asiento libre. ¡Bienvenida!`,
+    hit: (p, m) => `La página ${p} ya está sentada en el asiento ${m}. El acomodador no tiene que hacer nada.`,
   },
   lru: {
-    fault_evict:  (p, exp) => `La página ${p} llega y no hay lugar. Con sus anteojos de memoria, el acomodador saca a la página ${exp}: la más antigua sin usar.`,
-    fault_free:   (p)      => `La página ${p} ocupa un asiento vacío. El acomodador la registra en su memoria.`,
-    hit:          (p, m)   => `La página ${p} ya está en el asiento ${m}. El acomodador anota que fue vista recientemente.`,
+    fault_evict: (p, exp) => `La página ${p} llega y no hay lugar. Con sus anteojos de memoria, el acomodador saca a la página ${exp}: la más antigua sin usar.`,
+    fault_free: (p) => `La página ${p} ocupa un asiento vacío. El acomodador la registra en su memoria.`,
+    hit: (p, m) => `La página ${p} ya está en el asiento ${m}. El acomodador anota que fue vista recientemente.`,
   },
   opt: {
-    fault_evict:  (p, exp) => `La página ${p} necesita entrar. El acomodador consulta su pergamino y expulsa a la página ${exp}: la que tardará más en volver.`,
-    fault_free:   (p)      => `La página ${p} ocupa un asiento vacío. El futuro indica que esta es la mejor posición.`,
-    hit:          (p, m)   => `La página ${p} ya está en el asiento ${m}. El futuro confirma que fue correcta esa decisión.`,
+    fault_evict: (p, exp) => `La página ${p} necesita entrar. El acomodador consulta su pergamino y expulsa a la página ${exp}: la que tardará más en volver.`,
+    fault_free: (p) => `La página ${p} ocupa un asiento vacío. El futuro indica que esta es la mejor posición.`,
+    hit: (p, m) => `La página ${p} ya está en el asiento ${m}. El futuro confirma que fue correcta esa decisión.`,
   },
   clock: {
-    fault_evict:  (p, exp) => `La linterna del acomodador gira y encuentra a la página ${exp} con bit=0. ¡Expulsada! La página ${p} toma su lugar.`,
-    fault_free:   (p)      => `La página ${p} entra al asiento vacío. La manecilla del reloj avanza.`,
-    hit:          (p, m)   => `La página ${p} ya está en el asiento ${m}. Su bit de referencia se enciende: ¡tiene segunda oportunidad!`,
+    fault_evict: (p, exp) => `La linterna del acomodador gira y encuentra a la página ${exp} con bit=0. ¡Expulsada! La página ${p} toma su lugar.`,
+    fault_free: (p) => `La página ${p} entra al asiento vacío. La manecilla del reloj avanza.`,
+    hit: (p, m) => `La página ${p} ya está en el asiento ${m}. Su bit de referencia se enciende: ¡tiene segunda oportunidad!`,
   },
   sc: {
-    fault_evict:  (p, exp) => `La página ${exp} pierde su segunda oportunidad. La mano del acomodador señala su salida. La página ${p} entra.`,
-    fault_free:   (p)      => `La página ${p} ocupa un asiento libre y se une a la fila de segunda oportunidad.`,
-    hit:          (p, m)   => `La página ${p} ya está en el asiento ${m}. ¡El acomodador le levanta la mano: segunda oportunidad activada!`,
+    fault_evict: (p, exp) => `La página ${exp} pierde su segunda oportunidad. La mano del acomodador señala su salida. La página ${p} entra.`,
+    fault_free: (p) => `La página ${p} ocupa un asiento libre y se une a la fila de segunda oportunidad.`,
+    hit: (p, m) => `La página ${p} ya está en el asiento ${m}. ¡El acomodador le levanta la mano: segunda oportunidad activada!`,
   },
 };
 
 function actualizarNarrador(paso) {
-  const el   = document.getElementById("narrator-text");
+  const el = document.getElementById("narrator-text");
   const icon = document.getElementById("narrator-icon");
   if (!el) return;
 
@@ -419,24 +419,24 @@ function actualizarNarrador(paso) {
    ACOMODADOR — actualizar personalidad según algoritmo
    ---------------------------------------------------------- */
 const USHER_DATA = {
-  fifo:  { cls: "usher-fifo",  desc: "FIFO\nel guardián\ndel tiempo",       acc: "🕐" },
-  lru:   { cls: "usher-lru",   desc: "LRU\nel de buena\nmemoria",           acc: "🕶️" },
-  opt:   { cls: "usher-opt",   desc: "ÓPTIMO\nel que conoce\nel futuro",    acc: "📜" },
-  clock: { cls: "usher-clock", desc: "CLOCK\nel del reloj\ninterminable",   acc: "🔄" },
-  sc:    { cls: "usher-sc",    desc: "2da OPORT.\nel misericordioso",        acc: "✋" },
+  fifo: { cls: "usher-fifo", desc: "FIFO\nel guardián\ndel tiempo", acc: "🕐" },
+  lru: { cls: "usher-lru", desc: "LRU\nel de buena\nmemoria", acc: "🕶️" },
+  opt: { cls: "usher-opt", desc: "ÓPTIMO\nel que conoce\nel futuro", acc: "📜" },
+  clock: { cls: "usher-clock", desc: "CLOCK\nel del reloj\ninterminable", acc: "🔄" },
+  sc: { cls: "usher-sc", desc: "2da OPORT.\nel misericordioso", acc: "✋" },
 };
 
 const ALGO_SCREEN = {
-  fifo:  { name: "FIFO",           tagline: "El acomodador saca al que lleva más tiempo sentado" },
-  lru:   { name: "LRU",            tagline: "El acomodador saca al que menos fue visto recientemente" },
-  opt:   { name: "ÓPTIMO",         tagline: "El acomodador consulta su pergamino del futuro" },
-  clock: { name: "CLOCK",          tagline: "La linterna gira buscando al de bit cero" },
-  sc:    { name: "2DA OPORT.",     tagline: "El acomodador da una segunda chance antes de expulsar" },
+  fifo: { name: "FIFO", tagline: "El acomodador saca al que lleva más tiempo sentado" },
+  lru: { name: "LRU", tagline: "El acomodador saca al que menos fue visto recientemente" },
+  opt: { name: "ÓPTIMO", tagline: "El acomodador consulta su pergamino del futuro" },
+  clock: { name: "CLOCK", tagline: "La linterna gira buscando al de bit cero" },
+  sc: { name: "2DA OPORT.", tagline: "El acomodador da una segunda chance antes de expulsar" },
 };
 
 function actualizarAcomodador(algo) {
   const data = USHER_DATA[algo] || USHER_DATA.fifo;
-  const fig  = document.getElementById("usher-figure");
+  const fig = document.getElementById("usher-figure");
   const desc = document.getElementById("usher-desc");
   if (fig) {
     fig.className = `usher-figure ${data.cls}`;
@@ -446,16 +446,16 @@ function actualizarAcomodador(algo) {
   // Pantalla
   const sd = ALGO_SCREEN[algo] || ALGO_SCREEN.fifo;
   const nameEl = document.getElementById("screen-algo-name");
-  const tagEl  = document.getElementById("screen-algo-tagline");
+  const tagEl = document.getElementById("screen-algo-tagline");
   if (nameEl) nameEl.textContent = sd.name;
-  if (tagEl)  tagEl.textContent  = sd.tagline;
+  if (tagEl) tagEl.textContent = sd.tagline;
 }
 
 /* ----------------------------------------------------------
    FLASH DE FALLO — parpadeo rojo de la sala
    ---------------------------------------------------------- */
 function triggerFaultFlash() {
-  const el    = document.getElementById("fault-flash");
+  const el = document.getElementById("fault-flash");
   const cinema = document.getElementById("memory-cinema");
   if (el) {
     el.classList.remove("active");
@@ -483,18 +483,18 @@ function animarEntradaPersona(marcoIdx, pagina) {
   if (!targetSeat) return;
 
   const stageRect = stage.getBoundingClientRect();
-  const seatRect  = targetSeat.getBoundingClientRect();
+  const seatRect = targetSeat.getBoundingClientRect();
 
   // Punto de entrada: parte superior del área de asientos
   const seatsZone = document.getElementById('seats-grid');
-  const zoneRect  = seatsZone ? seatsZone.getBoundingClientRect() : seatRect;
+  const zoneRect = seatsZone ? seatsZone.getBoundingClientRect() : seatRect;
 
   const startX = (zoneRect.left - stageRect.left) + zoneRect.width / 2 - 14;
-  const startY = (zoneRect.top  - stageRect.top)  - 28;
+  const startY = (zoneRect.top - stageRect.top) - 28;
 
   // Centro del asiento destino
-  const endX = (seatRect.left - stageRect.left) + seatRect.width  / 2 - 14;
-  const endY = (seatRect.top  - stageRect.top)  + seatRect.height / 2 - 14;
+  const endX = (seatRect.left - stageRect.left) + seatRect.width / 2 - 14;
+  const endY = (seatRect.top - stageRect.top) + seatRect.height / 2 - 14;
 
   // Crear elemento flotante
   const el = document.createElement('div');
@@ -506,8 +506,8 @@ function animarEntradaPersona(marcoIdx, pagina) {
     </svg>
     <span class="page-walker-num">${pagina}</span>
   `;
-  el.style.left    = startX + 'px';
-  el.style.top     = startY + 'px';
+  el.style.left = startX + 'px';
+  el.style.top = startY + 'px';
   el.style.opacity = '0';
   stage.classList.add('walker-active');
   stage.appendChild(el);
@@ -519,8 +519,8 @@ function animarEntradaPersona(marcoIdx, pagina) {
   const dx = endX - startX;
   const dy = endY - startY;
   setTimeout(() => {
-    el.style.animation  = 'none';
-    el.style.opacity    = '1';
+    el.style.animation = 'none';
+    el.style.opacity = '1';
     el.style.transition = `transform 0.55s cubic-bezier(0.25, 0.8, 0.35, 1.15),
                             opacity   0.1s`;
     // forzar reflow para que la transición arranque
@@ -531,8 +531,8 @@ function animarEntradaPersona(marcoIdx, pagina) {
   // Fase 3: fundirse al llegar al asiento
   setTimeout(() => {
     el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-    el.style.opacity    = '0';
-    el.style.transform  = `translate(${dx}px, ${dy}px) scale(1.15)`;
+    el.style.opacity = '0';
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(1.15)`;
     setTimeout(() => {
       el.remove();
       if (!stage.querySelector('.page-walker')) stage.classList.remove('walker-active');
@@ -576,7 +576,7 @@ function mostrarPaso(idx) {
   const refNum = document.getElementById("current-ref-num");
   if (refNum) {
     refNum.textContent = paso.referencia;
-    refNum.className   = `current-ref-num ${paso.fault ? "fault" : "hit"}`;
+    refNum.className = `current-ref-num ${paso.fault ? "fault" : "hit"}`;
   }
   const refBadge = document.getElementById("current-ref-badge");
   if (refBadge) {
@@ -590,7 +590,7 @@ function mostrarPaso(idx) {
 
   // Contadores
   const faultsSoFar = historial.slice(0, idx + 1).filter(p => p.fault).length;
-  const hitsSoFar   = historial.slice(0, idx + 1).filter(p => !p.fault).length;
+  const hitsSoFar = historial.slice(0, idx + 1).filter(p => !p.fault).length;
   const cntF = document.getElementById("cnt-faults");
   const cntH = document.getElementById("cnt-hits");
   if (cntF && cntF.textContent !== String(faultsSoFar)) {
@@ -644,14 +644,14 @@ function mostrarPaso(idx) {
 function actualizarBotonesStep() {
   const atI = pasoActual <= 0;
   const atF = pasoActual >= historial.length - 1;
-  ["pb-prev","pb-first"].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = atI; });
-  ["pb-next","pb-last"].forEach(id  => { const b = document.getElementById(id); if (b) b.disabled = atF; });
+  ["pb-prev", "pb-first"].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = atI; });
+  ["pb-next", "pb-last"].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = atF; });
 }
 
 function siguientePaso() { if (pasoActual < historial.length - 1) mostrarPaso(pasoActual + 1); }
-function anteriorPaso()  { if (pasoActual > 0)                   mostrarPaso(pasoActual - 1); }
-function primerPaso()    { mostrarPaso(0); }
-function ultimoPaso()    { mostrarPaso(historial.length - 1); }
+function anteriorPaso() { if (pasoActual > 0) mostrarPaso(pasoActual - 1); }
+function primerPaso() { mostrarPaso(0); }
+function ultimoPaso() { mostrarPaso(historial.length - 1); }
 
 /* ----------------------------------------------------------
    AUTO-PLAY
@@ -682,17 +682,17 @@ function detenerSimulacion() {
 }
 
 function _setPlayState(playing) {
-  const btn   = document.getElementById("pb-play");
-  const icon  = document.getElementById("pb-play-icon");
+  const btn = document.getElementById("pb-play");
+  const icon = document.getElementById("pb-play-icon");
   const label = document.getElementById("pb-play-label");
   if (!btn) return;
   if (playing) {
     btn.classList.add("playing");
-    if (icon)  icon.innerHTML = `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`;
+    if (icon) icon.innerHTML = `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`;
     if (label) label.textContent = "Stop";
   } else {
     btn.classList.remove("playing");
-    if (icon)  icon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"/>`;
+    if (icon) icon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"/>`;
     if (label) label.textContent = "Play";
   }
 }
@@ -704,24 +704,24 @@ function mostrarEndScreen() {
   const endEl = document.getElementById("cinema-end-screen");
   if (!endEl) return;
 
-  const total  = cadenaReferencias.length;
+  const total = cadenaReferencias.length;
   const faults = historial.filter(p => p.fault).length;
-  const hits   = historial.filter(p => !p.fault).length;
-  const tasa   = (hits / total * 100).toFixed(1);
+  const hits = historial.filter(p => !p.fault).length;
+  const tasa = (hits / total * 100).toFixed(1);
 
   // Rating
   const hitRate = hits / total;
   let rating = "Excelente";
-  if (hitRate < 0.2)      rating = "Muy pocos aciertos";
+  if (hitRate < 0.2) rating = "Muy pocos aciertos";
   else if (hitRate < 0.4) rating = "Regular";
   else if (hitRate < 0.6) rating = "Bueno";
   else if (hitRate < 0.8) rating = "Muy bueno";
 
-  const subEl   = document.getElementById("end-subtitle");
+  const subEl = document.getElementById("end-subtitle");
   const statsEl = document.getElementById("end-stats");
-  const ratEl   = document.getElementById("end-rating");
+  const ratEl = document.getElementById("end-rating");
 
-  if (subEl)   subEl.textContent = `Algoritmo: ${_nombreAlgo(algoritmoActivo)} — ${total} referencias, ${configMemoria.frames} marcos`;
+  if (subEl) subEl.textContent = `Algoritmo: ${_nombreAlgo(algoritmoActivo)} — ${total} referencias, ${configMemoria.frames} marcos`;
   if (statsEl) statsEl.innerHTML = `
     <div class="end-stat"><div class="end-stat-val fault">${faults}</div><div class="end-stat-lbl">Page Faults</div></div>
     <div class="end-stat"><div class="end-stat-val good">${hits}</div><div class="end-stat-lbl">Hits</div></div>
@@ -746,42 +746,42 @@ function iniciarSimulacion() {
   detenerSimulacion();
   cerrarEndScreen();
 
-  const numFrames = parseInt(document.getElementById("inp-frames").value,   10);
-  const pageSize  = parseInt(document.getElementById("inp-pagesize").value, 10);
-  const memoria   = parseInt(document.getElementById("inp-memoria").value,  10);
-  const refStr    = document.getElementById("inp-referencias").value.trim();
+  const numFrames = parseInt(document.getElementById("inp-frames").value, 10);
+  const pageSize = parseInt(document.getElementById("inp-pagesize").value, 10);
+  const memoria = parseInt(document.getElementById("inp-memoria").value, 10);
+  const refStr = document.getElementById("inp-referencias").value.trim();
 
   if (isNaN(numFrames) || numFrames < 1) { mostrarToast("El número de marcos debe ser ≥ 1.", "error"); return; }
-  if (isNaN(pageSize)  || pageSize  < 1) { mostrarToast("El tamaño de página debe ser ≥ 1.", "error"); return; }
-  if (isNaN(memoria)   || memoria   < 1) { mostrarToast("El tamaño de memoria debe ser ≥ 1.", "error"); return; }
+  if (isNaN(pageSize) || pageSize < 1) { mostrarToast("El tamaño de página debe ser ≥ 1.", "error"); return; }
+  if (isNaN(memoria) || memoria < 1) { mostrarToast("El tamaño de memoria debe ser ≥ 1.", "error"); return; }
   if (!refStr) { mostrarToast("Ingresa una cadena de referencias", "error"); return; }
 
   const refs = refStr.split(/\s+/).map(Number).filter(n => !isNaN(n) && n >= 0);
   if (refs.length === 0) { mostrarToast("La cadena de referencias no es válida.", "error"); return; }
 
   cadenaReferencias = refs;
-  configMemoria     = { frames: numFrames, pageSize, memoria };
+  configMemoria = { frames: numFrames, pageSize, memoria };
 
   /* ── Indicador visual de thread en ejecución ── */
-  const narratorEl   = document.getElementById("narrator-text");
+  const narratorEl = document.getElementById("narrator-text");
   const narratorIcon = document.getElementById("narrator-icon");
-  if (narratorEl)   { narratorEl.textContent = "Lanzando thread de cómputo..."; narratorEl.className = ""; }
+  if (narratorEl) { narratorEl.textContent = "Lanzando thread de cómputo..."; narratorEl.className = ""; }
   if (narratorIcon) { narratorIcon.innerHTML = `<span class="thread-spinner"></span>`; }
 
   /* Deshabilitar controles mientras el Worker calcula */
-  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+  ["pb-first", "pb-prev", "pb-next", "pb-last"].forEach(id => {
     const el = document.getElementById(id); if (el) el.disabled = true;
   });
 
   /* ── Intentar SharedArrayBuffer (memoria compartida) ── */
-  let sabRefs   = null;
+  let sabRefs = null;
   let useShared = false;
   if (typeof SharedArrayBuffer !== "undefined") {
     try {
-      const sab  = new SharedArrayBuffer(refs.length * Int32Array.BYTES_PER_ELEMENT);
+      const sab = new SharedArrayBuffer(refs.length * Int32Array.BYTES_PER_ELEMENT);
       const view = new Int32Array(sab);
       refs.forEach((r, i) => Atomics.store(view, i, r));
-      sabRefs   = sab;
+      sabRefs = sab;
       useShared = true;
     } catch (_) { /* COOP/COEP no activos — usar postMessage */ }
   }
@@ -822,37 +822,37 @@ function iniciarSimulacion() {
   };
 
   worker.postMessage({
-    mode:        "simulate",
-    algoritmo:   algoritmoActivo,
+    mode: "simulate",
+    algoritmo: algoritmoActivo,
     referencias: sabRefs || refs,
-    marcos:      numFrames,
-    workerId:    0,
+    marcos: numFrames,
+    workerId: 0,
     useShared,
   });
 }
 
 /* Aplica el resultado devuelto por el Worker (o fallback) al DOM */
 function _aplicarResultadoSimulacion(resultado, numFrames, elapsedLabel) {
-  historial  = resultado.pasos;
+  historial = resultado.pasos;
   pasoActual = 0;
 
-  const total  = cadenaReferencias.length;
-  const tasa   = (resultado.faults / total * 100);
+  const total = cadenaReferencias.length;
+  const tasa = (resultado.faults / total * 100);
   const ultimo = resultado.pasos[resultado.pasos.length - 1];
   const usados = ultimo ? ultimo.frames.filter(p => p !== null).length : 0;
 
   _renderMetricasDark([
-    { lbl: "Page Faults",    val: resultado.faults,          cls: "fault" },
-    { lbl: "Page Hits",      val: resultado.hits,            cls: "good"  },
-    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%",        cls: ""      },
-    { lbl: "Marcos usados",  val: `${usados}/${numFrames}`,  cls: ""      },
+    { lbl: "Page Faults", val: resultado.faults, cls: "fault" },
+    { lbl: "Page Hits", val: resultado.hits, cls: "good" },
+    { lbl: "Tasa de fallos", val: fmt(tasa, 1) + "%", cls: "" },
+    { lbl: "Marcos usados", val: `${usados}/${numFrames}`, cls: "" },
   ]);
 
-  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+  ["pb-first", "pb-prev", "pb-next", "pb-last"].forEach(id => {
     const el = document.getElementById(id); if (el) el.disabled = false;
   });
   document.getElementById("cnt-faults").textContent = "0";
-  document.getElementById("cnt-hits").textContent   = "0";
+  document.getElementById("cnt-hits").textContent = "0";
 
   mostrarPaso(0);
 
@@ -868,6 +868,11 @@ function _aplicarResultadoSimulacion(resultado, numFrames, elapsedLabel) {
 
   if (document.getElementById("seccion-comparacion").style.display !== "none") {
     mostrarComparacion();
+  }
+
+  /* ── Guardar prueba en Store para Métricas ── */
+  if (typeof Store !== 'undefined') {
+    Store.savePaginacion(algoritmoActivo, cadenaReferencias, numFrames);
   }
 }
 
@@ -896,11 +901,11 @@ function seleccionarAlgoritmo(nombre) {
   const descEl = document.getElementById("algo-desc");
   if (descEl) {
     const descs = {
-      fifo:  "Expulsa la página que lleva más tiempo en memoria (la primera que entró).",
-      lru:   "Expulsa la página que no ha sido usada por más tiempo (menos usada recientemente).",
-      opt:   "Expulsa la página cuyo próximo uso está más lejos en el futuro. Óptimo teórico.",
+      fifo: "Expulsa la página que lleva más tiempo en memoria (la primera que entró).",
+      lru: "Expulsa la página que no ha sido usada por más tiempo (menos usada recientemente).",
+      opt: "Expulsa la página cuyo próximo uso está más lejos en el futuro. Óptimo teórico.",
       clock: "Bit de referencia por marco. Si bit=1 da segunda oportunidad; si bit=0 expulsa.",
-      sc:    "Igual que Clock pero usa una cola ordenada en vez de arreglo circular.",
+      sc: "Igual que Clock pero usa una cola ordenada en vez de arreglo circular.",
     };
     descEl.textContent = descs[nombre] || "";
   }
@@ -922,7 +927,7 @@ function mostrarComparacion() {
     mostrarToast("Ingresa una cadena de referencias", "error"); return;
   }
 
-  const nf    = configMemoria.frames || parseInt(document.getElementById("inp-frames").value, 10) || 3;
+  const nf = configMemoria.frames || parseInt(document.getElementById("inp-frames").value, 10) || 3;
   const total = cadenaReferencias.length;
   const algos = ["fifo", "lru", "opt", "clock", "sc"];
   const NOMBRES = { fifo: "FIFO", lru: "LRU", opt: "OPT", clock: "Clock", sc: "2da Oport." };
@@ -933,14 +938,14 @@ function mostrarComparacion() {
   if (!tablaEl) return;
 
   /* ── Detectar SharedArrayBuffer ── */
-  let sabRefs   = null;
+  let sabRefs = null;
   let useShared = false;
   if (typeof SharedArrayBuffer !== "undefined") {
     try {
-      const sab  = new SharedArrayBuffer(cadenaReferencias.length * Int32Array.BYTES_PER_ELEMENT);
+      const sab = new SharedArrayBuffer(cadenaReferencias.length * Int32Array.BYTES_PER_ELEMENT);
       const view = new Int32Array(sab);
       cadenaReferencias.forEach((r, i) => Atomics.store(view, i, r));
-      sabRefs   = sab;
+      sabRefs = sab;
       useShared = true;
     } catch (_) { /* COOP/COEP no activos */ }
   }
@@ -975,7 +980,7 @@ function mostrarComparacion() {
   const promises = algos.map((algo, idx) => new Promise(resolve => {
 
     const tStart = performance.now();
-    const card   = document.getElementById(`tc-${idx}`);
+    const card = document.getElementById(`tc-${idx}`);
     if (card) card.className = "thread-card running";
 
     /* Fallback síncrono si Workers no están disponibles */
@@ -1006,11 +1011,11 @@ function mostrarComparacion() {
     };
 
     worker.postMessage({
-      mode:        "compare",
-      algoritmo:   algo,
+      mode: "compare",
+      algoritmo: algo,
       referencias: sabRefs || cadenaReferencias,
-      marcos:      nf,
-      workerId:    idx,
+      marcos: nf,
+      workerId: idx,
       useShared,
     });
   }));
@@ -1029,11 +1034,11 @@ function mostrarComparacion() {
     if (!areaEl) return;
 
     areaEl.innerHTML = resultados.map(r => {
-      const esMejor  = r.faults === minF;
-      const esPeor   = r.faults === maxF && maxF !== minF;
-      const barW     = maxF > 0 ? (r.faults / maxF * 100).toFixed(1) : 0;
+      const esMejor = r.faults === minF;
+      const esPeor = r.faults === maxF && maxF !== minF;
+      const barW = maxF > 0 ? (r.faults / maxF * 100).toFixed(1) : 0;
       const faultPct = (r.faults / total * 100).toFixed(1);
-      const timeTag  = r.elapsed !== "sync"
+      const timeTag = r.elapsed !== "sync"
         ? `<span class="comp-thread-time">${r.elapsed} ms</span>` : "";
       return `
         <div class="comp-row ${esMejor ? "comp-best" : esPeor ? "comp-worst" : ""}">
@@ -1049,8 +1054,8 @@ function mostrarComparacion() {
             ${timeTag}
           </div>
           <div style="display:flex; justify-content:flex-end; gap:4px; align-items:center;">
-            ${esMejor ? '<span class="comp-badge comp-badge-best">Mejor</span>'          : ""}
-            ${esPeor  ? '<span class="comp-badge comp-badge-worst">Más fallos</span>'    : ""}
+            ${esMejor ? '<span class="comp-badge comp-badge-best">Mejor</span>' : ""}
+            ${esPeor ? '<span class="comp-badge comp-badge-worst">Más fallos</span>' : ""}
           </div>
         </div>`;
     }).join("");
@@ -1067,20 +1072,20 @@ function resetearSimulacion() {
   marcos = []; historial = []; pasoActual = 0;
   cadenaReferencias = []; configMemoria = {};
 
-  document.getElementById("seats-grid").innerHTML   = '<div class="cinema-placeholder">Configura y presiona Simular.</div>';
-  document.getElementById("queue-strip").innerHTML  = '<div class="cinema-placeholder">Aún no hay simulación.</div>';
-  document.getElementById("film-strip").innerHTML   = '<div class="cinema-placeholder" style="padding:4px 0;">Sin referencias.</div>';
+  document.getElementById("seats-grid").innerHTML = '<div class="cinema-placeholder">Configura y presiona Simular.</div>';
+  document.getElementById("queue-strip").innerHTML = '<div class="cinema-placeholder">Aún no hay simulación.</div>';
+  document.getElementById("film-strip").innerHTML = '<div class="cinema-placeholder" style="padding:4px 0;">Sin referencias.</div>';
   document.getElementById("cnt-faults").textContent = "0";
-  document.getElementById("cnt-hits").textContent   = "0";
+  document.getElementById("cnt-hits").textContent = "0";
   document.getElementById("current-ref-num").textContent = "—";
-  document.getElementById("current-ref-num").className   = "current-ref-num";
+  document.getElementById("current-ref-num").className = "current-ref-num";
   document.getElementById("current-ref-badge").innerHTML = "";
   document.getElementById("narrator-text").textContent = "Configura la memoria y presiona Simular para comenzar la función.";
-  document.getElementById("narrator-text").className   = "";
-  document.getElementById("narrator-icon").innerHTML   = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7090B0" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+  document.getElementById("narrator-text").className = "";
+  document.getElementById("narrator-icon").innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7090B0" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   document.getElementById("pb-progress-fill").style.width = "0%";
   /* playback-bar siempre visible — deshabilitar nav hasta nueva simulación */
-  ["pb-first","pb-prev","pb-next","pb-last"].forEach(id => {
+  ["pb-first", "pb-prev", "pb-next", "pb-last"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = true;
   });
@@ -1099,7 +1104,7 @@ function resetearSimulacion() {
    HELPERS
    ---------------------------------------------------------- */
 function _nombreAlgo(algo) {
-  return { fifo:"FIFO", lru:"LRU", opt:"Óptimo", clock:"Clock", sc:"2da Oportunidad" }[algo] ?? algo.toUpperCase();
+  return { fifo: "FIFO", lru: "LRU", opt: "Óptimo", clock: "Clock", sc: "2da Oportunidad" }[algo] ?? algo.toUpperCase();
 }
 
 function fmt(n, dec) { return Number(n).toFixed(dec); }
@@ -1110,7 +1115,7 @@ function fmt(n, dec) { return Number(n).toFixed(dec); }
 function tocarAlarma() {
   try {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window["webkitAudioContext"])();
-    const osc  = _audioCtx.createOscillator();
+    const osc = _audioCtx.createOscillator();
     const gain = _audioCtx.createGain();
     osc.connect(gain); gain.connect(_audioCtx.destination);
     osc.type = "square";
@@ -1119,7 +1124,7 @@ function tocarAlarma() {
     gain.gain.setValueAtTime(0.06, _audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.18);
     osc.start(_audioCtx.currentTime); osc.stop(_audioCtx.currentTime + 0.18);
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /* ----------------------------------------------------------
@@ -1131,12 +1136,12 @@ function onArchivoMemoriaSeleccionado(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const { config, errores } = parsearArchivoMemoria(e.target.result);
     if (errores.length > 0) { mostrarToast("Error en archivo: " + errores[0], "error"); return; }
-    if (config.frames     !== undefined) document.getElementById("inp-frames").value      = config.frames;
-    if (config.pagesize   !== undefined) document.getElementById("inp-pagesize").value    = config.pagesize;
-    if (config.memoria    !== undefined) document.getElementById("inp-memoria").value     = config.memoria;
+    if (config.frames !== undefined) document.getElementById("inp-frames").value = config.frames;
+    if (config.pagesize !== undefined) document.getElementById("inp-pagesize").value = config.pagesize;
+    if (config.memoria !== undefined) document.getElementById("inp-memoria").value = config.memoria;
     if (config.referencias !== undefined) document.getElementById("inp-referencias").value = config.referencias;
     mostrarToast("Configuración cargada desde archivo.", "success");
   };
@@ -1148,16 +1153,16 @@ function onArchivoMemoriaSeleccionado(event) {
    PARSEAR ARCHIVO (compatible con formato original)
    ---------------------------------------------------------- */
 function parsearArchivoMemoria(texto) {
-  const config  = {};
+  const config = {};
   const errores = [];
-  const lines   = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  const lines = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
   for (const line of lines) {
     const [key, ...rest] = line.split("=");
     const val = rest.join("=").trim();
     switch (key.trim().toLowerCase()) {
-      case "frames":      config.frames      = parseInt(val, 10); break;
-      case "pagesize":    config.pagesize    = parseInt(val, 10); break;
-      case "memoria":     config.memoria     = parseInt(val, 10); break;
+      case "frames": config.frames = parseInt(val, 10); break;
+      case "pagesize": config.pagesize = parseInt(val, 10); break;
+      case "memoria": config.memoria = parseInt(val, 10); break;
       case "referencias": config.referencias = val; break;
     }
   }

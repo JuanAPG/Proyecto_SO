@@ -7,16 +7,16 @@ let resultadoActual = null;
 let algoritmoSeleccionado = "fcfs";
 
 // Colores del Gantt compartidos con animación y cards
-const _GANTT_COLORS = ["#3d687b","#639922","#EF9F27","#E24B4A","#8B77D4","#1DB884","#FF6B6B","#4ECDC4"];
+const _GANTT_COLORS = ["#3d687b", "#639922", "#EF9F27", "#E24B4A", "#8B77D4", "#1DB884", "#FF6B6B", "#4ECDC4"];
 let _pidColors = {}; // pid → color hex
 
 // Estado de la animación
-let _animTimer  = null;
-let _animTime   = 0;
-let _animSegs   = [];
-let _animSpan   = 0;
+let _animTimer = null;
+let _animTime = 0;
+let _animSegs = [];
+let _animSpan = 0;
 // Referencias DOM cacheadas para la animación (evitan querySelector en cada tick)
-let _animCards  = {}; // pid → .psc-card element
+let _animCards = {}; // pid → .psc-card element
 let _animTdCells = {}; // pid → <td> de estado en tabla
 
 /* ----------------------------------------------------------
@@ -59,14 +59,14 @@ function seleccionarAlgoritmo(algo) {
 
   // Actualizar título del Gantt
   const nombres = {
-    fcfs:     "FCFS — First Come First Served",
-    sjf:      "SJF — Shortest Job First",
-    hrrn:     "HRRN — Highest Response Ratio Next",
-    rr:       "Round Robin",
-    srtf:     "SRTF — Shortest Remaining Time",
+    fcfs: "FCFS — First Come First Served",
+    sjf: "SJF — Shortest Job First",
+    hrrn: "HRRN — Highest Response Ratio Next",
+    rr: "Round Robin",
+    srtf: "SRTF — Shortest Remaining Time",
     priority: "Priority (Preemptive)",
-    mlq:      "Multilevel Queue",
-    mlfq:     "Multilevel Feedback Queue",
+    mlq: "Multilevel Queue",
+    mlfq: "Multilevel Feedback Queue",
   };
   const titulo = document.getElementById("ganttTitle");
   if (titulo) {
@@ -101,6 +101,11 @@ function ejecutarSimulacion() {
   resultadoActual = ejecutarAlgoritmo(algoritmoSeleccionado, procesosGlobales, quantum);
   if (!resultadoActual) return;
 
+  /* ── Guardar prueba en Store para Métricas ── */
+  if (typeof Store !== 'undefined') {
+    Store.saveScheduling(algoritmoSeleccionado, procesosGlobales, quantum);
+  }
+
   dibujarGantt();
 
   // Mostrar botón Animar
@@ -113,12 +118,12 @@ function ejecutarSimulacion() {
   renderEstadosProcesos();
 
   localStorage.setItem("osim_scheduling", JSON.stringify({
-    algoritmo:      resultadoActual.algoritmo,
-    avgWaiting:     resultadoActual.metricas.avgWaiting,
-    avgTurnaround:  resultadoActual.metricas.avgTurnaround,
+    algoritmo: resultadoActual.algoritmo,
+    avgWaiting: resultadoActual.metricas.avgWaiting,
+    avgTurnaround: resultadoActual.metricas.avgTurnaround,
     cpuUtilization: resultadoActual.metricas.cpuUtilization,
-    makespan:       resultadoActual.metricas.makespan,
-    totalProcesos:  resultadoActual.procesos.length,
+    makespan: resultadoActual.metricas.makespan,
+    totalProcesos: resultadoActual.procesos.length,
   }));
 
   /* ── Notificar al servidor (fork de scheduling) ── */
@@ -171,13 +176,13 @@ function dibujarGantt() {
 
   // Filas por PID
   const rowsHTML = seenPids.map(pid => {
-    const idx   = pidToIdx[pid];
+    const idx = pidToIdx[pid];
     const color = colores[idx % colores.length];
 
     const blocksHTML = segments
       .filter(s => s.pid === pid)
       .map((seg, i) => {
-        const left  = ((seg.start / makespan) * 100).toFixed(3);
+        const left = ((seg.start / makespan) * 100).toFixed(3);
         const width = (((seg.end - seg.start) / makespan) * 100).toFixed(3);
         const label = parseFloat(width) > 4 ? `P${pid}` : "";
         return `<div class="gantt-block"
@@ -217,11 +222,11 @@ function actualizarMetricas() {
   const m = resultadoActual.metricas;
 
   const datos = [
-    { label: "Avg Waiting",      raw: m.avgWaiting,                         sufijo: "ms" },
-    { label: "Avg Turnaround",   raw: m.avgTurnaround,                      sufijo: "ms" },
-    { label: "Avg Response",     raw: m.avgResponse,                        sufijo: "ms" },
-    { label: "CPU Utilization",  raw: m.cpuUtilization,                     sufijo: "", clase: "good" },
-    { label: "Makespan",         raw: m.makespan,                           sufijo: "ms" },
+    { label: "Avg Waiting", raw: m.avgWaiting, sufijo: "ms" },
+    { label: "Avg Turnaround", raw: m.avgTurnaround, sufijo: "ms" },
+    { label: "Avg Response", raw: m.avgResponse, sufijo: "ms" },
+    { label: "CPU Utilization", raw: m.cpuUtilization, sufijo: "", clase: "good" },
+    { label: "Makespan", raw: m.makespan, sufijo: "ms" },
     { label: "Context Switches", raw: resultadoActual.contextSwitches ?? 0, sufijo: "" },
   ];
 
@@ -236,18 +241,18 @@ function actualizarMetricas() {
 
   lista.querySelectorAll(".metric-value[data-target]").forEach((el) => {
     const destino = parseFloat(el.dataset.target) || 0;
-    const sufijo  = el.dataset.sufijo;
-    const esPct   = String(el.dataset.target).includes("%");
+    const sufijo = el.dataset.sufijo;
+    const esPct = String(el.dataset.target).includes("%");
     const textoFin = esPct ? String(el.dataset.target) : null;
 
     if (esPct) { setTimeout(() => { el.textContent = textoFin; }, 650); return; }
 
-    const dur   = 650;
+    const dur = 650;
     const start = performance.now();
     function tick(ahora) {
-      const t    = Math.min((ahora - start) / dur, 1);
+      const t = Math.min((ahora - start) / dur, 1);
       const ease = 1 - Math.pow(1 - t, 2);
-      const val  = destino * ease;
+      const val = destino * ease;
       el.textContent = (Number.isInteger(destino) ? Math.round(val) : val.toFixed(2)) + sufijo;
       if (t < 1) requestAnimationFrame(tick);
     }
@@ -281,7 +286,7 @@ function actualizarQueueDinámica() {
 function renderEstadosProcesos() {
   if (!resultadoActual) return;
   const statesPanel = document.getElementById("statesPanel");
-  const grid        = document.getElementById("processStateGrid");
+  const grid = document.getElementById("processStateGrid");
   if (!statesPanel || !grid) return;
 
   statesPanel.style.display = "block";
@@ -356,7 +361,7 @@ function iniciarAnimacion() {
   });
 
   // ─── Cachear referencias DOM ───────────────────────────────
-  _animCards   = {};
+  _animCards = {};
   _animTdCells = {};
 
   // Cards: buscar por data-pid en el grid
@@ -473,9 +478,9 @@ function detenerAnimacion(completado) {
 }
 
 function _estadoEnTiempo(p, t, runPid) {
-  if (p.finishTime <= t)      return "terminated";
-  if (p.pid === runPid)       return "running";
-  if (p.arrivalTime < t)      return "ready";
+  if (p.finishTime <= t) return "terminated";
+  if (p.pid === runPid) return "running";
+  if (p.arrivalTime < t) return "ready";
   return "new";
 }
 
@@ -490,21 +495,21 @@ function _actualizarEstadosAnimacion(t) {
   const procesos = resultadoActual.procesos;
 
   // Iluminar nodos del diagrama de estados
-  const hayNew        = procesos.some(p => p.arrivalTime >= t);
-  const hayReady      = procesos.some(p => p.arrivalTime < t && p.finishTime > t && p.pid !== runPid);
+  const hayNew = procesos.some(p => p.arrivalTime >= t);
+  const hayReady = procesos.some(p => p.arrivalTime < t && p.finishTime > t && p.pid !== runPid);
   const hayTerminated = procesos.some(p => p.finishTime <= t);
 
-  if (hayNew)          document.getElementById('smdNew')?.classList.add('smd-active');
-  if (hayReady)        document.getElementById('smdReady')?.classList.add('smd-active');
+  if (hayNew) document.getElementById('smdNew')?.classList.add('smd-active');
+  if (hayReady) document.getElementById('smdReady')?.classList.add('smd-active');
   if (runPid !== null) document.getElementById('smdRunning')?.classList.add('smd-active');
-  if (hayTerminated)   document.getElementById('smdTerminated')?.classList.add('smd-active');
+  if (hayTerminated) document.getElementById('smdTerminated')?.classList.add('smd-active');
 
   // Colores de borde para cada estado
   const borderColors = {
-    running:    '#6aaa1a',
-    ready:      '#185fa5',
+    running: '#6aaa1a',
+    ready: '#185fa5',
     terminated: '#bbb',
-    new:        '',
+    new: '',
   };
 
   // Actualizar cada proceso usando referencias cacheadas
@@ -539,7 +544,7 @@ function _actualizarEstadosAnimacion(t) {
 }
 
 function limpiarActivosEstado() {
-  ['smdNew','smdReady','smdRunning','smdWaiting','smdTerminated'].forEach(id => {
+  ['smdNew', 'smdReady', 'smdRunning', 'smdWaiting', 'smdTerminated'].forEach(id => {
     document.getElementById(id)?.classList.remove('smd-active');
   });
 }
@@ -550,9 +555,9 @@ function limpiarActivosEstado() {
 function limpiarGantt() {
   if (_animTimer !== null) detenerAnimacion(false);
 
-  const btnAnim  = document.getElementById("btnAnimate");
+  const btnAnim = document.getElementById("btnAnimate");
   const timeLabel = document.getElementById("ganttTimeLabel");
-  if (btnAnim)   { btnAnim.style.display = "none"; }
+  if (btnAnim) { btnAnim.style.display = "none"; }
   if (timeLabel) { timeLabel.style.display = "none"; }
 
   const ganttChart = document.getElementById("ganttChart");
