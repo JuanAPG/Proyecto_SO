@@ -24,6 +24,7 @@
       overflow: hidden;
       margin: 0;
       padding: 0;
+      background: #000;
     }
 
     /* ── Layout ── */
@@ -120,11 +121,10 @@
       border-radius: 8px;
       background: linear-gradient(135deg, var(--cb-deep), var(--cb-mid));
       color: #fff;
-      font-weight: 700;
-      font-size: 13px;
       border: 1px solid rgba(0, 207, 255, .3);
       cursor: pointer;
       font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
       letter-spacing: .06em;
       opacity: .35;
       pointer-events: none;
@@ -194,6 +194,8 @@
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 0;
+      background: #000;
     }
 
     .screens-col {
@@ -216,6 +218,8 @@
     .screen {
       flex: 1;
       min-width: 0;
+      min-height: 0;
+      height: 100%;
       display: flex;
       flex-direction: column;
       background: #000;
@@ -297,7 +301,8 @@
 
     /* Tickets area */
     .tickets-area {
-      flex: 1;
+      flex: 7;
+      min-height: 0;
       overflow-y: auto;
       padding: 10px;
       display: grid;
@@ -510,7 +515,8 @@
 
     /* Clapperboards */
     .algo-section {
-      flex-shrink: 0;
+      flex: 3;
+      min-height: 0;
       border-top: 1px solid rgba(0, 207, 255, .12);
       padding: 8px 12px 10px;
       background: #000;
@@ -538,11 +544,12 @@
       display: flex;
       flex-wrap: wrap;
       gap: 7px;
+      width: 100%;
+      justify-content: space-between;
     }
 
     .clapper {
-      position: relative;
-      width: 66px;
+      width: 85px;
       cursor: pointer;
       user-select: none;
       transition: transform .12s;
@@ -606,6 +613,17 @@
 
     .clapper.sel .clapper-body {
       box-shadow: 0 2px 14px rgba(0, 207, 255, .3);
+      border-color: aliceblue !important;
+      border-width: 1.5px;
+    }
+
+    .clapper.sel .clapper-base {
+      border-color: aliceblue;
+    }
+
+    .clapper.sel .clapper-label {
+      color: #fff;
+      text-shadow: 0 0 8px var(--cb-glow);
     }
 
     .clapper-label {
@@ -627,24 +645,21 @@
 
     .clapper-check {
       position: absolute;
-      top: -5px;
-      right: -5px;
-      z-index: 4;
-      width: 15px;
-      height: 15px;
+      top: -6px;
+      right: -6px;
+      z-index: 10;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: var(--cb-bright);
       color: #000;
-      font-size: 8px;
-      font-weight: 700;
+      font-size: 10px;
+      font-weight: 900;
       display: none;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 8px var(--cb-glow), 0 0 0 2px #000;
-    }
-
-    .clapper.sel .clapper-check {
-      display: flex;
+      box-shadow: 0 0 10px var(--cb-glow), 0 0 0 2px #000;
+      animation: checkPop .2s cubic-bezier(.34, 1.5, .64, 1) both;
     }
 
     /* ═══════════════════════════════════════════════════
@@ -667,7 +682,7 @@
 
     .modal-box {
       width: min(1100px, 96vw);
-      height: min(82vh, 700px);
+      height: min(88vh, 760px);
       background: #000;
       border: 1px solid rgba(0, 207, 255, .2);
       border-radius: 16px;
@@ -791,13 +806,13 @@
       flex-shrink: 0;
     }
 
-    /* Gráficas de barras */
+    /* Gráficas donut */
     .chart-wrap {
       flex: 1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       scrollbar-width: thin;
       scrollbar-color: rgba(0, 207, 255, .15) transparent;
     }
@@ -805,57 +820,89 @@
     .chart-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       cursor: pointer;
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
       border: 1px solid transparent;
       transition: all .15s;
+      background: rgba(255, 255, 255, .02);
     }
 
     .chart-row:hover {
-      background: rgba(0, 207, 255, .05);
-      border-color: rgba(0, 207, 255, .15);
+      background: rgba(0, 207, 255, .06);
+      border-color: rgba(0, 207, 255, .18);
     }
 
     .chart-row.winner {
-      background: rgba(0, 207, 255, .07);
-      border-color: rgba(0, 207, 255, .25);
+      background: rgba(0, 207, 255, .08);
+      border-color: rgba(0, 207, 255, .28);
+    }
+
+    /* Donut SVG */
+    .donut-wrap {
+      flex-shrink: 0;
+      position: relative;
+      width: 52px;
+      height: 52px;
+    }
+
+    .donut-wrap svg {
+      transform: rotate(-90deg);
+    }
+
+    .donut-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, .06);
+    }
+
+    .donut-fill {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-dashoffset .7s cubic-bezier(.34, 1.1, .64, 1);
+    }
+
+    .donut-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .donut-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      color: #fff;
+      letter-spacing: .02em;
+    }
+
+    .donut-unit {
+      font-size: 8px;
+      color: rgba(0, 207, 255, .5);
+      margin-top: 1px;
+    }
+
+    .chart-info {
+      flex: 1;
+      min-width: 0;
     }
 
     .chart-label {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 10px;
-      color: rgba(255, 255, 255, .7);
-      min-width: 80px;
+      color: rgba(255, 255, 255, .75);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 3px;
     }
 
-    .chart-bar-wrap {
-      flex: 1;
-      height: 20px;
-      background: rgba(255, 255, 255, .05);
-      border-radius: 4px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .chart-bar {
-      height: 100%;
-      border-radius: 4px;
-      transition: width .6s cubic-bezier(.34, 1.1, .64, 1);
-      display: flex;
-      align-items: center;
-      padding-left: 6px;
-    }
-
-    .chart-bar-val {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 12px;
-      color: rgba(255, 255, 255, .9);
-      white-space: nowrap;
+    .chart-sub {
+      font-size: 9px;
+      color: rgba(0, 207, 255, .4);
     }
 
     .chart-winner-badge {
@@ -867,12 +914,31 @@
       color: var(--cb-bright);
       border: 1px solid rgba(0, 207, 255, .3);
       white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Badge contador de algoritmos seleccionados */
+    .algo-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--cb-bright);
+      color: #000;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 5px;
+      margin-left: 6px;
+      box-shadow: 0 0 8px var(--cb-glow);
     }
 
     /* Cards de ganadores */
     .winners-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 8px;
       overflow-y: auto;
       scrollbar-width: thin;
@@ -1030,9 +1096,10 @@
         <div class="marquee-title">Metrics <span>Cinema</span></div>
         <div class="marquee-sub">Escoge tus boletos, selecciona algoritmos y compara resultados</div>
       </div>
-      <div style="display:flex;align-items:center;gap:18px;">
+      <div style="display:flex;align-items:end;gap:18px;">
+
         <div>
-          <button class="btn-compara" id="btn-compara" onclick="abrirModal()">🎥 COMPARAR SALAS →</button>
+
           <div class="val-row" style="margin-top:6px;justify-content:flex-end;">
             <div class="v-item" id="v-sched">
               <div class="v-dot"></div><span>1 prueba Sched.</span>
@@ -1047,7 +1114,10 @@
               <div class="v-dot"></div><span>1 algo Pag.</span>
             </div>
           </div>
+
         </div>
+        <button class="btn-compara" id="btn-compara" onclick="abrirModal()"> COMPARAR SALAS →</button>
+
         <div class="marquee-lights">
           <div class="marquee-bulb"></div>
           <div class="marquee-bulb"></div>
@@ -1075,7 +1145,8 @@
             </div>
             <div class="tickets-area" id="ts"></div>
             <div class="algo-section">
-              <div class="algo-label">Algoritmo a aplicar</div>
+              <div class="algo-label">Algoritmo a aplicar <span class="algo-count-badge" id="algo-count-s"
+                  style="display:none;">0</span></div>
               <div class="algo-chips" id="cs"></div>
             </div>
           </div>
@@ -1094,7 +1165,8 @@
             </div>
             <div class="tickets-area" id="tp"></div>
             <div class="algo-section">
-              <div class="algo-label">Algoritmo a aplicar</div>
+              <div class="algo-label">Algoritmo a aplicar <span class="algo-count-badge" id="algo-count-p"
+                  style="display:none;">0</span></div>
               <div class="algo-chips" id="cp"></div>
             </div>
           </div>
@@ -1115,7 +1187,10 @@
           <div class="modal-sub" id="modal-sub">Resultados en tiempo real</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="modal-close" onclick="cerrarModal()">✕ Cerrar</button>
+          <button class="modal-close" onclick="cerrarModal()"
+            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(0,207,255,.35);background:rgba(0,207,255,.07);color:rgba(0,207,255,.9);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
+            <span style="font-size:16px;line-height:1;">✕</span> Cerrar
+          </button>
         </div>
       </div>
       <div class="modal-body" id="modal-body">
@@ -1155,7 +1230,7 @@
     ══════════════════════════════════════════════════════ */
     let sTests = [], pTests = [];
     let selS = new Set(), selP = new Set();
-    let sChips = new Set(), pChips = new Set(); // multi-select algoritmos
+    let sChips = new Set(), pChips = new Set();
     let _lastResults = null;
 
     /* ══════════════════════════════════════════════════════
@@ -1269,11 +1344,11 @@
     function renderClappers(id, algos, selSet) {
       document.getElementById(id).innerHTML = algos.map(a => {
         const on = selSet.has(a.key);
-        return `<div class="clapper${on ? ' sel' : ''}" onclick="togChip('${id}','${a.key}')">
-  <div class="clapper-check">✓</div>
+        return `<div class="clapper${on ? ' sel' : ''}" onclick="togChip('${id}','${a.key}')" style="position:relative;">
+  <div class="clapper-check" style="${on ? 'display:flex;' : 'display:none;'}">✓</div>
   <div class="clapper-base"></div>
   <div class="clapper-flap-wrap"></div>
-  <div class="clapper-body" style="background:linear-gradient(160deg,${a.color}ee,${a.color}88)">
+  <div class="clapper-body" style="background:linear-gradient(160deg,${a.color}ee,${a.color}88)${on ? ';box-shadow:0 2px 16px ' + a.color + '66;' : ''}">
     <div class="clapper-label">${a.label}</div>
     <div class="clapper-sub">${a.sub}</div>
   </div>
@@ -1315,6 +1390,11 @@
     function renderAll() {
       renderTickets('ts', sTests, 's'); renderTickets('tp', pTests, 'p');
       renderClappers('cs', SA, sChips); renderClappers('cp', PA, pChips);
+      // Update count badges
+      const bs = document.getElementById('algo-count-s');
+      const bp = document.getElementById('algo-count-p');
+      if (bs) { bs.textContent = sChips.size; bs.style.display = sChips.size > 0 ? 'inline-flex' : 'none'; }
+      if (bp) { bp.textContent = pChips.size; bp.style.display = pChips.size > 0 ? 'inline-flex' : 'none'; }
       validate();
     }
 
@@ -1373,7 +1453,7 @@
         // Animar barras
         requestAnimationFrame(() => {
           setTimeout(() => {
-            document.querySelectorAll('.chart-bar[data-w]').forEach(b => {
+            document.querySelectorAll('[data-w]').forEach(b => {
               b.style.width = b.getAttribute('data-w') + '%';
             });
           }, 30);
@@ -1382,65 +1462,129 @@
     }
 
     /* ══════════════════════════════════════════════════════
-       RENDER MODAL SECTION — gráficas con slide
+       RENDER MODAL SECTION — tabs: donuts | bar charts
     ══════════════════════════════════════════════════════ */
     function renderModalSection(type, results) {
       const isSched = type === 'sched';
       const title = isSched ? 'Scheduling' : 'Paginación';
-
       if (!results.length) return `<div class="modal-section"><div class="modal-section-title">${title}</div><div style="color:rgba(0,207,255,.3);font-size:12px;padding:20px;">Sin datos.</div></div>`;
 
       const uid = type + '_' + Date.now();
+      const R = 22;
 
-      // Definición de métricas por tipo
       const metricDefs = isSched ? [
-        { key: 'avgWaiting', label: 'Avg Waiting', good: 'low', color: 'rgba(0,207,255,.55)', fmt: v => v },
-        { key: 'avgTurnaround', label: 'Avg Turnaround', good: 'low', color: 'rgba(0,207,255,.55)', fmt: v => v },
-        { key: 'avgResponse', label: 'Avg Response', good: 'low', color: 'rgba(14,165,212,.7)', fmt: v => v },
-        { key: 'cpuUtilization', label: 'CPU Util.', good: 'high', color: 'rgba(99,198,99,.6)', fmt: v => v },
-        { key: 'makespan', label: 'Makespan', good: 'low', color: 'rgba(239,159,39,.6)', fmt: v => v },
+        { key: 'avgWaiting', label: 'Avg Waiting', good: 'low', color: '#00CFFF', unit: 'ms' },
+        { key: 'avgTurnaround', label: 'Avg Turnaround', good: 'low', color: '#00CFFF', unit: 'ms' },
+        { key: 'avgResponse', label: 'Avg Response', good: 'low', color: '#0EA5D4', unit: 'ms' },
+        { key: 'cpuUtilization', label: 'CPU Util.', good: 'high', color: '#7BC67E', unit: '%' },
+        { key: 'makespan', label: 'Makespan', good: 'low', color: '#EF9F27', unit: 'ms' },
       ] : [
-        { key: 'faults', label: 'Page Faults', good: 'low', color: 'rgba(226,75,74,.6)', fmt: (v, r) => r.result.faults },
-        { key: 'hits', label: 'Page Hits', good: 'high', color: 'rgba(99,198,99,.6)', fmt: (v, r) => r.result.hits },
-        { key: 'rate', label: 'Hit Rate %', good: 'high', color: 'rgba(0,207,255,.55)', fmt: (v, r) => (r.result.hits / r.result.total * 100).toFixed(1) + '%' },
+        { key: 'faults', label: 'Page Faults', good: 'low', color: '#FF6B6B', unit: '' },
+        { key: 'hits', label: 'Page Hits', good: 'high', color: '#7BC67E', unit: '' },
+        { key: 'rate', label: 'Hit Rate', good: 'high', color: '#00CFFF', unit: '%' },
       ];
 
-      // Generar slides (una por métrica)
-      const slides = metricDefs.map((md, slideIdx) => {
-        const vals = results.map(r => {
-          if (isSched) return parseFloat(r.metricas[md.key]) || 0;
-          if (md.key === 'faults') return r.result.faults;
-          if (md.key === 'hits') return r.result.hits;
-          return parseFloat(r.result.hits / r.result.total * 100) || 0;
-        });
-        const maxV = Math.max(...vals, 0.1);
-        const minV = Math.min(...vals);
-        const maxV2 = Math.max(...vals);
+      function getVal(r, md) {
+        if (isSched) return parseFloat(r.metricas[md.key]) || 0;
+        if (md.key === 'faults') return r.result.faults;
+        if (md.key === 'hits') return r.result.hits;
+        return parseFloat(r.result.hits / r.result.total * 100) || 0;
+      }
 
-        const rows = results.map((r, i) => {
-          const v = vals[i];
-          const pct = (v / maxV * 100).toFixed(1);
-          const isWinner = md.good === 'low' ? v === minV : v === maxV2;
-          const label = `${r.test.name.substring(0, 12)} · ${r.algoInfo.label}`;
-          const displayV = isSched ? v : md.fmt(v, r);
-          return `<div class="chart-row${isWinner ? ' winner' : ''}" onclick="mostrarReplay(${i},'${type}')">
-        <div class="chart-label" title="${label}">${label}</div>
-        <div class="chart-bar-wrap">
-          <div class="chart-bar" data-w="${pct}" style="width:0%;background:${isWinner ? md.color : 'rgba(255,255,255,.12)'}">
-            <span class="chart-bar-val">${displayV}</span>
+      function donut(pct, color, displayV, unit, isWinner) {
+        const circ = 2 * Math.PI * R;
+        const offset = circ * (1 - Math.min(pct, 1));
+        const col = isWinner ? color : 'rgba(255,255,255,.18)';
+        const shortV = String(displayV).substring(0, 6);
+        return `<div class="donut-wrap" style="width:52px;height:52px;flex-shrink:0;">
+          <svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg)">
+            <circle class="donut-bg" cx="26" cy="26" r="${R}" stroke-width="5"/>
+            <circle class="donut-fill" cx="26" cy="26" r="${R}" stroke="${col}" stroke-width="5"
+              stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"/>
+          </svg>
+          <div class="donut-label">
+            <div class="donut-val" style="font-size:11px;">${shortV}</div>
+            <div class="donut-unit" style="font-size:7px;">${unit}</div>
           </div>
-        </div>
-        ${isWinner ? `<div class="chart-winner-badge">🏆</div>` : ''}
-      </div>`;
+        </div>`;
+      }
+
+      const slides = metricDefs.map((md, slideIdx) => {
+        const vals = results.map(r => getVal(r, md));
+        const minV = Math.min(...vals);
+        const maxV2 = Math.max(...vals, 0.001);
+
+        // ── TAB DONUTS ──
+        const donutRows = results.map((r, i) => {
+          const v = vals[i];
+          const isWinner = md.good === 'low' ? v === minV : v === maxV2;
+          const normPct = md.good === 'low' ? 1 - (v - minV) / ((maxV2 - minV) || 1) : v / maxV2;
+          const displayV = md.unit === '%' && !isSched ? v.toFixed(1) : v;
+          const label = `${r.test.name.substring(0, 12)} · ${r.algoInfo.label}`;
+          return `<div class="chart-row${isWinner ? ' winner' : ''}" onclick="mostrarReplay(${i},'${type}')" style="padding:7px 9px;gap:10px;align-items:center;">
+            ${donut(normPct, md.color, displayV, md.unit, isWinner)}
+            <div class="chart-info" style="min-width:0;flex:1;">
+              <div class="chart-label" style="font-size:10px;margin-bottom:2px;" title="${label}">${label}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${isWinner ? md.color : 'rgba(255,255,255,.5)'};">${displayV}<span style="font-size:9px;margin-left:2px;opacity:.6;">${md.unit}</span></div>
+            </div>
+            ${isWinner ? '<div class="chart-winner-badge" style="font-size:9px;">🏆</div>' : ''}
+          </div>`;
         }).join('');
 
-        return `<div class="slide" id="${uid}_s${slideIdx}" style="display:${slideIdx === 0 ? 'block' : 'none'}">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.45);margin-bottom:6px;">${md.label}</div>
-      ${rows}
-    </div>`;
+        // ── TAB BAR CHART SVG ──
+        const barH = 28;
+        const barGap = 10;
+        const svgH = results.length * (barH + barGap) + 20;
+        const svgBars = results.map((r, i) => {
+          const v = vals[i];
+          const isWinner = md.good === 'low' ? v === minV : v === maxV2;
+          const pct = maxV2 > 0 ? v / maxV2 : 0;
+          const displayV = md.unit === '%' && !isSched ? v.toFixed(1) : v;
+          const label = `${r.test.name.substring(0, 9)}·${r.algoInfo.label}`;
+          const y = i * (barH + barGap) + 10;
+          const barColor = isWinner ? md.color : 'rgba(255,255,255,.15)';
+          const glowId = `${uid}_g${slideIdx}_${i}`;
+          return `
+            <defs>
+              <filter id="${glowId}" x="-20%" y="-50%" width="140%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <text x="0" y="${y + barH / 2 + 4}" font-family="'IBM Plex Mono',monospace" font-size="9" fill="rgba(255,255,255,.5)" text-anchor="start">${label}</text>
+            <rect x="110" y="${y}" width="${Math.max(pct * 220, 2)}" height="${barH}" rx="4" fill="${barColor}" ${isWinner ? `filter="url(#${glowId})"` : ''} class="bar-rect" data-target="${pct * 220}" style="transition:width .7s cubic-bezier(.34,1.1,.64,1);" id="${uid}_br${slideIdx}_${i}"/>
+            <text x="${115 + pct * 220}" y="${y + barH / 2 + 4}" font-family="'Bebas Neue',sans-serif" font-size="12" fill="${isWinner ? md.color : 'rgba(255,255,255,.4)'}">${displayV}${md.unit}${isWinner ? ' 🏆' : ''}</text>
+          `;
+        }).join('');
+
+        return `<div class="slide" id="${uid}_s${slideIdx}" style="display:${slideIdx === 0 ? 'flex' : 'none'};flex-direction:column;height:100%;gap:0;">
+          <!-- Tabs header -->
+          <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid rgba(0,207,255,.12);margin-bottom:6px;">
+            <button id="${uid}_t${slideIdx}_donut" onclick="switchTab('${uid}',${slideIdx},'donut')"
+              style="flex:1;padding:6px 10px;background:rgba(0,207,255,.1);border:none;border-bottom:2px solid var(--cb-bright);color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
+              ◉ PROCESOS
+            </button>
+            <button id="${uid}_t${slideIdx}_bar" onclick="switchTab('${uid}',${slideIdx},'bar')"
+              style="flex:1;padding:6px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:rgba(0,207,255,.4);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;cursor:pointer;transition:all .15s;">
+              ▦ GRÁFICA
+            </button>
+          </div>
+          <!-- Metric label -->
+          <div style="font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:rgba(0,207,255,.45);flex-shrink:0;padding:0 4px 4px;">${md.label}</div>
+          <!-- Tab: Donuts -->
+          <div id="${uid}_tab${slideIdx}_donut" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
+            ${donutRows}
+          </div>
+          <!-- Tab: Bar chart -->
+          <div id="${uid}_tab${slideIdx}_bar" style="flex:1;overflow-y:auto;display:none;padding:4px 8px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
+            <svg width="100%" height="${svgH}" viewBox="0 0 360 ${svgH}" preserveAspectRatio="xMidYMid meet">
+              ${svgBars}
+            </svg>
+          </div>
+        </div>`;
       }).join('');
 
-      // Ganadores
+      // ── Ganadores ──
       let winnersHTML = '';
       if (results.length > 1) {
         const wDefs = isSched ? [
@@ -1452,22 +1596,16 @@
           { key: 'hits', label: 'Más hits', good: 'high', icon: '✅' },
         ];
         winnersHTML = wDefs.map(d => {
-          const vals2 = results.map(r => {
-            if (isSched) return parseFloat(r.metricas[d.key]) || 0;
-            if (d.key === 'faults') return r.result.faults;
-            return r.result.hits;
-          });
-          const bestIdx = d.good === 'low'
-            ? vals2.indexOf(Math.min(...vals2))
-            : vals2.indexOf(Math.max(...vals2));
+          const vals2 = results.map(r => getVal(r, d));
+          const bestIdx = d.good === 'low' ? vals2.indexOf(Math.min(...vals2)) : vals2.indexOf(Math.max(...vals2));
           const best = results[bestIdx];
-          const val = isSched ? best.metricas[d.key] : (d.key === 'faults' ? best.result.faults : best.result.hits);
-          const lbl = `${best.test.name.substring(0, 10)} · ${best.algoInfo.label}`;
+          const val = vals2[bestIdx];
+          const lbl = `${best.test.name.substring(0, 9)} · ${best.algoInfo.label}`;
           return `<div class="winner-card" onclick="mostrarReplay(${bestIdx},'${type}')">
-        <div class="winner-metric">${d.icon} ${d.label}</div>
-        <div class="winner-algo">${lbl}</div>
-        <div class="winner-val">${val}</div>
-      </div>`;
+            <div class="winner-metric">${d.icon} ${d.label}</div>
+            <div class="winner-algo" style="font-size:14px;">${lbl}</div>
+            <div class="winner-val">${val}</div>
+          </div>`;
         }).join('');
       }
 
@@ -1476,16 +1614,40 @@
       ).join('');
 
       return `<div class="modal-section">
-    <div class="modal-section-title">${title}</div>
-    <div class="slide-wrap" id="${uid}_wrap">${slides}</div>
-    <div class="slide-nav">
-      <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)-1,${metricDefs.length})">‹</button>
-      <div class="slide-dots" id="${uid}_dots">${dots}</div>
-      <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)+1,${metricDefs.length})">›</button>
-    </div>
-    ${winnersHTML ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.4);margin:8px 0 5px;">🏆 Ganadores</div><div class="winners-grid">${winnersHTML}</div>` : ''}
-    <div style="font-size:9px;color:rgba(0,207,255,.25);margin-top:6px;text-align:center;">Click en fila o ganador para ver replay ↓</div>
-  </div>`;
+        <div class="modal-section-title">${title}</div>
+        <div class="slide-wrap" id="${uid}_wrap" style="flex:1;min-height:0;">${slides}</div>
+        <div class="slide-nav">
+          <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)-1,${metricDefs.length})">‹</button>
+          <div class="slide-dots" id="${uid}_dots">${dots}</div>
+          <button class="slide-arrow" onclick="goSlide('${uid}',(_slideIdx['${uid}']||0)+1,${metricDefs.length})">›</button>
+        </div>
+        ${winnersHTML ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,207,255,.4);margin:6px 0 4px;">🏆 Ganadores</div><div class="winners-grid" style="grid-template-columns:repeat(${isSched ? 3 : 2},1fr);">${winnersHTML}</div>` : ''}
+        <div style="font-size:9px;color:rgba(0,207,255,.2);margin-top:4px;text-align:center;">Click en un resultado para ver replay ↓</div>
+      </div>`;
+    }
+
+    /* Tab switching for donut/bar within a slide */
+    function switchTab(uid, slideIdx, tab) {
+      const donutEl = document.getElementById(`${uid}_tab${slideIdx}_donut`);
+      const barEl = document.getElementById(`${uid}_tab${slideIdx}_bar`);
+      const tDonut = document.getElementById(`${uid}_t${slideIdx}_donut`);
+      const tBar = document.getElementById(`${uid}_t${slideIdx}_bar`);
+      if (!donutEl || !barEl) return;
+
+      const isDonut = tab === 'donut';
+      donutEl.style.display = isDonut ? 'flex' : 'none';
+      barEl.style.display = isDonut ? 'none' : 'block';
+
+      if (tDonut) {
+        tDonut.style.background = isDonut ? 'rgba(0,207,255,.1)' : 'transparent';
+        tDonut.style.borderBottomColor = isDonut ? 'var(--cb-bright)' : 'transparent';
+        tDonut.style.color = isDonut ? 'var(--cb-bright)' : 'rgba(0,207,255,.4)';
+      }
+      if (tBar) {
+        tBar.style.background = !isDonut ? 'rgba(0,207,255,.1)' : 'transparent';
+        tBar.style.borderBottomColor = !isDonut ? 'var(--cb-bright)' : 'transparent';
+        tBar.style.color = !isDonut ? 'var(--cb-bright)' : 'rgba(0,207,255,.4)';
+      }
     }
 
     /* Slide navigation */
@@ -1495,13 +1657,13 @@
       _slideIdx[uid] = idx;
       const wrap = document.getElementById(uid + '_wrap');
       if (!wrap) return;
-      wrap.querySelectorAll('.slide').forEach((s, i) => s.style.display = i === idx ? 'block' : 'none');
+      wrap.querySelectorAll('.slide').forEach((s, i) => s.style.display = i === idx ? 'flex' : 'none');
       const dots = document.getElementById(uid + '_dots');
       if (dots) dots.querySelectorAll('.slide-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
       // Animar barras del slide activo
       requestAnimationFrame(() => {
         setTimeout(() => {
-          wrap.querySelectorAll(`#${uid}_s${idx} .chart-bar[data-w]`).forEach(b => {
+          wrap.querySelectorAll(`#${uid}_s${idx} [data-w]`).forEach(b => {
             b.style.width = b.getAttribute('data-w') + '%';
           });
         }, 30);
@@ -1513,8 +1675,12 @@
     /* ══════════════════════════════════════════════════════
        REPLAY — inline en el modal (panel inferior)
     ══════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════
+       REPLAY — segunda pantalla dentro del modal
+    ══════════════════════════════════════════════════════ */
     let _replayTimer = null, _replayT = 0, _replayMax = 0, _replayPlaying = false;
     let _replayPayload = null;
+    const RCOLORS = ['#3d687b', '#639922', '#EF9F27', '#E24B4A', '#8B77D4', '#1DB884', '#FF6B6B', '#4ECDC4'];
 
     function mostrarReplay(idx, type) {
       if (!_lastResults) return;
@@ -1522,7 +1688,6 @@
       const results = isSched ? _lastResults.sResults : _lastResults.pResults;
       const data = results[idx]; if (!data) return;
 
-      // Detener replay anterior
       if (_replayTimer) { clearInterval(_replayTimer); _replayTimer = null; _replayPlaying = false; }
       _replayT = 0;
 
@@ -1545,82 +1710,142 @@
         ? (payload.segments?.length ? Math.max(...payload.segments.map(s => s.end)) : 0)
         : (payload.refs?.length || 0);
 
-      // Cambiar modal a 3 filas (head + comparación + replay)
-      const box = document.querySelector('.modal-box');
-      box.style.height = 'min(92vh,860px)';
-      box.style.gridTemplateRows = undefined;
-
-      // Insertar/actualizar panel replay
-      let rp = document.getElementById('replay-panel');
-      if (!rp) {
-        rp = document.createElement('div');
-        rp.id = 'replay-panel';
-        rp.style.cssText = 'flex-shrink:0;border-top:1px solid rgba(0,207,255,.15);background:#000;display:flex;flex-direction:column;overflow:hidden;max-height:260px;';
-        box.appendChild(rp);
-      }
-
-      const COLORS = ['#3d687b', '#639922', '#EF9F27', '#E24B4A', '#8B77D4', '#1DB884', '#FF6B6B', '#4ECDC4'];
+      // ── Construir segunda pantalla ──
       const pids = isSched ? [...new Set((payload.segments || []).map(s => s.pid))] : [];
       const pidColor = {};
-      pids.forEach((pid, i) => pidColor[pid] = COLORS[i % COLORS.length]);
+      pids.forEach((pid, i) => pidColor[pid] = RCOLORS[i % RCOLORS.length]);
 
-      const ganttRows = isSched ? pids.map(pid => `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:rgba(0,207,255,.6);min-width:32px;">${pid}</div>
-      <div style="flex:1;height:22px;background:rgba(0,207,255,.05);border-radius:4px;overflow:hidden;border:1px solid rgba(0,207,255,.08);">
-        <div id="rpgf-${pid}" style="height:100%;width:0%;background:${pidColor[pid]};border-radius:4px;transition:width .35s ease;display:flex;align-items:center;padding-left:5px;font-family:'Bebas Neue',sans-serif;font-size:10px;color:rgba(255,255,255,.9);"></div>
-      </div>
-    </div>`).join('')
-        : `<div style="font-size:10px;color:rgba(0,207,255,.4);font-family:'IBM Plex Mono',monospace;">Ref ${isSched ? '' : 'actual'}: <span id="rp-ref-cur">—</span> &nbsp;|&nbsp; Paso: <span id="rp-step-num">0</span> / ${payload.refs?.length || 0}</div>`;
+      // Tabla de procesos
+      const procTableRows = isSched ? (payload.processes || [])
+        .sort((a, b) => (a.arrivalTime || 0) - (b.arrivalTime || 0))
+        .map(p => `<tr id="rpt-${p.pid}">
+          <td style="color:${pidColor[p.pid] || '#fff'};font-family:'Bebas Neue',sans-serif;font-size:14px;">${p.pid}</td>
+          <td>${p.arrivalTime}</td>
+          <td>${p.burstTime}</td>
+          <td>${p.startTime ?? '—'}</td>
+          <td>${p.finishTime ?? '—'}</td>
+          <td>${p.waitingTime ?? '—'}</td>
+          <td>${p.turnaroundTime ?? '—'}</td>
+          <td id="rpst-${p.pid}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">NEW</td>
+        </tr>`).join('')
+        : (payload.refs || []).map((r, i) => `<tr id="rpt-ref-${i}">
+          <td>${i + 1}</td>
+          <td style="color:var(--cb-bright);font-family:'Bebas Neue',sans-serif;font-size:14px;">${r}</td>
+          <td id="rpst-ref-${i}" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(0,207,255,.4);">—</td>
+        </tr>`).join('');
 
+      const tableHead = isSched
+        ? `<tr><th>PID</th><th>Arr</th><th>Burst</th><th>Start</th><th>Fin</th><th>Wait</th><th>TAT</th><th>Estado</th></tr>`
+        : `<tr><th>#</th><th>Ref</th><th>Estado</th></tr>`;
+
+      // Gantt tracks
+      const ganttTracks = isSched ? pids.map(pid => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${pidColor[pid]};min-width:36px;text-align:right;">${pid}</div>
+          <div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:5px;position:relative;border:1px solid rgba(255,255,255,.06);">
+            <div id="rpgf-${pid}" style="position:absolute;height:100%;width:0%;background:${pidColor[pid]};border-radius:5px;transition:left .3s ease,width .3s ease;display:flex;align-items:center;padding-left:6px;font-family:'Bebas Neue',sans-serif;font-size:10px;color:rgba(255,255,255,.9);overflow:hidden;"></div>
+          </div>
+        </div>`).join('') : '';
+
+      // Nodos diagrama estados
       const stateNodes = isSched ? `
-    <div id="rpdn-new"      style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">NEW</div>
-    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
-    <div id="rpdn-ready"    style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">READY</div>
-    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
-    <div id="rpdn-running"  style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">RUNNING</div>
-    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
-    <div id="rpdn-terminated" style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">TERMINATED</div>
-  ` : `
-    <div id="rpdn-running"  style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">PROCESANDO</div>
-    <div style="color:rgba(0,207,255,.3);font-size:14px;">→</div>
-    <div id="rpdn-terminated" style="padding:4px 10px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.35);transition:all .25s;">COMPLETO</div>
-  `;
+        <div id="rpdn-new"        class="rp-snode">NEW</div><div class="rp-sarr">→</div>
+        <div id="rpdn-ready"      class="rp-snode">READY</div><div class="rp-sarr">→</div>
+        <div id="rpdn-running"    class="rp-snode">RUNNING</div><div class="rp-sarr">→</div>
+        <div id="rpdn-terminated" class="rp-snode">TERMINATED</div>
+      ` : `
+        <div id="rpdn-running"    class="rp-snode">PROCESANDO</div><div class="rp-sarr">→</div>
+        <div id="rpdn-terminated" class="rp-snode">COMPLETO</div>
+      `;
 
-      rp.innerHTML = `
-    <!-- Head del replay -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(0,207,255,.1);flex-shrink:0;">
-      <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.1em;color:${payload.color};text-shadow:0 0 10px ${payload.color}88;">▶ REPLAY — ${payload.testName}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button onclick="rpToggle()" id="rp-play-btn" style="background:var(--cb-mid);border:none;color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">▶ INICIAR</button>
-        <button onclick="rpStep()"  style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">⏭ PASO</button>
-        <button onclick="rpReset()" style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:rgba(0,207,255,.6);padding:5px 10px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">↺</button>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--cb-bright);letter-spacing:.1em;"><span style="font-size:10px;color:rgba(0,207,255,.5);">T=</span><span id="rp-t">0</span></div>
-      </div>
-    </div>
-    <!-- Diagrama de estados -->
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,207,255,.08);">
-      ${stateNodes}
-    </div>
-    <!-- Timeline / gantt -->
-    <div style="flex:1;padding:8px 14px;overflow-y:auto;min-height:0;">
-      ${ganttRows}
-    </div>
-    <!-- Progress bar -->
-    <div style="height:2px;background:rgba(0,207,255,.1);flex-shrink:0;">
-      <div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div>
-    </div>
-  `;
+      // Inyectar CSS de segunda pantalla si no existe
+      if (!document.getElementById('rp-css')) {
+        const s = document.createElement('style');
+        s.id = 'rp-css';
+        s.textContent = `
+          .rp-screen2 { position:absolute;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94); }
+          .rp-screen2.active { transform:translateX(0); }
+          .rp-snode { padding:8px 20px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.06em;border:1.5px solid rgba(0,207,255,.15);color:rgba(0,207,255,.3);transition:all .25s; }
+          .rp-sarr  { color:rgba(0,207,255,.3);font-size:14px; }
+          .rp-table { width:100%;border-collapse:collapse;font-size:11px; }
+          .rp-table th { padding:5px 8px;text-align:left;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.06em;color:rgba(0,207,255,.4);border-bottom:1px solid rgba(0,207,255,.1); }
+          .rp-table td { padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace; }
+          .rp-table tr.rp-row-active td { background:rgba(0,207,255,.07); }
+          .rp-snode-active { color:#fff!important;border-color:var(--cb-bright)!important;box-shadow:0 0 12px rgba(0,207,255,.4)!important;transform:scale(1.07)!important; }
+          .rpdn-running-active { color:#7BC67E!important;border-color:#7BC67E!important;box-shadow:0 0 12px rgba(106,170,26,.5)!important; }
+          .rpdn-terminated-active { color:rgba(255,255,255,.7)!important;border-color:rgba(255,255,255,.35)!important; }
+        `;
+        document.head.appendChild(s);
+      }
 
+      // Asegurarse que modal-box es relative
+      const box = document.querySelector('.modal-box');
+      box.style.position = 'relative';
+      box.style.overflow = 'hidden';
+
+      // Crear/reusar pantalla 2
+      let s2 = document.getElementById('rp-screen2');
+      if (!s2) {
+        s2 = document.createElement('div');
+        s2.id = 'rp-screen2';
+        s2.className = 'rp-screen2';
+        box.appendChild(s2);
+      }
+
+      const _pagFb = !isSched ? ('<div style="color:rgba(0,207,255,.3);font-size:11px;font-family:\'IBM Plex Mono\',monospace;">Ref actual: <span id=\'rp-ref-cur\'>—</span> &nbsp;|&nbsp; Paso: <span id=\'rp-step-num\'>0</span> / ' + (payload.refs?.length || 0) + '</div>') : '';
+      const _ganttContent = ganttTracks || _pagFb;
+      s2.innerHTML = `
+        <!-- Head -->
+        <div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:20px;padding:18px 16px;border-bottom:1px solid rgba(0,207,255,.08);background:rgba(0,207,255,.02);">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,var(--cb-bright) 0px,var(--cb-bright) 8px,transparent 8px,transparent 16px);opacity:.4;"></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button onclick="volverComparacion()" style="background:none;border:1px solid rgba(0,207,255,.25);color:rgba(0,207,255,.7);border-radius:5px;padding:4px 12px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.06em;cursor:pointer;">← VOLVER</button>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.1em;color:${payload.color};text-shadow:0 0 10px ${payload.color}88;">▶ REPLAY — ${payload.testName}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="rpToggle()" id="rp-play-btn" style="background:var(--cb-mid);border:none;color:#fff;padding:5px 14px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">▶ INICIAR</button>
+            <button onclick="rpStep()"   style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:#fff;padding:5px 12px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">⏭ PASO</button>
+            <button onclick="rpReset()"  style="background:#14283a;border:1px solid rgba(0,207,255,.2);color:rgba(0,207,255,.6);padding:5px 10px;border-radius:5px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer;">↺</button>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cb-bright);"><span style="font-size:10px;color:rgba(0,207,255,.5);">T=</span><span id="rp-t">0</span></div>
+          </div>
+        </div>
+        <!-- Progress -->
+        <div style="height:2px;background:rgba(0,207,255,.08);flex-shrink:0;"><div id="rp-prog" style="height:100%;background:var(--cb-mid);width:0%;transition:width .3s ease;"></div></div>
+        <!-- Diagrama estados -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:16px;padding:20px 16px;border-bottom:1px solid rgba(0,207,255,.08);background:rgba(0,207,255,.02);font-size:16px;">
+          ${stateNodes}
+        </div>
+        <!-- Cuerpo: gantt + tabla -->
+        <div style="display:grid;grid-template-columns:1fr 360px;overflow:hidden;min-height:0;height:calc(100% - 120px);">
+          <!-- Gantt -->
+          <div style="padding:14px 16px;border-right:1px solid rgba(0,207,255,.08);overflow-y:auto;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(0,207,255,.5);margin-bottom:10px;">TIMELINE</div>
+            ${_ganttContent}
+          </div>
+          <!-- Tabla procesos -->
+          <div style="overflow-y:auto;padding:14px 16px;scrollbar-width:thin;scrollbar-color:rgba(0,207,255,.15) transparent;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.08em;color:rgba(0,207,255,.5);margin-bottom:10px;">PROCESOS</div>
+            <table class="rp-table"><thead>${tableHead}</thead><tbody id="rp-tbody">${procTableRows}</tbody></table>
+          </div>
+        </div>
+      `;
+
+      // Activar slide
+      requestAnimationFrame(() => { s2.classList.add('active'); });
       rpRenderT();
+    }
+
+    function volverComparacion() {
+      rpStop();
+      const s2 = document.getElementById('rp-screen2');
+      if (s2) { s2.classList.remove('active'); }
     }
 
     function rpRenderT() {
       if (!_replayPayload) return;
       const t = _replayT;
       const max = _replayMax;
+
       const prog = document.getElementById('rp-prog');
       if (prog) prog.style.width = max > 0 ? (t / max * 100) + '%' : '0%';
       const tEl = document.getElementById('rp-t');
@@ -1631,20 +1856,17 @@
         const procs = _replayPayload.processes || [];
         const pids = [...new Set(segs.map(s => s.pid))];
 
-        // Gantt bars — width proporcional a tiempo ejecutado hasta t, posición desde startTime
+        // Gantt — mostrar solo tiempo ejecutado hasta t, offset desde startTime real
         pids.forEach(pid => {
           const fill = document.getElementById('rpgf-' + pid);
           if (!fill) return;
           const pidSegs = segs.filter(s => s.pid === pid);
-          // tiempo ejecutado acumulado hasta t
-          const exec = pidSegs.reduce((acc, s) => acc + Math.max(0, Math.min(s.end, t) - s.start), 0);
-          // startTime real del proceso (primer segmento)
           const startT = Math.min(...pidSegs.map(s => s.start));
-          const pct = max > 0 ? (exec / max * 100) : 0;
-          // offset = startTime/max * 100
+          // No mostrar nada si aún no llegó
+          if (t <= startT) { fill.style.left = '0%'; fill.style.width = '0%'; fill.textContent = ''; return; }
+          const exec = pidSegs.reduce((acc, s) => acc + Math.max(0, Math.min(s.end, t) - s.start), 0);
           const off = max > 0 ? (startT / max * 100) : 0;
-          fill.parentElement.style.position = 'relative';
-          fill.style.position = 'absolute';
+          const pct = max > 0 ? (exec / max * 100) : 0;
           fill.style.left = off + '%';
           fill.style.width = pct + '%';
           fill.textContent = pct > 4 ? pid : '';
@@ -1655,16 +1877,29 @@
         const runPid = runSeg ? runSeg.pid : null;
         ['new', 'ready', 'running', 'terminated'].forEach(s => {
           const el = document.getElementById('rpdn-' + s);
-          if (el) { el.style.color = 'rgba(0,207,255,.35)'; el.style.borderColor = 'rgba(0,207,255,.15)'; el.style.boxShadow = 'none'; el.style.transform = 'scale(1)'; }
+          if (el) { el.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active'); }
         });
-        const activate = (id, color, shadow) => {
-          const el = document.getElementById(id); if (!el) return;
-          el.style.color = color; el.style.borderColor = color; el.style.boxShadow = `0 0 12px ${shadow}`; el.style.transform = 'scale(1.08)';
-        };
-        if (t === 0 || procs.some(p => (p.arrivalTime || 0) >= t)) activate('rpdn-new', 'rgba(0,207,255,.9)', 'rgba(0,207,255,.4)');
-        if (procs.some(p => (p.arrivalTime || 0) < t && (p.finishTime || 0) > t && p.pid !== runPid)) activate('rpdn-ready', 'var(--cb-bright)', 'rgba(0,207,255,.4)');
-        if (runPid) activate('rpdn-running', '#7BC67E', 'rgba(106,170,26,.5)');
-        if (procs.some(p => (p.finishTime || 0) <= t && t > 0)) activate('rpdn-terminated', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.15)');
+        if (t === 0 || procs.some(p => (p.arrivalTime || 0) >= t))
+          document.getElementById('rpdn-new')?.classList.add('rp-snode-active');
+        if (procs.some(p => (p.arrivalTime || 0) < t && (p.finishTime || 0) > t && p.pid !== runPid))
+          document.getElementById('rpdn-ready')?.classList.add('rp-snode-active');
+        if (runPid) document.getElementById('rpdn-running')?.classList.add('rpdn-running-active');
+        if (procs.some(p => (p.finishTime || 0) <= t && t > 0))
+          document.getElementById('rpdn-terminated')?.classList.add('rpdn-terminated-active');
+
+        // Tabla — actualizar estado por proceso
+        procs.forEach(p => {
+          const row = document.getElementById('rpt-' + p.pid);
+          const cell = document.getElementById('rpst-' + p.pid);
+          if (!cell) return;
+          let state = 'NEW', color = 'rgba(0,207,255,.35)';
+          if ((p.finishTime || 0) <= t && t > 0) { state = 'TERMINATED'; color = 'rgba(255,255,255,.3)'; }
+          else if (p.pid === runPid) { state = 'RUNNING'; color = '#7BC67E'; }
+          else if ((p.arrivalTime || 0) < t) { state = 'READY'; color = 'var(--cb-bright)'; }
+          cell.textContent = state;
+          cell.style.color = color;
+          if (row) row.classList.toggle('rp-row-active', p.pid === runPid);
+        });
 
       } else {
         // Paginación
@@ -1673,17 +1908,22 @@
         const step = document.getElementById('rp-step-num');
         if (cur) cur.textContent = t > 0 && t <= refs.length ? refs[t - 1] : '—';
         if (step) step.textContent = t;
-        const activate = (id, color, shadow) => {
-          const el = document.getElementById(id); if (!el) return;
-          el.style.color = color; el.style.borderColor = color; el.style.boxShadow = `0 0 12px ${shadow}`; el.style.transform = 'scale(1.08)';
-        };
-        const deact = id => {
-          const el = document.getElementById(id); if (!el) return;
-          el.style.color = 'rgba(0,207,255,.35)'; el.style.borderColor = 'rgba(0,207,255,.15)'; el.style.boxShadow = 'none'; el.style.transform = 'scale(1)';
-        };
-        deact('rpdn-running'); deact('rpdn-terminated');
-        if (t > 0 && t <= refs.length) activate('rpdn-running', '#7BC67E', 'rgba(106,170,26,.5)');
-        if (t >= refs.length && t > 0) activate('rpdn-terminated', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.15)');
+
+        ['running', 'terminated'].forEach(s => {
+          document.getElementById('rpdn-' + s)?.classList.remove('rp-snode-active', 'rpdn-running-active', 'rpdn-terminated-active');
+        });
+        if (t > 0 && t <= refs.length) document.getElementById('rpdn-running')?.classList.add('rpdn-running-active');
+        if (t >= refs.length && t > 0) document.getElementById('rpdn-terminated')?.classList.add('rpdn-terminated-active');
+
+        // Tabla refs
+        refs.forEach((_, i) => {
+          const row = document.getElementById('rpt-ref-' + i);
+          const cell = document.getElementById('rpst-ref-' + i);
+          if (!cell || !row) return;
+          if (i < t) { cell.textContent = '✓'; cell.style.color = '#7BC67E'; }
+          else { cell.textContent = '—'; cell.style.color = 'rgba(0,207,255,.3)'; }
+          row.classList.toggle('rp-row-active', i === t - 1);
+        });
       }
     }
 
@@ -1691,9 +1931,7 @@
       if (_replayT < _replayMax) { _replayT++; rpRenderT(); }
       if (_replayT >= _replayMax && _replayPlaying) rpStop();
     }
-    function rpToggle() {
-      if (_replayPlaying) { rpStop(); } else { rpStart(); }
-    }
+    function rpToggle() { if (_replayPlaying) { rpStop(); } else { rpStart(); } }
     function rpStart() {
       if (_replayT >= _replayMax) { _replayT = 0; rpRenderT(); }
       _replayPlaying = true;
@@ -1715,45 +1953,40 @@
       sTests = Store.getScheduling();
       pTests = Store.getPaginacion();
 
-      /* ── Datos de prueba default si no hay nada guardado ── */
+      const _uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
       if (!sTests.length) {
-        const _uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         sTests = [
           {
-            id: _uid(), ts: Date.now(), algo: 'fcfs', quantum: 2,
-            name: 'FCFS · Demo A',
+            id: _uid(), ts: Date.now(), algo: 'fcfs', quantum: 2, name: 'FCFS · Demo A',
             processes: [
               { pid: 1, arrivalTime: 0, burstTime: 5, priority: 2, state: 'ready' },
               { pid: 2, arrivalTime: 1, burstTime: 3, priority: 1, state: 'ready' },
               { pid: 3, arrivalTime: 2, burstTime: 8, priority: 3, state: 'ready' },
               { pid: 4, arrivalTime: 3, burstTime: 2, priority: 1, state: 'ready' },
-            ],
+            ]
           },
           {
-            id: _uid(), ts: Date.now() - 60000, algo: 'rr', quantum: 3,
-            name: 'RR · Demo B',
+            id: _uid(), ts: Date.now() - 60000, algo: 'rr', quantum: 3, name: 'RR · Demo B',
             processes: [
               { pid: 1, arrivalTime: 0, burstTime: 6, priority: 1, state: 'ready' },
               { pid: 2, arrivalTime: 2, burstTime: 4, priority: 2, state: 'ready' },
               { pid: 3, arrivalTime: 4, burstTime: 7, priority: 1, state: 'ready' },
               { pid: 4, arrivalTime: 5, burstTime: 3, priority: 3, state: 'ready' },
-            ],
+            ]
           },
         ];
       }
 
       if (!pTests.length) {
-        const _uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         pTests = [
           {
-            id: _uid(), ts: Date.now(), algo: 'fifo', frames: 3,
-            name: 'FIFO · Demo A',
-            refs: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2],
+            id: _uid(), ts: Date.now(), algo: 'fifo', frames: 3, name: 'FIFO · Demo A',
+            refs: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]
           },
           {
-            id: _uid(), ts: Date.now() - 60000, algo: 'lru', frames: 4,
-            name: 'LRU · Demo B',
-            refs: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5, 6],
+            id: _uid(), ts: Date.now() - 60000, algo: 'lru', frames: 4, name: 'LRU · Demo B',
+            refs: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5, 6]
           },
         ];
       }
