@@ -190,6 +190,7 @@ function tickCinema() {
     const slot = CS.cores[ci];
     if (slot) {
       const p = getProc(slot.pid);
+      if (!p) { CS.cores[ci] = null; continue; }
       if (p.startTime === null) p.startTime = t;
 
       CS.ganttByCore[ci].push({ pid: p.pid, color: p.color, newSeg: slot.quantumUsed === 0 });
@@ -229,7 +230,9 @@ function tickCinema() {
 function dispatchToCore(ci) {
   if (!CS.readyQueue.length) return;
   const pid = CS.readyQueue.shift();
-  CS.cores[ci] = { pid, remainingTime: getProc(pid).remainingTime, quantumUsed: 0 };
+  const p = CS.processes.find(proc => proc.pid === pid);
+  if (!p) return;
+  CS.cores[ci] = { pid, remainingTime: p.remainingTime, quantumUsed: 0 };
   animateDispatch(pid);
 }
 
@@ -309,9 +312,12 @@ function renderCPU() {
   const zone = document.getElementById('cs-cpu-slot');
   if (!zone) return;
 
-  const anyRunning = CS.cores.some(s => s !== null);
+  const slots = Array.isArray(CS.cores) ? CS.cores : [];
+  const activeSlots = slots
+    .map((slot, ci) => ({ slot, ci }))
+    .filter(({ slot }) => slot !== null && slot !== undefined);
 
-  if (!anyRunning) {
+  if (!activeSlots.length) {
     zone.innerHTML = `<div class="cs-cpu-idle">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
         <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -323,37 +329,30 @@ function renderCPU() {
     return;
   }
 
-  let html = '';
-  for (let ci = 0; ci < CS.numCores; ci++) {
-    const slot = CS.cores[ci];
-    if (!slot) continue;
-    const p = getProc(slot.pid);
-    if (!p) continue;
-
-    const pct = Math.round((p.remainingTime / p.burstTime) * 100);
-    const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
-
-    html += `
-      <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core${ci}">
-        <div class="cs-avatar">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
-            <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
-          </svg>
-        </div>
-        <div class="cs-pid">${p.pid}</div>
-        <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
-          <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
-        </div>
-        <div class="cs-remaining" style="color:${p.color}">${p.remainingTime}</div>
-        ${rrPct !== null ? `
-          <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
-            <div class="cs-quantum-fill" style="width:${rrPct}%;background:${p.color}"></div>
-          </div>` : ''}
-        ${CS.numCores > 1 ? `<div class="cs-subtitle">core ${ci}</div>` : ''}
-      </div>`;
-  }
-
-  zone.innerHTML = html;
+  zone.innerHTML = activeSlots.map(({ slot, ci }) => {
+    const p = CS.processes.find(proc => proc.pid === slot.pid);
+    if (!p) return '';
+    const pct = Math.max(0, Math.round((p.remainingTime / p.burstTime) * 100));
+    const rrPct = CS.algorithm === 'rr'
+      ? Math.min(100, Math.round((slot.quantumUsed / CS.quantumMax) * 100))
+      : null;
+    return `<div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}">
+      <div class="cs-avatar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
+          <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+        </svg>
+      </div>
+      <div class="cs-pid">${p.pid}</div>
+      <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
+        <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
+      </div>
+      <div class="cs-remaining" style="color:${p.color}">${p.remainingTime}</div>
+      ${rrPct !== null ? `<div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
+        <div class="cs-quantum-fill" style="width:${rrPct}%;background:${p.color}"></div>
+      </div>` : ''}
+      ${slots.length > 1 ? `<div class="cs-subtitle">core ${ci}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 /* ----------------------------------------------------------
