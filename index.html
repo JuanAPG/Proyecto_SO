@@ -1127,6 +1127,67 @@
         padding: 16px 12px;
       }
     }
+
+    /* ── VIEWPORT LOCK — sin scroll, todo en pantalla ── */
+    html, body { height: 100%; overflow: hidden; }
+
+    body { display: flex; flex-direction: column; }
+
+    /* Ocultar secciones extra */
+    .algo-section,
+    .ds-section,
+    .algo-section + .section { display: none !important; }
+
+    /* Hero comprimido */
+    .hero         { min-height: auto; flex-shrink: 0; }
+    .hero-inner   { padding: 16px 24px; }
+    .hero-title   { font-size: clamp(17px, 2.2vw, 28px); margin-bottom: 8px; }
+    .hero-subtitle { font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+    .hero-chip    { margin-bottom: 12px; }
+
+    /* Stats comprimida */
+    .stats-strip  { flex-shrink: 0; }
+    .stat-item    { padding: 9px 16px; }
+    .stat-number  { font-size: 17px; }
+    .stat-icon    { width: 28px; height: 28px; font-size: 14px; }
+    .stat-desc    { font-size: 10px; }
+
+    /* Módulos: llena el espacio restante con padding bottom */
+    .stats-strip + .section {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      padding: 12px 24px 20px;
+      display: flex !important;
+      flex-direction: column;
+    }
+
+    .stats-strip + .section .section-eyebrow  { margin-bottom: 2px; }
+    .stats-strip + .section .section-title    { font-size: clamp(14px, 1.7vw, 20px); margin-bottom: 3px; }
+    .stats-strip + .section .section-subtitle { font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
+
+    .stats-strip + .section .modules-grid {
+      flex: 1;
+      min-height: 0;
+      grid-auto-rows: 1fr;
+    }
+
+    .stats-strip + .section .module-card {
+      padding: 16px 18px;
+      overflow: hidden;
+    }
+
+    .stats-strip + .section .module-icon {
+      width: 38px; height: 38px; font-size: 17px; margin-bottom: 10px;
+    }
+
+    .stats-strip + .section .module-title  { font-size: 14px; margin-bottom: 5px; }
+    .stats-strip + .section .module-desc   { font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+    .stats-strip + .section .module-footer { padding-top: 10px; }
+    .stats-strip + .section .module-tag    { font-size: 9px; padding: 2px 6px; }
+
+    /* Footer compacto con padding bottom real */
+    .footer { flex-shrink: 0; padding: 10px 24px 18px; }
   </style>
 </head>
 
