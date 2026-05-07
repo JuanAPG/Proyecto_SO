@@ -1331,6 +1331,7 @@
         }
         alert(`Cargados ${count} procesos`);
         renderListaProcesos();
+        switchTab('tab-lista');
       };
       reader.readAsText(file);
       e.target.value = '';
