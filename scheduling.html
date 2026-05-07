@@ -853,6 +853,17 @@
             <div class="input-label">Prioridad (1 = mayor)</div>
             <input type="number" id="inputPriority" class="input-cine" placeholder="1" value="1" min="1">
           </div>
+          <div class="field-group">
+            <div class="input-label">Páginas</div>
+            <input type="number" id="inputPages" class="input-cine" placeholder="1" value="1" min="1">
+          </div>
+          <div class="field-group">
+            <div class="input-label">Tipo</div>
+            <select id="inputType" class="input-cine" style="cursor:pointer;">
+              <option value="fork">Fork</option>
+              <option value="thread">Thread</option>
+            </select>
+          </div>
 
           <button class="btn-cine" id="btnAgregar">+ AGREGAR A LA FILA</button>
 
@@ -867,7 +878,7 @@
 
           <div
             style="margin-top:8px;padding:8px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:5px;font-size:10px;color:rgba(0,207,255,.45);font-family:'IBM Plex Mono',monospace;line-height:1.5;">
-            Formato TXT:<br>PID,Arrival,Burst,Priority,Pages
+            Formato TXT:<br>PID,Arrival,Burst,Priority,Pages[,fork|thread]
           </div>
         </div>
 
@@ -1143,6 +1154,8 @@
       const arrivalTime = parseInt(document.getElementById('inputArrival').value) || 0;
       const burstTime = parseInt(document.getElementById('inputBurst').value);
       const priority = parseInt(document.getElementById('inputPriority').value) || 1;
+      const pages = parseInt(document.getElementById('inputPages').value) || 1;
+      const type = document.getElementById('inputType').value || 'fork';
 
       if (isNaN(burstTime) || burstTime <= 0) {
         alert('Burst requerido y > 0'); return null;
@@ -1151,8 +1164,8 @@
       const proceso = {
         pid, arrivalTime, burstTime, priority,
         remainingTime: burstTime,
-        pages: 1,
-        type: 'fork',
+        pages,
+        type,
         state: 'new',
         color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
       };
@@ -1162,6 +1175,7 @@
 
       document.getElementById('inputBurst').value = '';
       document.getElementById('inputName').value = '';
+      document.getElementById('inputPages').value = '1';
       return proceso;
     }
 
@@ -1220,9 +1234,13 @@
       procesosGlobales.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'proc-list-item';
+        const typeBadge = p.type === 'thread'
+          ? `<span style="font-size:9px;background:rgba(138,77,212,.25);color:#CE93D8;border:1px solid rgba(138,77,212,.4);border-radius:3px;padding:1px 5px;">THR</span>`
+          : `<span style="font-size:9px;background:rgba(239,159,39,.2);color:#EF9F27;border:1px solid rgba(239,159,39,.4);border-radius:3px;padding:1px 5px;">FORK</span>`;
         div.innerHTML = `
       <span class="proc-list-name" style="color:${p.color}">${p.pid}</span>
-      <span class="proc-list-info">T0=${p.arrivalTime} · B=${p.burstTime} · P=${p.priority}</span>
+      ${typeBadge}
+      <span class="proc-list-info">T0=${p.arrivalTime} · B=${p.burstTime} · P=${p.priority} · pg=${p.pages}</span>
       <button class="proc-del-btn" onclick="quitarProceso(${i})" title="Eliminar">×</button>`;
         lista.appendChild(div);
       });
@@ -1243,6 +1261,8 @@
       document.getElementById('inputArrival').value = '0';
       document.getElementById('inputBurst').value = '';
       document.getElementById('inputPriority').value = '1';
+      document.getElementById('inputPages').value = '1';
+      document.getElementById('inputType').value = 'fork';
       renderListaProcesos();
       resetCinema(false);
       document.getElementById('cs-play-btn').disabled = true;

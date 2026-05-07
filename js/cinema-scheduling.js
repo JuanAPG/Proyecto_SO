@@ -161,7 +161,9 @@ function tickCinema() {
     const p = getProc(CS.running.pid);
     if (p.startTime === null) p.startTime = t;
 
-    CS.gantt.push({ pid: p.pid, color: p.color, tick: t });
+    // newSeg=true marca el primer tick de cada quantum: evita que el Gantt fusione
+    // bloques consecutivos del mismo PID separados por un preempt de RR
+    CS.gantt.push({ pid: p.pid, color: p.color, tick: t, newSeg: CS.running.quantumUsed === 0 });
 
     p.remainingTime--;
     CS.running.remainingTime--;
@@ -332,12 +334,13 @@ function renderGantt() {
 
   const total = CS.gantt.length;
 
-  // Compactar en segmentos contiguos del mismo PID
+  // Compactar en segmentos contiguos del mismo PID.
+  // newSeg=true (inicio de quantum) fuerza un corte aunque el PID sea el mismo.
   const segs = [];
   let cur = { pid: CS.gantt[0].pid, color: CS.gantt[0].color, startTick: 0, count: 1 };
   for (let i = 1; i < total; i++) {
     const g = CS.gantt[i];
-    if (g.pid === cur.pid) {
+    if (g.pid === cur.pid && !g.newSeg) {
       cur.count++;
     } else {
       segs.push({ ...cur });
@@ -347,13 +350,16 @@ function renderGantt() {
   segs.push({ ...cur });
 
   // Barra de colores
+  let cumStart = 0;
   const bars = segs.map(s => {
     const pct = ((s.count / total) * 100).toFixed(2);
     const bg = s.color || 'rgba(255,255,255,0.07)';
     const lbl = s.pid !== null ? s.pid : '';
+    const t0 = cumStart;
+    cumStart += s.count;
     return `<div class="cs-gantt-seg"
       style="width:${pct}%;background:${bg};min-width:${s.count < 3 ? 12 : 0}px"
-      title="${s.pid ?? 'Idle'} · t${s.startTick}–t${s.startTick + s.count}">
+      title="${s.pid ?? 'Idle'} · t${t0}–t${t0 + s.count}">
       ${s.count >= 2 ? `<span class="cs-gantt-lbl">${lbl}</span>` : ''}
     </div>`;
   }).join('');

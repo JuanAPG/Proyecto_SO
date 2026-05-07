@@ -178,13 +178,14 @@ function algoritmo_RoundRobin(procesos, quantum = 2) {
   const segments  = [];
   let tiempoActual = 0;
   let procesosRestantes = [...procesos];
-  const primeraVez = {};
+  // primeraEjecucion: registra cuándo cada proceso EMPIEZA a ejecutar por primera vez
+  // (no cuándo entra a la cola, para que responseTime sea correcto)
+  const primeraEjecucion = {};
 
   while (procesosRestantes.length > 0 || cola.length > 0) {
     procesosRestantes = procesosRestantes.filter((p) => {
       if (p.arrivalTime <= tiempoActual) {
         cola.push({ ...p, tiempoRestante: p.burstTime });
-        if (!primeraVez[p.pid]) primeraVez[p.pid] = tiempoActual;
         return false;
       }
       return true;
@@ -196,6 +197,9 @@ function algoritmo_RoundRobin(procesos, quantum = 2) {
     const tiempoEjecucion = Math.min(quantum, proceso.tiempoRestante);
     const segStart        = tiempoActual;
 
+    // Registrar primera ejecución real (no la admisión a la cola)
+    if (!(proceso.pid in primeraEjecucion)) primeraEjecucion[proceso.pid] = tiempoActual;
+
     tiempoActual           += tiempoEjecucion;
     proceso.tiempoRestante -= tiempoEjecucion;
     segments.push({ pid: proceso.pid, start: segStart, end: tiempoActual });
@@ -204,7 +208,6 @@ function algoritmo_RoundRobin(procesos, quantum = 2) {
     procesosRestantes = procesosRestantes.filter((p) => {
       if (p.arrivalTime <= tiempoActual) {
         cola.push({ ...p, tiempoRestante: p.burstTime });
-        if (!primeraVez[p.pid]) primeraVez[p.pid] = tiempoActual;
         return false;
       }
       return true;
@@ -213,7 +216,7 @@ function algoritmo_RoundRobin(procesos, quantum = 2) {
     if (proceso.tiempoRestante > 0) {
       cola.push(proceso);
     } else {
-      const startTime = primeraVez[proceso.pid];
+      const startTime = primeraEjecucion[proceso.pid];
       resultado.push({ ...proceso, startTime, finishTime: tiempoActual,
         responseTime:   startTime - proceso.arrivalTime,
         waitingTime:    tiempoActual - proceso.burstTime - proceso.arrivalTime,
