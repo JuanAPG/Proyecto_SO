@@ -586,10 +586,30 @@
 
     /* ── Stage ── */
     .cs-stage {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       gap: 10px;
       margin-bottom: 10px;
+      align-items: stretch;
+    }
+
+    .cs-stage .cs-box:first-child {
+      flex: 0 0 200px;
+    }
+
+    #cs-cpu-area {
+      display: flex;
+      flex: 1;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    #cs-cpu-area .cs-box.cpu-box {
+      flex: 1;
+      min-width: 90px;
+      max-width: 200px;
+      height: 140px;
     }
 
     .cs-stage-bottom {
@@ -872,28 +892,6 @@
       position: relative;
     }
 
-    /* ── Multi-core CPU grid ── */
-    .cs-cores-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .cs-core-slot {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .cs-core-label {
-      font-size: 8px;
-      color: rgba(0, 207, 255, .5);
-      font-family: 'IBM Plex Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
   </style>
 </head>
 
@@ -1163,9 +1161,8 @@
             <div class="cs-box-label">📥 Próximos Estrenos</div>
             <div id="cs-arriving"></div>
           </div>
-          <div class="cs-box cpu-box">
-            <div class="cs-box-label">⚡ En CPU</div>
-            <div id="cs-cpu-slot"></div>
+          <div id="cs-cpu-area">
+            <!-- one cs-box.cpu-box per core, rendered by renderCPU() -->
           </div>
         </div>
         <div class="cs-stage-bottom">

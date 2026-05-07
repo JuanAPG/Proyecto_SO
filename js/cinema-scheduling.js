@@ -304,70 +304,42 @@ function renderQueue() {
   }).join('');
 }
 
-/* ── CPU (multi-core) ── */
+/* ── CPU (un cs-box por core) ── */
 function renderCPU() {
-  const zone = document.getElementById('cs-cpu-slot');
-  if (!zone) return;
+  const area = document.getElementById('cs-cpu-area');
+  if (!area) return;
 
-  const numCores = CS.numCores;
+  area.innerHTML = '';
 
-  if (numCores === 1) {
-    // Single core: same as original behavior
-    const slot = CS.cores[0];
-    if (!slot) {
-      zone.innerHTML = `<div class="cs-cpu-idle">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-        <span>CPU libre</span>
-      </div>`;
-      return;
-    }
-    const p = getProc(slot.pid);
-    if (!p) return;
-    const pct = Math.round((p.remainingTime / p.burstTime) * 100);
-    const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
-    zone.innerHTML = `
-      <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core0">
-        <div class="cs-avatar">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
-            <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
-          </svg>
-        </div>
-        <div class="cs-pid">${p.pid}</div>
-        <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
-          <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
-        </div>
-        <div class="cs-remaining">${p.remainingTime}</div>
-        ${rrPct !== null ? `
-          <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
-            <div class="cs-quantum-fill" style="width:${rrPct}%"></div>
-          </div>` : ''}
-      </div>`;
-    return;
-  }
-
-  // Multi-core: one slot per core
-  let html = '';
-  for (let ci = 0; ci < numCores; ci++) {
+  for (let ci = 0; ci < CS.numCores; ci++) {
     const slot = CS.cores[ci];
-    let cardHtml;
+    const box = document.createElement('div');
+    box.className = 'cs-box cpu-box';
+
+    let innerHtml = `<div class="cs-box-label">⚡ Core ${ci}</div>`;
+
     if (!slot) {
-      cardHtml = `<div class="cs-cpu-idle" style="height:52px;min-width:48px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+      innerHtml += `<div class="cs-cpu-idle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
           <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
         <span>idle</span>
       </div>`;
     } else {
       const p = getProc(slot.pid);
-      if (!p) { cardHtml = ''; }
-      else {
+      if (p) {
         const pct = Math.round((p.remainingTime / p.burstTime) * 100);
         const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
-        cardHtml = `
-          <div class="cs-customer cs-running" style="--accent:${p.color};min-width:48px;" id="cs-card-${p.pid}-core${ci}">
-            <div class="cs-pid" style="font-size:13px;">${p.pid}</div>
+        innerHtml += `
+          <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core${ci}">
+            <div class="cs-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="${p.color}">
+                <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+              </svg>
+            </div>
+            <div class="cs-pid">${p.pid}</div>
             <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
               <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
             </div>
@@ -379,13 +351,10 @@ function renderCPU() {
           </div>`;
       }
     }
-    html += `<div class="cs-core-slot">
-      ${cardHtml}
-      <div class="cs-core-label">Core ${ci}</div>
-    </div>`;
-  }
 
-  zone.innerHTML = `<div class="cs-cores-grid">${html}</div>`;
+    box.innerHTML = innerHtml;
+    area.appendChild(box);
+  }
 }
 
 /* ----------------------------------------------------------
