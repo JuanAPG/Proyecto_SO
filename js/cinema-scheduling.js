@@ -5,17 +5,21 @@
 
 const CS = {
   tick: 0,
+  numCores: 1,
   processes: [],
   arriving: [],
   readyQueue: [],
-  running: null,
+  cores: [],        // [{pid, remainingTime, quantumUsed}|null] length = numCores
   done: [],
-  gantt: [],   // [{pid, color, tick}]
+  ganttByCore: [],  // [coreIdx] => [{pid, color, newSeg}] one entry per tick
   quantumMax: 2,
   interval: null,
   speed: 700,
   algorithm: 'fcfs',
   paused: true,
+
+  // compat getter: first running slot
+  get running() { return this.cores.find(s => s !== null) ?? null; },
 };
 
 const COLORS = [
@@ -39,6 +43,10 @@ function initCinemaScheduling() {
 
   resetCinema(false);
 
+  CS.numCores = Math.max(1, parseInt(document.getElementById('coresValue')?.value) || 1);
+  CS.cores = new Array(CS.numCores).fill(null);
+  CS.ganttByCore = Array.from({ length: CS.numCores }, () => []);
+
   CS.processes = procs.map((p, i) => ({
     pid: p.pid,
     arrivalTime: p.arrivalTime ?? 0,
@@ -55,24 +63,18 @@ function initCinemaScheduling() {
 
   CS.arriving = [...CS.processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
   CS.readyQueue = [];
-  CS.running = null;
   CS.done = [];
-  CS.gantt = [];
   CS.tick = 0;
   CS.paused = true;
   CS.algorithm = (typeof algoritmoSeleccionado !== 'undefined' ? algoritmoSeleccionado : null) || 'fcfs';
   CS.quantumMax = parseInt(document.getElementById('quantumValue')?.value) || 2;
 
-  // ── FIX: mover al CPU/queue los procesos con arrivalTime=0 inmediatamente ──
   _processArrivals(0);
-  if (!CS.running && CS.readyQueue.length) {
-    sortQueueForAlgo(0);
-    dispatch();
-  }
+  _dispatchFreeCores(0);
 
   renderCS();
   updateCSControls();
-  mostrarToastCS(`Simulación lista · ${CS.algorithm.toUpperCase()} · ${CS.processes.length} procesos`, 'info');
+  mostrarToastCS(`Simulación lista · ${CS.algorithm.toUpperCase()} · ${CS.processes.length} proc · ${CS.numCores} core${CS.numCores > 1 ? 's' : ''}`, 'info');
 }
 
 /* ----------------------------------------------------------
@@ -83,8 +85,10 @@ function resetCinema(rerenderOnly = false) {
   CS.interval = null;
   CS.paused = true;
   if (!rerenderOnly) {
-    CS.tick = 0; CS.readyQueue = []; CS.running = null;
-    CS.done = []; CS.gantt = [];
+    CS.tick = 0; CS.readyQueue = [];
+    CS.cores = new Array(CS.numCores || 1).fill(null);
+    CS.done = [];
+    CS.ganttByCore = Array.from({ length: CS.numCores || 1 }, () => []);
     CS.arriving = []; CS.processes = [];
   }
   renderCS();
@@ -125,7 +129,6 @@ function startCinemaInterval() {
   }, CS.speed);
 }
 
-/* ── Paso manual ── */
 function stepCinema() {
   if (CS.paused) tickCinema();
 }
@@ -142,6 +145,18 @@ function _processArrivals(t) {
 }
 
 /* ----------------------------------------------------------
+   HELPER: despachar procesos a cores libres
+   ---------------------------------------------------------- */
+function _dispatchFreeCores(t) {
+  sortQueueForAlgo(t);
+  for (let ci = 0; ci < CS.numCores; ci++) {
+    if (!CS.cores[ci] && CS.readyQueue.length) {
+      dispatchToCore(ci);
+    }
+  }
+}
+
+/* ----------------------------------------------------------
    TICK
    ---------------------------------------------------------- */
 function tickCinema() {
@@ -150,53 +165,54 @@ function tickCinema() {
   // 1. Llegadas
   _processArrivals(t);
 
-  // 2. CPU libre → despachar
-  if (!CS.running && CS.readyQueue.length) {
-    sortQueueForAlgo(t);
-    dispatch();
-  }
-
-  // 3. Ejecutar
-  if (CS.running) {
-    const p = getProc(CS.running.pid);
-    if (p.startTime === null) p.startTime = t;
-
-    // newSeg=true marca el primer tick de cada quantum: evita que el Gantt fusione
-    // bloques consecutivos del mismo PID separados por un preempt de RR
-    CS.gantt.push({ pid: p.pid, color: p.color, tick: t, newSeg: CS.running.quantumUsed === 0 });
-
-    p.remainingTime--;
-    CS.running.remainingTime--;
-    CS.running.quantumUsed++;
-
-    updateRunningBar(p);
-
-    if (p.remainingTime <= 0) {
-      p.finishTime = t + 1;
-      p.turnaroundTime = p.finishTime - p.arrivalTime;
-      p.waitingTime = p.turnaroundTime - p.burstTime;
-      CS.done.push(p.pid);
-      animateDone(CS.running.pid);
-      CS.running = null;
-
-    } else if (CS.algorithm === 'rr' && CS.running.quantumUsed >= CS.quantumMax) {
-      CS.readyQueue.push(CS.running.pid);
-      animatePreempt(CS.running.pid);
-      CS.running = null;
-
-    } else if (CS.algorithm === 'srtf' && CS.readyQueue.length) {
+  // 2. SRTF: preempt cores si hay proceso más corto esperando
+  if (CS.algorithm === 'srtf' && CS.readyQueue.length) {
+    for (let ci = 0; ci < CS.numCores; ci++) {
+      const slot = CS.cores[ci];
+      if (!slot) continue;
       const shortest = shortestInQueue();
       const sp = getProc(shortest);
-      if (sp && sp.remainingTime < p.remainingTime) {
-        CS.readyQueue.push(CS.running.pid);
-        animatePreempt(CS.running.pid);
-        CS.running = null;
+      const rp = getProc(slot.pid);
+      if (sp && rp && sp.remainingTime < rp.remainingTime) {
+        CS.readyQueue.push(slot.pid);
+        animatePreempt(slot.pid);
+        CS.cores[ci] = null;
         sortQueueForAlgo(t);
-        dispatch();
       }
     }
-  } else {
-    CS.gantt.push({ pid: null, color: null, tick: t });
+  }
+
+  // 3. Despachar a cores libres
+  _dispatchFreeCores(t);
+
+  // 4. Ejecutar cada core
+  for (let ci = 0; ci < CS.numCores; ci++) {
+    const slot = CS.cores[ci];
+    if (slot) {
+      const p = getProc(slot.pid);
+      if (p.startTime === null) p.startTime = t;
+
+      CS.ganttByCore[ci].push({ pid: p.pid, color: p.color, newSeg: slot.quantumUsed === 0 });
+
+      p.remainingTime--;
+      slot.remainingTime--;
+      slot.quantumUsed++;
+
+      if (p.remainingTime <= 0) {
+        p.finishTime = t + 1;
+        p.turnaroundTime = p.finishTime - p.arrivalTime;
+        p.waitingTime = p.turnaroundTime - p.burstTime;
+        CS.done.push(p.pid);
+        animateDone(slot.pid);
+        CS.cores[ci] = null;
+      } else if (CS.algorithm === 'rr' && slot.quantumUsed >= CS.quantumMax) {
+        CS.readyQueue.push(slot.pid);
+        animatePreempt(slot.pid);
+        CS.cores[ci] = null;
+      }
+    } else {
+      CS.ganttByCore[ci].push({ pid: null, color: null, newSeg: false });
+    }
   }
 
   sortQueueForAlgo(t + 1);
@@ -210,12 +226,15 @@ function tickCinema() {
 /* ----------------------------------------------------------
    DISPATCH
    ---------------------------------------------------------- */
-function dispatch() {
+function dispatchToCore(ci) {
   if (!CS.readyQueue.length) return;
   const pid = CS.readyQueue.shift();
-  CS.running = { pid, remainingTime: getProc(pid).remainingTime, quantumUsed: 0 };
+  CS.cores[ci] = { pid, remainingTime: getProc(pid).remainingTime, quantumUsed: 0 };
   animateDispatch(pid);
 }
+
+/* backward compat alias */
+function dispatch() { _dispatchFreeCores(CS.tick); }
 
 /* ----------------------------------------------------------
    ORDENAR FILA
@@ -285,111 +304,198 @@ function renderQueue() {
   }).join('');
 }
 
-/* ── CPU ── */
+/* ── CPU (multi-core) ── */
 function renderCPU() {
   const zone = document.getElementById('cs-cpu-slot');
   if (!zone) return;
-  if (!CS.running) {
-    zone.innerHTML = `<div class="cs-cpu-idle">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-      <span>CPU libre</span>
-    </div>`;
+
+  const numCores = CS.numCores;
+
+  if (numCores === 1) {
+    // Single core: same as original behavior
+    const slot = CS.cores[0];
+    if (!slot) {
+      zone.innerHTML = `<div class="cs-cpu-idle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <span>CPU libre</span>
+      </div>`;
+      return;
+    }
+    const p = getProc(slot.pid);
+    if (!p) return;
+    const pct = Math.round((p.remainingTime / p.burstTime) * 100);
+    const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
+    zone.innerHTML = `
+      <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core0">
+        <div class="cs-avatar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
+            <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+          </svg>
+        </div>
+        <div class="cs-pid">${p.pid}</div>
+        <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
+          <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
+        </div>
+        <div class="cs-remaining">${p.remainingTime}</div>
+        ${rrPct !== null ? `
+          <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
+            <div class="cs-quantum-fill" style="width:${rrPct}%"></div>
+          </div>` : ''}
+      </div>`;
     return;
   }
-  const p = getProc(CS.running.pid);
-  if (!p) return;
-  const pct = Math.round((p.remainingTime / p.burstTime) * 100);
-  const rrPct = CS.algorithm === 'rr' ? Math.round((CS.running.quantumUsed / CS.quantumMax) * 100) : null;
-  zone.innerHTML = `
-    <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}">
-      <div class="cs-avatar">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
-          <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+
+  // Multi-core: one slot per core
+  let html = '';
+  for (let ci = 0; ci < numCores; ci++) {
+    const slot = CS.cores[ci];
+    let cardHtml;
+    if (!slot) {
+      cardHtml = `<div class="cs-cpu-idle" style="height:52px;min-width:48px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
         </svg>
-      </div>
-      <div class="cs-pid">${p.pid}</div>
-      <div class="cs-burst-bar" title="Tiempo restante: ${p.remainingTime}/${p.burstTime}">
-        <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
-      </div>
-      <div class="cs-remaining">${p.remainingTime}</div>
-      ${rrPct !== null ? `
-        <div class="cs-quantum-bar" title="Quantum: ${CS.running.quantumUsed}/${CS.quantumMax}">
-          <div class="cs-quantum-fill" style="width:${rrPct}%"></div>
-        </div>` : ''}
+        <span>idle</span>
+      </div>`;
+    } else {
+      const p = getProc(slot.pid);
+      if (!p) { cardHtml = ''; }
+      else {
+        const pct = Math.round((p.remainingTime / p.burstTime) * 100);
+        const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
+        cardHtml = `
+          <div class="cs-customer cs-running" style="--accent:${p.color};min-width:48px;" id="cs-card-${p.pid}-core${ci}">
+            <div class="cs-pid" style="font-size:13px;">${p.pid}</div>
+            <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
+              <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
+            </div>
+            <div class="cs-remaining">${p.remainingTime}</div>
+            ${rrPct !== null ? `
+              <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
+                <div class="cs-quantum-fill" style="width:${rrPct}%"></div>
+              </div>` : ''}
+          </div>`;
+      }
+    }
+    html += `<div class="cs-core-slot">
+      ${cardHtml}
+      <div class="cs-core-label">Core ${ci}</div>
     </div>`;
+  }
+
+  zone.innerHTML = `<div class="cs-cores-grid">${html}</div>`;
 }
 
 /* ----------------------------------------------------------
-   RENDER: GANTT DIAGRAM
+   RENDER: GANTT (multi-core rows)
    ---------------------------------------------------------- */
-function renderGantt() {
-  const zone = document.getElementById('cs-gantt');
-  if (!zone) return;
-  if (!CS.gantt.length) {
-    zone.innerHTML = '';
-    return;
-  }
-
-  const total = CS.gantt.length;
-
-  // Compactar en segmentos contiguos del mismo PID.
-  // newSeg=true (inicio de quantum) fuerza un corte aunque el PID sea el mismo.
+function _compactGanttRow(ticks) {
+  if (!ticks.length) return [];
   const segs = [];
-  let cur = { pid: CS.gantt[0].pid, color: CS.gantt[0].color, startTick: 0, count: 1 };
-  for (let i = 1; i < total; i++) {
-    const g = CS.gantt[i];
+  let cur = { pid: ticks[0].pid, color: ticks[0].color, count: 1 };
+  for (let i = 1; i < ticks.length; i++) {
+    const g = ticks[i];
     if (g.pid === cur.pid && !g.newSeg) {
       cur.count++;
     } else {
       segs.push({ ...cur });
-      cur = { pid: g.pid, color: g.color, startTick: i, count: 1 };
+      cur = { pid: g.pid, color: g.color, count: 1 };
     }
   }
   segs.push({ ...cur });
+  return segs;
+}
 
-  // Barra de colores
-  let cumStart = 0;
-  const bars = segs.map(s => {
-    const pct = ((s.count / total) * 100).toFixed(2);
-    const bg = s.color || 'rgba(255,255,255,0.07)';
-    const lbl = s.pid !== null ? s.pid : '';
-    const t0 = cumStart;
-    cumStart += s.count;
-    return `<div class="cs-gantt-seg"
-      style="width:${pct}%;background:${bg};min-width:${s.count < 3 ? 12 : 0}px"
-      title="${s.pid ?? 'Idle'} · t${t0}–t${t0 + s.count}">
-      ${s.count >= 2 ? `<span class="cs-gantt-lbl">${lbl}</span>` : ''}
-    </div>`;
-  }).join('');
+function renderGantt() {
+  const zone = document.getElementById('cs-gantt');
+  if (!zone) return;
 
-  // Etiquetas de tick en los bordes de segmentos
+  const total = CS.ganttByCore[0]?.length || 0;
+  if (!total) { zone.innerHTML = ''; return; }
+
+  const numCores = CS.numCores;
+
+  // ── Per-core rows ──
+  let rowsHtml = '';
+  for (let ci = 0; ci < numCores; ci++) {
+    const ticks = CS.ganttByCore[ci];
+    const idleCount = ticks.filter(t => t.pid === null).length;
+    const idlePct = Math.round((idleCount / total) * 100);
+    const segs = _compactGanttRow(ticks);
+
+    let cumCount = 0;
+    const bars = segs.map(s => {
+      const pct = ((s.count / total) * 100).toFixed(2);
+      const bg = s.pid ? s.color : 'rgba(255,255,255,0.07)';
+      const lbl = s.pid ?? '';
+      const t0 = cumCount;
+      cumCount += s.count;
+      return `<div class="cs-gantt-seg"
+        style="width:${pct}%;background:${bg};min-width:${s.count < 3 ? 12 : 0}px"
+        title="${s.pid ?? 'Idle'} · t${t0}–t${t0 + s.count}">
+        ${s.count >= 2 ? `<span class="cs-gantt-lbl">${lbl}</span>` : ''}
+      </div>`;
+    }).join('');
+
+    const labelHtml = numCores > 1
+      ? `<div class="cs-gantt-row-label">
+          <div>Core ${ci}</div>
+          <div class="cs-gantt-idle-pct">${idlePct}% idle</div>
+        </div>`
+      : '';
+
+    rowsHtml += `
+      <div class="cs-gantt-row">
+        ${labelHtml}
+        <div class="cs-gantt-row-bar">
+          <div class="cs-gantt-bar">${bars}</div>
+        </div>
+      </div>`;
+  }
+
+  // ── Tick marks ──
+  const step = total <= 20 ? 1 : total <= 60 ? 5 : 10;
   let timeHtml = '';
-  let cumTicks = 0;
-  segs.forEach(s => {
-    const pct = ((cumTicks / total) * 100).toFixed(2);
-    timeHtml += `<div class="cs-gantt-tick" style="left:${pct}%">${cumTicks}</div>`;
-    cumTicks += s.count;
-  });
-  timeHtml += `<div class="cs-gantt-tick" style="left:100%;transform:translateX(-100%)">${total}</div>`;
+  for (let i = 0; i <= total; i += step) {
+    const pct = ((i / total) * 100).toFixed(2);
+    timeHtml += `<div class="cs-gantt-tick" style="left:${pct}%">${i}</div>`;
+  }
+  if (total % step !== 0) {
+    timeHtml += `<div class="cs-gantt-tick" style="left:100%;transform:translateX(-100%)">${total}</div>`;
+  }
+
+  const ticksRow = `
+    <div class="cs-gantt-row cs-gantt-ticks-row">
+      ${numCores > 1 ? '<div class="cs-gantt-row-label"></div>' : ''}
+      <div class="cs-gantt-row-bar">
+        <div class="cs-gantt-ticks">${timeHtml}</div>
+      </div>
+    </div>`;
+
+  const headerHtml = numCores > 1
+    ? `<div class="cs-gantt-header">
+        <span class="cs-gantt-title">Vista por Cores — ${numCores} cores en paralelo</span>
+        <span class="cs-gantt-badge">Cada fila = 1 Core CPU físico</span>
+      </div>`
+    : '';
 
   zone.innerHTML = `
-    <div class="cs-gantt-bar">${bars}</div>
-    <div class="cs-gantt-ticks">${timeHtml}</div>`;
+    ${headerHtml}
+    <div class="cs-gantt-multi">
+      ${rowsHtml}
+      ${ticksRow}
+    </div>`;
 }
 
 /* ----------------------------------------------------------
-   RENDER: COMPLETADOS — tabla con métricas
+   RENDER: COMPLETADOS
    ---------------------------------------------------------- */
 function renderDone() {
   const zone = document.getElementById('cs-done-list');
   if (!zone) return;
-
-  if (!CS.done.length) {
-    zone.innerHTML = '';
-    return;
-  }
+  if (!CS.done.length) { zone.innerHTML = ''; return; }
 
   const rows = CS.done.map(pid => {
     const p = getProc(pid);
@@ -458,18 +564,7 @@ function customerCard(p, state, subtitle = '') {
 
 /* ── Actualizar barra sin re-render ── */
 function updateRunningBar(p) {
-  const card = document.getElementById(`cs-card-${p.pid}`);
-  if (!card) return;
-  const fill = card.querySelector('.cs-burst-fill');
-  const rem = card.querySelector('.cs-remaining');
-  const qf = card.querySelector('.cs-quantum-fill');
-  const pct = Math.round((p.remainingTime / p.burstTime) * 100);
-  if (fill) fill.style.width = pct + '%';
-  if (rem) rem.textContent = p.remainingTime;
-  if (qf && CS.running) {
-    const qpct = Math.round((CS.running.quantumUsed / CS.quantumMax) * 100);
-    qf.style.width = qpct + '%';
-  }
+  // With multi-core, cards have per-core IDs; this is a no-op kept for compat
 }
 
 /* ── Animaciones ── */
@@ -515,7 +610,6 @@ function updateCSControls() {
   }
 }
 
-/* ── Speed ── */
 function setCinemaSpeed(val) {
   CS.speed = Math.max(100, 2200 - parseInt(val));
   if (!CS.paused && CS.interval) {
@@ -524,7 +618,6 @@ function setCinemaSpeed(val) {
   }
 }
 
-/* ── Toast ── */
 function mostrarToastCS(msg, type) {
   if (typeof mostrarToast === 'function') { mostrarToast(msg, type); return; }
   console.log(`[CinemaCS] ${type}: ${msg}`);
