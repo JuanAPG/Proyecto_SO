@@ -937,13 +937,31 @@
             <div class="input-label">Páginas</div>
             <input type="number" id="inputPages" class="input-cine" placeholder="1" value="1" min="1">
           </div>
-          <div class="field-group">
-            <div class="input-label">Tipo</div>
-            <select id="inputType" class="input-cine" style="cursor:pointer;">
-              <option value="fork">Fork</option>
-              <option value="thread">Thread</option>
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div class="field-group" style="margin:0">
+              <div class="input-label">Tipo</div>
+              <select id="inputType" class="input-cine" style="cursor:pointer;" onchange="actualizarFormDinamico()">
+                <option value="fork">Fork</option>
+                <option value="thread">Thread</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin:0">
+              <div class="input-label">Cantidad</div>
+              <input type="number" id="inputCount" class="input-cine" value="1" min="1" max="8"
+                oninput="actualizarFormDinamico()">
+            </div>
           </div>
+
+          <!-- Info threads: mismos datos, N copias -->
+          <div id="thread-info" style="display:none;padding:7px 9px;border-radius:6px;
+            background:rgba(138,77,212,.12);border:1px solid rgba(138,77,212,.35);
+            font-size:10px;color:#CE93D8;font-family:'IBM Plex Mono',monospace;line-height:1.6;">
+            📎 Se crearán <span id="thread-info-n"></span> threads con los mismos AT/BT/Priority.<br>
+            <span style="color:rgba(255,255,255,.4);">Ej: P1 → P1a · P1b · P1c</span>
+          </div>
+
+          <!-- Sub-formularios para forks (datos individuales) -->
+          <div id="fork-subforms" style="display:none;"></div>
 
           <button class="btn-cine" id="btnAgregar">+ AGREGAR A LA FILA</button>
           <button class="btn-cine secondary" id="btnCancelarEdicion" style="display:none;font-size:12px;padding:7px;" onclick="cancelarEdicion()">✕ CANCELAR EDICIÓN</button>
@@ -955,11 +973,18 @@
               ↑ TXT
               <input type="file" id="fileInput" accept=".txt" style="display:none;">
             </label>
+            <button class="btn-cine" id="btnCargarEjemplo" style="font-size:12px;padding:7px;white-space:nowrap;"
+              title="Carga data/procesos.txt del servidor sin buscar el archivo">
+              ★ EJEMPLO
+            </button>
           </div>
 
           <div
-            style="margin-top:8px;padding:8px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:5px;font-size:10px;color:rgba(0,207,255,.45);font-family:'IBM Plex Mono',monospace;line-height:1.6;overflow-wrap:break-word;word-break:break-all;">
-            Formato TXT:<br>PID,Arrival,Burst,<wbr>Priority,Pages,<wbr>fork | thread
+            style="margin-top:8px;padding:9px 10px;background:rgba(0,207,255,.09);border:1px solid rgba(0,207,255,.35);border-radius:6px;font-size:10px;color:rgba(0,207,255,.9);font-family:'IBM Plex Mono',monospace;line-height:1.8;overflow-wrap:break-word;word-break:break-all;">
+            <span style="font-weight:700;letter-spacing:.04em;">📄 Formato .txt requerido:</span><br>
+            <span style="color:rgba(255,255,255,.55);">PID,Arrival,Burst,Priority,Pages[,fork|thread]</span><br>
+            <span style="color:rgba(0,207,255,.6);font-size:9px;">Ej: 1,0,5,2,4,fork &nbsp;·&nbsp; 2,1,3,1,2,thread</span><br>
+            <span style="color:rgba(255,180,0,.75);font-size:9px;">⚠ Solo archivos .txt · Una línea por proceso · Campos separados por coma</span>
           </div>
         </div>
 
@@ -1228,51 +1253,179 @@
     });
 
     /* ══════════════════════════════════════════════════════════
+       PROCESOS — FORMULARIO DINÁMICO (Tipo / Cantidad)
+    ══════════════════════════════════════════════════════════ */
+    const _FORK_LETTERS = 'abcdefgh';
+
+    function actualizarFormDinamico() {
+      const type  = document.getElementById('inputType').value;
+      const count = Math.min(8, Math.max(1, parseInt(document.getElementById('inputCount').value) || 1));
+
+      const threadInfo  = document.getElementById('thread-info');
+      const forkSection = document.getElementById('fork-subforms');
+
+      if (count <= 1) {
+        threadInfo.style.display  = 'none';
+        forkSection.style.display = 'none';
+        return;
+      }
+
+      if (type === 'thread') {
+        threadInfo.style.display  = 'block';
+        forkSection.style.display = 'none';
+        const baseName = document.getElementById('inputName').value.trim() || ('P' + procesoIdCounter);
+        const labels = Array.from({length: count}, (_, i) => `${baseName}${_FORK_LETTERS[i]}`).join(' · ');
+        document.getElementById('thread-info-n').textContent = `${count} (${labels})`;
+      } else {
+        threadInfo.style.display  = 'none';
+        forkSection.style.display = 'block';
+        renderForkSubforms(count);
+      }
+    }
+
+    function renderForkSubforms(count) {
+      const baseName = document.getElementById('inputName').value.trim() || ('P' + procesoIdCounter);
+      const container = document.getElementById('fork-subforms');
+      // Preservar valores ya escritos
+      const prev = {};
+      for (let i = 0; i < 8; i++) {
+        const a = document.getElementById(`fsub-${i}-arrival`);
+        const b = document.getElementById(`fsub-${i}-burst`);
+        const p = document.getElementById(`fsub-${i}-priority`);
+        if (a) prev[i] = { arrival: a.value, burst: b.value, priority: p.value };
+      }
+
+      container.innerHTML = `<div style="font-size:10px;color:rgba(0,207,255,.8);
+        font-family:'IBM Plex Mono',monospace;margin-bottom:6px;font-weight:700;">
+        ⑂ Datos individuales por fork:</div>`;
+
+      for (let i = 0; i < count; i++) {
+        const letter = _FORK_LETTERS[i];
+        const color  = _CINEMA_COLORS[i % _CINEMA_COLORS.length];
+        const saved  = prev[i] || {};
+        const div = document.createElement('div');
+        div.style.cssText = `border:1px solid rgba(0,207,255,.18);border-radius:7px;
+          padding:7px 8px;margin-bottom:5px;background:rgba(0,207,255,.04);`;
+        div.innerHTML = `
+          <div style="font-size:10px;font-weight:700;color:${color};
+            font-family:'IBM Plex Mono',monospace;margin-bottom:5px;">
+            ${baseName}${letter}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+            <div>
+              <div class="input-label" style="font-size:9px;">Llegada</div>
+              <input type="number" id="fsub-${i}-arrival" class="input-cine"
+                value="${saved.arrival ?? 0}" min="0" style="padding:5px 6px;font-size:11px;">
+            </div>
+            <div>
+              <div class="input-label" style="font-size:9px;">Burst</div>
+              <input type="number" id="fsub-${i}-burst" class="input-cine"
+                value="${saved.burst ?? ''}" placeholder="BT" min="1" style="padding:5px 6px;font-size:11px;">
+            </div>
+            <div>
+              <div class="input-label" style="font-size:9px;">Prior.</div>
+              <input type="number" id="fsub-${i}-priority" class="input-cine"
+                value="${saved.priority ?? 1}" min="1" style="padding:5px 6px;font-size:11px;">
+            </div>
+          </div>`;
+        container.appendChild(div);
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
        PROCESOS — AGREGAR
     ══════════════════════════════════════════════════════════ */
     function obtenerProcesoDesdeFormula() {
       const nombreInput = document.getElementById('inputName').value.trim();
-      const pid = nombreInput || ('P' + procesoIdCounter);
+      const basePid     = nombreInput || ('P' + procesoIdCounter);
       const arrivalTime = parseInt(document.getElementById('inputArrival').value) || 0;
-      const burstTime = parseInt(document.getElementById('inputBurst').value);
-      const priority = parseInt(document.getElementById('inputPriority').value) || 1;
-      const pages = parseInt(document.getElementById('inputPages').value) || 1;
-      const type = document.getElementById('inputType').value || 'fork';
+      const burstTime   = parseInt(document.getElementById('inputBurst').value);
+      const priority    = parseInt(document.getElementById('inputPriority').value) || 1;
+      const pages       = parseInt(document.getElementById('inputPages').value) || 1;
+      const type        = document.getElementById('inputType').value || 'fork';
+      const count       = Math.min(8, Math.max(1, parseInt(document.getElementById('inputCount').value) || 1));
 
-      if (isNaN(burstTime) || burstTime <= 0) {
-        alert('Burst requerido y > 0'); return null;
+      if (count === 1) {
+        // — Proceso único (comportamiento original)
+        if (isNaN(burstTime) || burstTime <= 0) { alert('Burst requerido y > 0'); return null; }
+        procesosGlobales.push({
+          pid: basePid, arrivalTime, burstTime, priority,
+          remainingTime: burstTime, pages, type, state: 'new',
+          color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
+        });
+        if (!nombreInput) procesoIdCounter++;
+
+      } else if (type === 'thread') {
+        // — Threads: N copias con los mismos datos del formulario base
+        if (isNaN(burstTime) || burstTime <= 0) { alert('Burst requerido y > 0'); return null; }
+        for (let i = 0; i < count; i++) {
+          procesosGlobales.push({
+            pid: `${basePid}${_FORK_LETTERS[i]}`,
+            arrivalTime, burstTime, priority,
+            remainingTime: burstTime, pages,
+            type: 'thread', state: 'new',
+            color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
+          });
+          procesoIdCounter++;
+        }
+
+      } else {
+        // — Forks: cada uno con sus propios datos del sub-formulario
+        const forkData = [];
+        for (let i = 0; i < count; i++) {
+          const letter   = _FORK_LETTERS[i];
+          const fBurst   = parseInt(document.getElementById(`fsub-${i}-burst`)?.value);
+          const fArrival = parseInt(document.getElementById(`fsub-${i}-arrival`)?.value) || 0;
+          const fPrio    = parseInt(document.getElementById(`fsub-${i}-priority`)?.value) || 1;
+          if (isNaN(fBurst) || fBurst <= 0) {
+            alert(`Burst requerido para ${basePid}${letter}`); return null;
+          }
+          forkData.push({ letter, arrival: fArrival, burst: fBurst, priority: fPrio });
+        }
+        forkData.forEach(f => {
+          procesosGlobales.push({
+            pid: `${basePid}${f.letter}`,
+            arrivalTime: f.arrival, burstTime: f.burst, priority: f.priority,
+            remainingTime: f.burst, pages,
+            type: 'fork', state: 'new',
+            color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
+          });
+          procesoIdCounter++;
+        });
       }
 
-      const proceso = {
-        pid, arrivalTime, burstTime, priority,
-        remainingTime: burstTime,
-        pages,
-        type,
-        state: 'new',
-        color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
-      };
-
-      procesosGlobales.push(proceso);
-      if (!nombreInput) procesoIdCounter++;
-
-      document.getElementById('inputBurst').value = '';
-      document.getElementById('inputName').value = '';
-      document.getElementById('inputPages').value = '1';
-      return proceso;
+      // Limpiar formulario
+      document.getElementById('inputBurst').value   = '';
+      document.getElementById('inputName').value    = '';
+      document.getElementById('inputPages').value   = '1';
+      document.getElementById('inputCount').value   = '1';
+      document.getElementById('inputArrival').value = '0';
+      document.getElementById('fork-subforms').style.display = 'none';
+      document.getElementById('thread-info').style.display   = 'none';
+      return true;
     }
 
     document.getElementById('btnAgregar').addEventListener('click', () => {
       if (editandoIndex >= 0) {
         guardarEdicion();
       } else {
-        if (obtenerProcesoDesdeFormula()) renderListaProcesos();
+        if (obtenerProcesoDesdeFormula()) {
+          renderListaProcesos();
+          switchTab('tab-lista');
+        }
       }
     });
     document.getElementById('inputBurst').addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         if (editandoIndex >= 0) { guardarEdicion(); }
-        else { if (obtenerProcesoDesdeFormula()) renderListaProcesos(); }
+        else { if (obtenerProcesoDesdeFormula()) { renderListaProcesos(); switchTab('tab-lista'); } }
       }
+    });
+    // Actualizar etiquetas de threads cuando cambia el nombre base
+    document.getElementById('inputName').addEventListener('input', () => {
+      const type  = document.getElementById('inputType').value;
+      const count = parseInt(document.getElementById('inputCount').value) || 1;
+      if (count > 1) actualizarFormDinamico();
     });
 
     function guardarEdicion() {
@@ -1301,40 +1454,88 @@
     }
 
     /* ══════════════════════════════════════════════════════════
-       PROCESOS — CARGAR DESDE TXT
-       Formato: PID,Arrival,Burst,Priority,Pages[,type]
+       PROCESOS — PARSER COMPARTIDO
+       Formato: PID,Arrival,Burst,Priority,Pages[,fork|thread]
+    ══════════════════════════════════════════════════════════ */
+    function procesarTextoTxt(texto) {
+      const LINE_RE = /^[\w\-]+,\d+,\d+(?:,\d+(?:,\d+(?:,(?:fork|thread))?)?)?$/i;
+      const lines = texto.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
+      let start = 0;
+      if (lines.length && /pid/i.test(lines[0])) start = 1;
+
+      let count = 0, skipped = 0;
+      for (let i = start; i < lines.length; i++) {
+        const raw = lines[i].trim();
+        if (!LINE_RE.test(raw)) { skipped++; continue; }
+
+        const parts = raw.split(',').map(p => p.trim());
+        const pid   = parts[0];
+        const arr   = parseInt(parts[1]) || 0;
+        const burst = parseInt(parts[2]);
+        const prio  = parseInt(parts[3]) || 1;
+        if (isNaN(burst) || burst <= 0) { skipped++; continue; }
+
+        procesosGlobales.push({
+          pid, arrivalTime: arr, burstTime: burst, priority: prio,
+          remainingTime: burst, pages: parseInt(parts[4]) || 1,
+          type: (parts[5] || 'fork').toLowerCase() === 'thread' ? 'thread' : 'fork',
+          state: 'new',
+          color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
+        });
+        procesoIdCounter++; count++;
+      }
+      return { count, skipped };
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       PROCESOS — CARGAR DESDE ARCHIVO LOCAL
     ══════════════════════════════════════════════════════════ */
     document.getElementById('fileInput').addEventListener('change', e => {
       const file = e.target.files[0]; if (!file) return;
+
+      if (!/\.txt$/i.test(file.name)) {
+        alert('❌ Formato incorrecto: solo se aceptan archivos .txt\n\nEjemplo de nombre válido: procesos.txt');
+        e.target.value = ''; return;
+      }
+
       const reader = new FileReader();
       reader.onload = ev => {
-        const lines = ev.target.result.split('\n').filter(l => l.trim());
-        let start = 0;
-        if (lines[0].toLowerCase().includes('pid')) start = 1;
-        let count = 0;
-        for (let i = start; i < lines.length; i++) {
-          const parts = lines[i].split(',').map(p => p.trim());
-          if (parts.length < 3) continue;
-          const pid = parts[0] || ('P' + procesoIdCounter);
-          const arr = parseInt(parts[1]) || 0;
-          const burst = parseInt(parts[2]);
-          const prio = parseInt(parts[3]) || 1;
-          if (isNaN(burst) || burst <= 0) continue;
-          procesosGlobales.push({
-            pid, arrivalTime: arr, burstTime: burst, priority: prio,
-            remainingTime: burst, pages: parseInt(parts[4]) || 1,
-            type: (parts[5] || 'fork').toLowerCase() === 'thread' ? 'thread' : 'fork',
-            state: 'new',
-            color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
-          });
-          procesoIdCounter++; count++;
-        }
-        alert(`Cargados ${count} procesos`);
+        const { count, skipped } = procesarTextoTxt(ev.target.result);
+        const msg = skipped > 0
+          ? `✅ Cargados ${count} proceso(s).\n⚠ ${skipped} línea(s) ignoradas por formato inválido.\n\nFormato esperado:\nPID,Arrival,Burst,Priority,Pages[,fork|thread]`
+          : `✅ Cargados ${count} proceso(s) correctamente.`;
+        alert(msg);
         renderListaProcesos();
         switchTab('tab-config');
       };
       reader.readAsText(file);
       e.target.value = '';
+    });
+
+    /* ══════════════════════════════════════════════════════════
+       PROCESOS — CARGAR EJEMPLO DESDE SERVIDOR (data/procesos.txt)
+    ══════════════════════════════════════════════════════════ */
+    document.getElementById('btnCargarEjemplo').addEventListener('click', async () => {
+      const btn = document.getElementById('btnCargarEjemplo');
+      btn.disabled = true;
+      btn.textContent = '⏳ Cargando...';
+      try {
+        const res = await fetch('data/procesos.txt');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const texto = await res.text();
+        const { count, skipped } = procesarTextoTxt(texto);
+        const msg = skipped > 0
+          ? `✅ Ejemplo cargado: ${count} proceso(s).\n⚠ ${skipped} línea(s) ignoradas por formato inválido.`
+          : `✅ Ejemplo cargado: ${count} proceso(s) de data/procesos.txt`;
+        alert(msg);
+        renderListaProcesos();
+        switchTab('tab-config');
+      } catch (err) {
+        alert(`❌ No se pudo cargar el ejemplo: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '★ EJEMPLO';
+      }
     });
 
     /* ══════════════════════════════════════════════════════════

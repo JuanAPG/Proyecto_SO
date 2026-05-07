@@ -1152,6 +1152,13 @@ function cargarArchivoMemoria() { document.getElementById("file-input-memoria").
 function onArchivoMemoriaSeleccionado(event) {
   const file = event.target.files[0];
   if (!file) return;
+
+  // Regex: solo archivos .txt
+  if (!/\.txt$/i.test(file.name)) {
+    mostrarToast("❌ Solo se aceptan archivos .txt", "error");
+    event.target.value = ""; return;
+  }
+
   const reader = new FileReader();
   reader.onload = function (e) {
     const { config, errores } = parsearArchivoMemoria(e.target.result);
@@ -1160,7 +1167,7 @@ function onArchivoMemoriaSeleccionado(event) {
     if (config.pagesize !== undefined) document.getElementById("inp-pagesize").value = config.pagesize;
     if (config.memoria !== undefined) document.getElementById("inp-memoria").value = config.memoria;
     if (config.referencias !== undefined) document.getElementById("inp-referencias").value = config.referencias;
-    mostrarToast("Configuración cargada desde archivo.", "success");
+    mostrarToast("✅ Configuración cargada desde archivo.", "success");
   };
   reader.readAsText(file);
   event.target.value = "";
@@ -1172,15 +1179,40 @@ function onArchivoMemoriaSeleccionado(event) {
 function parsearArchivoMemoria(texto) {
   const config = {};
   const errores = [];
+
+  // Regex de línea válida: Clave=Valor (espacios opcionales, case-insensitive)
+  const LINE_RE = /^(frames|pagesize|memoria|referencias)\s*=\s*(.+)$/i;
+  // Regex de valor entero positivo
+  const INT_RE  = /^\d+$/;
+  // Regex de cadena de referencias: números enteros separados por espacios
+  const REF_RE  = /^(\d+)(\s+\d+)*$/;
+
   const lines = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+
   for (const line of lines) {
-    const [key, ...rest] = line.split("=");
-    const val = rest.join("=").trim();
-    switch (key.trim().toLowerCase()) {
-      case "frames": config.frames = parseInt(val, 10); break;
-      case "pagesize": config.pagesize = parseInt(val, 10); break;
-      case "memoria": config.memoria = parseInt(val, 10); break;
-      case "referencias": config.referencias = val; break;
+    const match = LINE_RE.exec(line);
+    if (!match) continue; // línea no reconocida, se ignora
+
+    const key = match[1].toLowerCase();
+    const val = match[2].trim();
+
+    switch (key) {
+      case "frames":
+        if (!INT_RE.test(val)) { errores.push(`frames: valor inválido "${val}" (debe ser entero positivo)`); break; }
+        config.frames = parseInt(val, 10);
+        break;
+      case "pagesize":
+        if (!INT_RE.test(val)) { errores.push(`pagesize: valor inválido "${val}" (debe ser entero positivo)`); break; }
+        config.pagesize = parseInt(val, 10);
+        break;
+      case "memoria":
+        if (!INT_RE.test(val)) { errores.push(`memoria: valor inválido "${val}" (debe ser entero positivo)`); break; }
+        config.memoria = parseInt(val, 10);
+        break;
+      case "referencias":
+        if (!REF_RE.test(val)) { errores.push(`referencias: formato inválido "${val}" (números enteros separados por espacios)`); break; }
+        config.referencias = val;
+        break;
     }
   }
   return { config, errores };
