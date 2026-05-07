@@ -300,6 +300,20 @@
       line-height: 1;
     }
 
+    .proc-edit-btn {
+      background: none;
+      border: none;
+      color: rgba(0, 207, 255, .55);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 2px;
+      line-height: 1;
+    }
+
+    .proc-edit-btn:hover {
+      color: var(--cb-bright);
+    }
+
     /* ── Algo list (tab 3) ── */
     .algo-category-title {
       font-size: 10px;
@@ -866,6 +880,7 @@
           </div>
 
           <button class="btn-cine" id="btnAgregar">+ AGREGAR A LA FILA</button>
+          <button class="btn-cine secondary" id="btnCancelarEdicion" style="display:none;font-size:12px;padding:7px;" onclick="cancelarEdicion()">✕ CANCELAR EDICIÓN</button>
 
           <div style="display:flex;gap:6px;margin-top:2px;">
             <button class="btn-cine secondary" id="btnLimpiar" style="font-size:12px;padding:7px;">✕ LIMPIAR
@@ -877,8 +892,8 @@
           </div>
 
           <div
-            style="margin-top:8px;padding:8px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:5px;font-size:10px;color:rgba(0,207,255,.45);font-family:'IBM Plex Mono',monospace;line-height:1.5;">
-            Formato TXT:<br>PID,Arrival,Burst,Priority,Pages[,fork|thread]
+            style="margin-top:8px;padding:8px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.08);border-radius:5px;font-size:10px;color:rgba(0,207,255,.45);font-family:'IBM Plex Mono',monospace;line-height:1.6;overflow-wrap:break-word;word-break:break-all;">
+            Formato TXT:<br>PID,Arrival,Burst,<wbr>Priority,Pages<wbr>[,fork|thread]
           </div>
         </div>
 
@@ -1093,6 +1108,7 @@
     let procesosGlobales = [];
     let procesoIdCounter = 1;
     let algoritmoSeleccionado = 'fcfs';
+    let editandoIndex = -1;
 
     // GANTT_COLORS viene de ui.js — fallback por si acaso
     const _CINEMA_COLORS = [
@@ -1180,11 +1196,43 @@
     }
 
     document.getElementById('btnAgregar').addEventListener('click', () => {
-      if (obtenerProcesoDesdeFormula()) renderListaProcesos();
+      if (editandoIndex >= 0) {
+        guardarEdicion();
+      } else {
+        if (obtenerProcesoDesdeFormula()) renderListaProcesos();
+      }
     });
     document.getElementById('inputBurst').addEventListener('keypress', e => {
-      if (e.key === 'Enter') { if (obtenerProcesoDesdeFormula()) renderListaProcesos(); }
+      if (e.key === 'Enter') {
+        if (editandoIndex >= 0) { guardarEdicion(); }
+        else { if (obtenerProcesoDesdeFormula()) renderListaProcesos(); }
+      }
     });
+
+    function guardarEdicion() {
+      const nombreInput = document.getElementById('inputName').value.trim();
+      const pid = nombreInput || procesosGlobales[editandoIndex].pid;
+      const arrivalTime = parseInt(document.getElementById('inputArrival').value) || 0;
+      const burstTime = parseInt(document.getElementById('inputBurst').value);
+      const priority = parseInt(document.getElementById('inputPriority').value) || 1;
+      const pages = parseInt(document.getElementById('inputPages').value) || 1;
+      const type = document.getElementById('inputType').value || 'fork';
+      if (isNaN(burstTime) || burstTime <= 0) { alert('Burst requerido y > 0'); return; }
+      const p = procesosGlobales[editandoIndex];
+      p.pid = pid;
+      p.arrivalTime = arrivalTime;
+      p.burstTime = burstTime;
+      p.remainingTime = burstTime;
+      p.priority = priority;
+      p.pages = pages;
+      p.type = type;
+      cancelarEdicion();
+      document.getElementById('inputBurst').value = '';
+      document.getElementById('inputName').value = '';
+      document.getElementById('inputPages').value = '1';
+      renderListaProcesos();
+      switchTab('tab-lista');
+    }
 
     /* ══════════════════════════════════════════════════════════
        PROCESOS — CARGAR DESDE TXT
@@ -1241,14 +1289,38 @@
       <span class="proc-list-name" style="color:${p.color}">${p.pid}</span>
       ${typeBadge}
       <span class="proc-list-info">T0=${p.arrivalTime} · B=${p.burstTime} · P=${p.priority} · pg=${p.pages}</span>
+      <button class="proc-edit-btn" onclick="editarProceso(${i})" title="Editar">✏</button>
       <button class="proc-del-btn" onclick="quitarProceso(${i})" title="Eliminar">×</button>`;
         lista.appendChild(div);
       });
     }
 
     function quitarProceso(idx) {
+      if (editandoIndex === idx) cancelarEdicion();
       procesosGlobales.splice(idx, 1);
       renderListaProcesos();
+    }
+
+    function editarProceso(idx) {
+      const p = procesosGlobales[idx];
+      editandoIndex = idx;
+      document.getElementById('inputName').value = p.pid;
+      document.getElementById('inputArrival').value = p.arrivalTime;
+      document.getElementById('inputBurst').value = p.burstTime;
+      document.getElementById('inputPriority').value = p.priority;
+      document.getElementById('inputPages').value = p.pages;
+      document.getElementById('inputType').value = p.type;
+      document.getElementById('btnAgregar').textContent = '✔ GUARDAR CAMBIOS';
+      document.getElementById('btnAgregar').style.background = '#1a5c30';
+      document.getElementById('btnCancelarEdicion').style.display = 'block';
+      switchTab('tab-proceso');
+    }
+
+    function cancelarEdicion() {
+      editandoIndex = -1;
+      document.getElementById('btnAgregar').textContent = '+ AGREGAR A LA FILA';
+      document.getElementById('btnAgregar').style.background = '';
+      document.getElementById('btnCancelarEdicion').style.display = 'none';
     }
 
     /* ══════════════════════════════════════════════════════════
