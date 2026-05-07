@@ -586,30 +586,10 @@
 
     /* ── Stage ── */
     .cs-stage {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-bottom: 10px;
-      align-items: stretch;
-    }
-
-    .cs-stage .cs-box:first-child {
-      flex: 0 0 200px;
-    }
-
-    #cs-cpu-area {
-      display: flex;
-      flex: 1;
-      gap: 10px;
-      min-width: 0;
-      flex-wrap: wrap;
-      align-items: stretch;
-    }
-
-    #cs-cpu-area .cs-box.cpu-box {
-      flex: 1;
-      min-width: 90px;
-      max-width: 200px;
-      height: 140px;
     }
 
     .cs-stage-bottom {
@@ -1161,8 +1141,9 @@
             <div class="cs-box-label">📥 Próximos Estrenos</div>
             <div id="cs-arriving"></div>
           </div>
-          <div id="cs-cpu-area">
-            <!-- one cs-box.cpu-box per core, rendered by renderCPU() -->
+          <div class="cs-box cpu-box">
+            <div class="cs-box-label">⚡ En CPU</div>
+            <div id="cs-cpu-slot"></div>
           </div>
         </div>
         <div class="cs-stage-bottom">

@@ -304,57 +304,56 @@ function renderQueue() {
   }).join('');
 }
 
-/* ── CPU (un cs-box por core) ── */
+/* ── CPU (todos los cores dentro del único cuadro) ── */
 function renderCPU() {
-  const area = document.getElementById('cs-cpu-area');
-  if (!area) return;
+  const zone = document.getElementById('cs-cpu-slot');
+  if (!zone) return;
 
-  area.innerHTML = '';
+  const anyRunning = CS.cores.some(s => s !== null);
 
+  if (!anyRunning) {
+    zone.innerHTML = `<div class="cs-cpu-idle">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span>CPU libre</span>
+    </div>`;
+    return;
+  }
+
+  let html = '';
   for (let ci = 0; ci < CS.numCores; ci++) {
     const slot = CS.cores[ci];
-    const box = document.createElement('div');
-    box.className = 'cs-box cpu-box';
+    if (!slot) continue;
+    const p = getProc(slot.pid);
+    if (!p) continue;
 
-    let innerHtml = `<div class="cs-box-label">⚡ Core ${ci}</div>`;
+    const pct = Math.round((p.remainingTime / p.burstTime) * 100);
+    const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
 
-    if (!slot) {
-      innerHtml += `<div class="cs-cpu-idle">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-          <rect x="2" y="3" width="20" height="14" rx="2"/>
-          <line x1="8" y1="21" x2="16" y2="21"/>
-          <line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-        <span>idle</span>
+    html += `
+      <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core${ci}">
+        <div class="cs-avatar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="${p.color}">
+            <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
+          </svg>
+        </div>
+        <div class="cs-pid">${p.pid}</div>
+        <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
+          <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
+        </div>
+        <div class="cs-remaining" style="color:${p.color}">${p.remainingTime}</div>
+        ${rrPct !== null ? `
+          <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
+            <div class="cs-quantum-fill" style="width:${rrPct}%;background:${p.color}"></div>
+          </div>` : ''}
+        ${CS.numCores > 1 ? `<div class="cs-subtitle">core ${ci}</div>` : ''}
       </div>`;
-    } else {
-      const p = getProc(slot.pid);
-      if (p) {
-        const pct = Math.round((p.remainingTime / p.burstTime) * 100);
-        const rrPct = CS.algorithm === 'rr' ? Math.round((slot.quantumUsed / CS.quantumMax) * 100) : null;
-        innerHtml += `
-          <div class="cs-customer cs-running" style="--accent:${p.color}" id="cs-card-${p.pid}-core${ci}">
-            <div class="cs-avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="${p.color}">
-                <circle cx="12" cy="8" r="4"/><path d="M6 21v-1a5 5 0 0 1 10 0v1"/>
-              </svg>
-            </div>
-            <div class="cs-pid">${p.pid}</div>
-            <div class="cs-burst-bar" title="Restante: ${p.remainingTime}/${p.burstTime}">
-              <div class="cs-burst-fill" style="width:${pct}%;background:${p.color}"></div>
-            </div>
-            <div class="cs-remaining">${p.remainingTime}</div>
-            ${rrPct !== null ? `
-              <div class="cs-quantum-bar" title="Quantum: ${slot.quantumUsed}/${CS.quantumMax}">
-                <div class="cs-quantum-fill" style="width:${rrPct}%"></div>
-              </div>` : ''}
-          </div>`;
-      }
-    }
-
-    box.innerHTML = innerHtml;
-    area.appendChild(box);
   }
+
+  zone.innerHTML = html;
 }
 
 /* ----------------------------------------------------------
