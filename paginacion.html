@@ -1443,6 +1443,78 @@
     #seccion-comparacion {
       display: none !important;
     }
+
+    /* ── SIDEBAR: 3 secciones siempre visibles, sin scroll externo ── */
+    .tab-bar { display: none !important; }
+
+    /* Todos los paneles visibles simultáneamente */
+    #pt-datos,
+    #pt-algo,
+    #pt-lista { display: flex !important; overflow: hidden; gap: 5px; }
+
+    /* Datos: compacto, altura fija */
+    #pt-datos {
+      flex: 0 0 auto;
+      flex-direction: column;
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid rgba(0,207,255,.08);
+    }
+
+    /* Algo: compacto, altura fija */
+    #pt-algo {
+      flex: 0 0 auto;
+      flex-direction: column;
+      padding: 6px 10px 6px;
+      border-bottom: 1px solid rgba(0,207,255,.08);
+    }
+
+    /* Lista: ocupa el espacio restante */
+    #pt-lista {
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      padding: 6px 10px 8px;
+    }
+
+    /* ref-chips llena el espacio disponible con scroll interno */
+    #ref-chips {
+      flex: 1 !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow-y: auto !important;
+    }
+
+    /* Inputs y títulos más compactos */
+    #pt-datos .input-cine,
+    #pt-algo  .input-cine,
+    #pt-lista .input-cine { padding: 5px 8px; font-size: 11px; }
+
+    #pt-datos .section-title,
+    #pt-algo  .section-title,
+    #pt-lista .section-title { font-size: 13px; margin: 3px 0 2px; }
+
+    #pt-datos .section-title:first-child,
+    #pt-algo  .section-title:first-child,
+    #pt-lista .section-title:first-child { margin-top: 0; }
+
+    #pt-datos .btn-cine,
+    #pt-algo  .btn-cine { padding: 6px; font-size: 13px; }
+
+    /* Algo cards: sólo nombre, sin ícono ni descripción */
+    .algo-card-pag  { padding: 5px 4px; }
+    .algo-card-icon { display: none; }
+    .algo-card-sub  { display: none; }
+    .algo-card-name { font-size: 10px; }
+
+    /* Descripción de algoritmo: compacta */
+    #algo-desc {
+      font-size: 9px;
+      padding: 4px 6px;
+      line-height: 1.3;
+    }
+
+    /* Texto de ayuda en pt-datos: ocultar para ganar espacio */
+    #pt-datos > div:last-child[style*="font-size:9px"] { display: none; }
   </style>
 </head>
 
