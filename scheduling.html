@@ -608,6 +608,12 @@
       overflow-x: hidden;
     }
 
+    .cs-stage-bottom .cs-box {
+      height: auto;
+      min-height: 140px;
+      overflow-y: visible;
+    }
+
     .cs-box.cpu-box {
       border-color: rgba(0, 207, 255, .35);
       overflow-x: auto;
@@ -784,6 +790,49 @@
         transform: translateX(0)
       }
     }
+
+    /* ── Multi-level Queue rows (MLQ / MLFQ) ── */
+    .cs-mlq-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .cs-mlq-row:last-child { border-bottom: none; }
+    .cs-mlq-label {
+      font-size: 9px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: rgba(0,207,255,.55);
+      width: 120px;
+      flex-shrink: 0;
+      padding-top: 4px;
+      letter-spacing: .02em;
+      line-height: 1.4;
+    }
+    .cs-mlq-label strong {
+      font-size: 11px;
+      color: var(--cb-bright, #00CFFF);
+      display: block;
+    }
+    .cs-mlq-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      flex: 1;
+      min-height: 30px;
+      align-items: center;
+    }
+    .cs-mlq-empty {
+      font-size: 9px;
+      color: rgba(255,255,255,.15);
+      font-family: 'IBM Plex Mono', monospace;
+      font-style: italic;
+    }
+    .cs-mlq-row-active .cs-mlq-label strong {
+      color: #7BC67E;
+    }
+    .cs-mlq-row-active { background: rgba(123,198,126,.04); border-radius: 4px; }
 
     @keyframes cs-done-anim {
       0% {
@@ -981,10 +1030,13 @@
 
           <div
             style="margin-top:8px;padding:9px 10px;background:rgba(0,207,255,.09);border:1px solid rgba(0,207,255,.35);border-radius:6px;font-size:10px;color:rgba(0,207,255,.9);font-family:'IBM Plex Mono',monospace;line-height:1.8;overflow-wrap:break-word;word-break:break-all;">
-            <span style="font-weight:700;letter-spacing:.04em;">📄 Formato .txt requerido:</span><br>
-            <span style="color:rgba(255,255,255,.55);">PID,Arrival,Burst,Priority,Pages[,fork|thread]</span><br>
-            <span style="color:rgba(0,207,255,.6);font-size:9px;">Ej: 1,0,5,2,4,fork &nbsp;·&nbsp; 2,1,3,1,2,thread</span><br>
-            <span style="color:rgba(255,180,0,.75);font-size:9px;">⚠ Solo archivos .txt · Una línea por proceso · Campos separados por coma</span>
+            <span style="font-weight:700;letter-spacing:.04em;">📄 Formato .txt:</span><br>
+            <span style="color:rgba(255,255,255,.55);">PID,Arrival,Burst,Priority,Pages,Type,Count</span><br>
+            <span style="color:rgba(138,198,126,.8);font-size:9px;">🧵 Thread (Count&gt;1) → mismos datos, N copias:<br>
+            &nbsp;&nbsp;P3,2,6,1,5,thread,3 → P3a P3b P3c</span><br>
+            <span style="color:rgba(239,159,39,.8);font-size:9px;">⑂ Fork → una línea por proceso con datos propios:<br>
+            &nbsp;&nbsp;P2a,1,3,1,3,fork,1<br>
+            &nbsp;&nbsp;P2b,3,5,2,2,fork,1</span>
           </div>
         </div>
 
@@ -1173,7 +1225,7 @@
         </div>
         <div class="cs-stage-bottom">
           <div class="cs-box">
-            <div class="cs-box-label">🍿 Fila de Espera — Ready Queue</div>
+            <div class="cs-box-label" id="cs-queue-label">🍿 Fila de Espera — Ready Queue</div>
             <div id="cs-queue-items"></div>
           </div>
           <div class="cs-box">
@@ -1458,7 +1510,8 @@
        Formato: PID,Arrival,Burst,Priority,Pages[,fork|thread]
     ══════════════════════════════════════════════════════════ */
     function procesarTextoTxt(texto) {
-      const LINE_RE = /^[\w\-]+,\d+,\d+(?:,\d+(?:,\d+(?:,(?:fork|thread))?)?)?$/i;
+      // PID,Arrival,Burst[,Priority[,Pages[,fork|thread[,Count]]]]
+      const LINE_RE = /^[\w\-]+,\d+,\d+(?:,\d+(?:,\d+(?:,(?:fork|thread)(?:,\d+)?)?)?)?$/i;
       const lines = texto.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
       let start = 0;
       if (lines.length && /pid/i.test(lines[0])) start = 1;
@@ -1469,20 +1522,24 @@
         if (!LINE_RE.test(raw)) { skipped++; continue; }
 
         const parts = raw.split(',').map(p => p.trim());
-        const pid   = parts[0];
-        const arr   = parseInt(parts[1]) || 0;
-        const burst = parseInt(parts[2]);
-        const prio  = parseInt(parts[3]) || 1;
+        const basePid = parts[0];
+        const arr     = parseInt(parts[1]) || 0;
+        const burst   = parseInt(parts[2]);
+        const prio    = parseInt(parts[3]) || 1;
+        const pages   = parseInt(parts[4]) || 1;
+        const type    = (parts[5] || 'fork').toLowerCase() === 'thread' ? 'thread' : 'fork';
+        const qty     = Math.max(1, Math.min(26, parseInt(parts[6]) || 1));
         if (isNaN(burst) || burst <= 0) { skipped++; continue; }
 
-        procesosGlobales.push({
-          pid, arrivalTime: arr, burstTime: burst, priority: prio,
-          remainingTime: burst, pages: parseInt(parts[4]) || 1,
-          type: (parts[5] || 'fork').toLowerCase() === 'thread' ? 'thread' : 'fork',
-          state: 'new',
-          color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
-        });
-        procesoIdCounter++; count++;
+        for (let q = 0; q < qty; q++) {
+          const pid = qty === 1 ? basePid : basePid + _FORK_LETTERS[q];
+          procesosGlobales.push({
+            pid, arrivalTime: arr, burstTime: burst, priority: prio,
+            remainingTime: burst, pages, type, state: 'new',
+            color: _CINEMA_COLORS[procesoIdCounter % _CINEMA_COLORS.length],
+          });
+          procesoIdCounter++; count++;
+        }
       }
       return { count, skipped };
     }

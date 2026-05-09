@@ -9,7 +9,7 @@ const CS = {
   processes: [],
   arriving: [],
   readyQueue: [],
-  cores: [],        // [{pid, remainingTime, quantumUsed}|null] length = numCores
+  cores: [],        // [{pid, remainingTime, quantumUsed, queueIdx}|null] length = numCores
   done: [],
   ganttByCore: [],  // [coreIdx] => [{pid, color, newSeg}] one entry per tick
   quantumMax: 2,
@@ -17,6 +17,11 @@ const CS = {
   speed: 700,
   algorithm: 'fcfs',
   paused: true,
+
+  // MLQ / MLFQ
+  queues: [[], [], []],   // queue[0]=alta, [1]=media, [2]=baja
+  queueLevels: {},        // MLFQ: pid → current queue level
+  mlqQuantums: [2, 4, Infinity],
 
   // compat getter: first running slot
   get running() { return this.cores.find(s => s !== null) ?? null; },
@@ -69,6 +74,20 @@ function initCinemaScheduling() {
   CS.algorithm = (typeof algoritmoSeleccionado !== 'undefined' ? algoritmoSeleccionado : null) || 'fcfs';
   CS.quantumMax = parseInt(document.getElementById('quantumValue')?.value) || 2;
 
+  // MLQ / MLFQ init
+  CS.queues = [[], [], []];
+  CS.queueLevels = {};
+  if (CS.algorithm === 'mlq') {
+    const q0 = parseInt(document.getElementById('mlqQuantumQ0')?.value) || 2;
+    const q1 = parseInt(document.getElementById('mlqQuantumQ1')?.value) || 4;
+    CS.mlqQuantums = [q0, q1, Infinity];
+  } else if (CS.algorithm === 'mlfq') {
+    const q0 = parseInt(document.getElementById('mlfqQuantumQ0')?.value) || 2;
+    const q1 = parseInt(document.getElementById('mlfqQuantumQ1')?.value) || 4;
+    CS.mlqQuantums = [q0, q1, Infinity];
+    CS.processes.forEach(p => { CS.queueLevels[p.pid] = 0; });
+  }
+
   _processArrivals(0);
   _dispatchFreeCores(0);
 
@@ -90,6 +109,8 @@ function resetCinema(rerenderOnly = false) {
     CS.done = [];
     CS.ganttByCore = Array.from({ length: CS.numCores || 1 }, () => []);
     CS.arriving = []; CS.processes = [];
+    CS.queues = [[], [], []];
+    CS.queueLevels = {};
   }
   renderCS();
   updateCSControls();
@@ -139,18 +160,39 @@ function stepCinema() {
 function _processArrivals(t) {
   while (CS.arriving.length && CS.arriving[0].arrivalTime <= t) {
     const p = CS.arriving.shift();
-    CS.readyQueue.push(p.pid);
+    if (CS.algorithm === 'mlq') {
+      const lvl = p.priority <= 1 ? 0 : p.priority <= 2 ? 1 : 2;
+      CS.queues[lvl].push(p.pid);
+    } else if (CS.algorithm === 'mlfq') {
+      CS.queues[0].push(p.pid);
+      CS.queueLevels[p.pid] = 0;
+    } else {
+      CS.readyQueue.push(p.pid);
+    }
     animateArrival(p.pid);
   }
+}
+
+/* Helper: first non-empty queue index for MLQ/MLFQ */
+function _highestQueue() {
+  for (let i = 0; i < 3; i++) { if (CS.queues[i].length) return i; }
+  return -1;
+}
+
+/* Helper: quantum limit for a core slot in MLQ/MLFQ */
+function _mlqQuantumLimit(slot) {
+  return CS.mlqQuantums[slot.queueIdx ?? 0] ?? Infinity;
 }
 
 /* ----------------------------------------------------------
    HELPER: despachar procesos a cores libres
    ---------------------------------------------------------- */
 function _dispatchFreeCores(t) {
-  sortQueueForAlgo(t);
+  const isML = CS.algorithm === 'mlq' || CS.algorithm === 'mlfq';
+  if (!isML) sortQueueForAlgo(t);
   for (let ci = 0; ci < CS.numCores; ci++) {
-    if (!CS.cores[ci] && CS.readyQueue.length) {
+    const hasWork = isML ? _highestQueue() !== -1 : CS.readyQueue.length > 0;
+    if (!CS.cores[ci] && hasWork) {
       dispatchToCore(ci);
     }
   }
@@ -178,6 +220,23 @@ function tickCinema() {
         animatePreempt(slot.pid);
         CS.cores[ci] = null;
         sortQueueForAlgo(t);
+      }
+    }
+  }
+
+  // 2b. MLQ/MLFQ: preempt if a higher-priority queue now has processes
+  if (CS.algorithm === 'mlq' || CS.algorithm === 'mlfq') {
+    const topQ = _highestQueue();
+    if (topQ !== -1) {
+      for (let ci = 0; ci < CS.numCores; ci++) {
+        const slot = CS.cores[ci];
+        if (!slot) continue;
+        const slotQ = slot.queueIdx ?? 0;
+        if (topQ < slotQ) {
+          CS.queues[slotQ].unshift(slot.pid);
+          animatePreempt(slot.pid);
+          CS.cores[ci] = null;
+        }
       }
     }
   }
@@ -210,6 +269,17 @@ function tickCinema() {
         CS.readyQueue.push(slot.pid);
         animatePreempt(slot.pid);
         CS.cores[ci] = null;
+      } else if ((CS.algorithm === 'mlq' || CS.algorithm === 'mlfq') && slot.quantumUsed >= _mlqQuantumLimit(slot)) {
+        const qIdx = slot.queueIdx ?? 0;
+        if (CS.algorithm === 'mlfq') {
+          const newQ = Math.min(qIdx + 1, 2);
+          CS.queueLevels[slot.pid] = newQ;
+          CS.queues[newQ].push(slot.pid);
+        } else {
+          CS.queues[qIdx].push(slot.pid);
+        }
+        animatePreempt(slot.pid);
+        CS.cores[ci] = null;
       }
     } else {
       CS.ganttByCore[ci].push({ pid: null, color: null, newSeg: false });
@@ -228,11 +298,19 @@ function tickCinema() {
    DISPATCH
    ---------------------------------------------------------- */
 function dispatchToCore(ci) {
-  if (!CS.readyQueue.length) return;
-  const pid = CS.readyQueue.shift();
+  let pid, queueIdx = 0;
+  if (CS.algorithm === 'mlq' || CS.algorithm === 'mlfq') {
+    const qi = _highestQueue();
+    if (qi === -1) return;
+    pid = CS.queues[qi].shift();
+    queueIdx = qi;
+  } else {
+    if (!CS.readyQueue.length) return;
+    pid = CS.readyQueue.shift();
+  }
   const p = CS.processes.find(proc => proc.pid === pid);
   if (!p) return;
-  CS.cores[ci] = { pid, remainingTime: p.remainingTime, quantumUsed: 0 };
+  CS.cores[ci] = { pid, remainingTime: p.remainingTime, quantumUsed: 0, queueIdx };
   animateDispatch(pid);
 }
 
@@ -285,6 +363,14 @@ function renderCS() {
   renderDone();
   const clockEl = document.getElementById('cs-clock');
   if (clockEl) clockEl.textContent = CS.tick;
+
+  // Update queue box label for MLQ/MLFQ
+  const lbl = document.getElementById('cs-queue-label');
+  if (lbl) {
+    if (CS.algorithm === 'mlq')       lbl.textContent = '🔀 Multilevel Queue — 3 niveles';
+    else if (CS.algorithm === 'mlfq') lbl.textContent = '⬇ Multilevel Feedback Queue';
+    else                              lbl.textContent = '🍿 Fila de Espera — Ready Queue';
+  }
 }
 
 /* ── Próximos estrenos ── */
@@ -301,9 +387,50 @@ function renderArriving() {
 function renderQueue() {
   const zone = document.getElementById('cs-queue-items');
   if (!zone) return;
+  if (CS.algorithm === 'mlq' || CS.algorithm === 'mlfq') {
+    renderQueueMLQ(zone);
+    return;
+  }
   zone.innerHTML = CS.readyQueue.map(pid => {
     const p = getProc(pid);
     return p ? customerCard(p, 'queued') : '';
+  }).join('');
+}
+
+function renderQueueMLQ(zone) {
+  const isMlfq = CS.algorithm === 'mlfq';
+
+  // Detect which queue is actively executing (has a process on CPU)
+  const activeQueues = new Set();
+  CS.cores.forEach(slot => { if (slot) activeQueues.add(slot.queueIdx ?? 0); });
+
+  const qMeta = isMlfq
+    ? [
+        { label: 'Q0', sub: `RR · q=${CS.mlqQuantums[0]}`, note: '(nueva llegada)' },
+        { label: 'Q1', sub: `RR · q=${CS.mlqQuantums[1]}`, note: '(degradado)' },
+        { label: 'Q2', sub: 'FCFS · ∞',                    note: '(mayor espera)' },
+      ]
+    : [
+        { label: 'Q0', sub: `RR · q=${CS.mlqQuantums[0]}`, note: 'Alta prioridad' },
+        { label: 'Q1', sub: `RR · q=${CS.mlqQuantums[1]}`, note: 'Media prioridad' },
+        { label: 'Q2', sub: 'FCFS · ∞',                    note: 'Baja prioridad' },
+      ];
+
+  zone.innerHTML = CS.queues.map((q, i) => {
+    const cards = q.map(pid => {
+      const p = getProc(pid);
+      return p ? customerCard(p, 'queued') : '';
+    }).join('');
+    const isActive = activeQueues.has(i);
+    return `<div class="cs-mlq-row${isActive ? ' cs-mlq-row-active' : ''}">
+      <div class="cs-mlq-label">
+        <strong>${qMeta[i].label}</strong>
+        ${qMeta[i].sub}<br><span style="opacity:.55">${qMeta[i].note}</span>
+      </div>
+      <div class="cs-mlq-cards">
+        ${cards || '<span class="cs-mlq-empty">vacía</span>'}
+      </div>
+    </div>`;
   }).join('');
 }
 
