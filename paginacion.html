@@ -1440,43 +1440,32 @@
     }
 
     /* Comparación — stub oculto */
-    #seccion-comparacion {
-      display: none !important;
-    }
+    #seccion-comparacion { display: none !important; }
 
-    /* ── SIDEBAR: 3 secciones siempre visibles, sin scroll externo ── */
+    /* ── SIDEBAR: 2 secciones siempre visibles ── */
     .tab-bar { display: none !important; }
 
-    /* Todos los paneles visibles simultáneamente */
     #pt-datos,
-    #pt-algo,
-    #pt-lista { display: flex !important; overflow: hidden; gap: 5px; }
+    #pt-lista { display: flex !important; overflow: hidden; }
 
-    /* Datos: compacto, altura fija */
+    #pt-algo { display: none !important; }
+
     #pt-datos {
       flex: 0 0 auto;
       flex-direction: column;
+      gap: 5px;
       padding: 8px 10px 6px;
       border-bottom: 1px solid rgba(0,207,255,.08);
     }
 
-    /* Algo: compacto, altura fija */
-    #pt-algo {
-      flex: 0 0 auto;
-      flex-direction: column;
-      padding: 6px 10px 6px;
-      border-bottom: 1px solid rgba(0,207,255,.08);
-    }
-
-    /* Lista: ocupa el espacio restante */
     #pt-lista {
       flex: 1;
       min-height: 0;
       flex-direction: column;
+      gap: 5px;
       padding: 6px 10px 8px;
     }
 
-    /* ref-chips llena el espacio disponible con scroll interno */
     #ref-chips {
       flex: 1 !important;
       min-height: 0 !important;
@@ -1484,143 +1473,124 @@
       overflow-y: auto !important;
     }
 
-    /* Inputs y títulos más compactos */
     #pt-datos .input-cine,
-    #pt-algo  .input-cine,
     #pt-lista .input-cine { padding: 5px 8px; font-size: 11px; }
 
     #pt-datos .section-title,
-    #pt-algo  .section-title,
     #pt-lista .section-title { font-size: 13px; margin: 3px 0 2px; }
 
     #pt-datos .section-title:first-child,
-    #pt-algo  .section-title:first-child,
     #pt-lista .section-title:first-child { margin-top: 0; }
 
-    #pt-datos .btn-cine,
-    #pt-algo  .btn-cine { padding: 6px; font-size: 13px; }
+    #pt-datos .btn-cine { padding: 6px; font-size: 13px; }
 
-    /* Algo cards: sólo nombre, sin ícono ni descripción */
-    .algo-card-pag  { padding: 5px 4px; }
-    .algo-card-icon { display: none; }
-    .algo-card-sub  { display: none; }
-    .algo-card-name { font-size: 10px; }
-
-    /* Descripción de algoritmo: compacta */
-    #algo-desc {
-      font-size: 9px;
-      padding: 4px 6px;
-      line-height: 1.3;
-    }
-
-    /* Texto de ayuda en pt-datos: ocultar para ganar espacio */
     #pt-datos > div:last-child[style*="font-size:9px"] { display: none; }
 
-    /* ── Thread Timeline Panel ── */
-    #thread-panel {
-      flex-direction: column;
-      padding: 12px 18px 10px;
+    /* ── Algo Footer Bar ── */
+    #algo-footer-bar {
+      flex-shrink: 0;
       background: #000;
-      overflow: hidden;
-    }
-    .tp-header {
+      border-top: 1px solid rgba(0,207,255,.12);
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
+      gap: 8px;
+      padding: 6px 16px;
+      min-height: 50px;
+    }
+
+    .afb-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: .1em;
+      color: rgba(0,207,255,.4);
       flex-shrink: 0;
-      flex-wrap: wrap;
+      white-space: nowrap;
     }
-    .tp-pid {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
-      color: rgba(0,207,255,.45);
-    }
-    .tp-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 17px;
-      color: var(--cb-bright);
-      letter-spacing: .08em;
-    }
-    .tp-shm-badge {
-      margin-left: auto;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 9px;
-      padding: 2px 8px;
-      border: 1px solid rgba(0,207,255,.25);
-      border-radius: 3px;
-      color: rgba(0,207,255,.5);
-    }
-    .tp-back-btn {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 13px;
-      letter-spacing: .06em;
-      padding: 3px 10px;
-      background: transparent;
-      border: 1px solid rgba(0,207,255,.25);
-      color: rgba(0,207,255,.6);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: border-color .2s, color .2s;
-    }
-    .tp-back-btn:hover { border-color: var(--cb-bright); color: var(--cb-bright); }
-    .tp-divider { height: 1px; background: rgba(0,207,255,.1); flex-shrink: 0; margin: 4px 0; }
-    .tp-lanes {
-      flex: 1;
-      min-height: 0;
+
+    .afb-pill {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      justify-content: center;
-      overflow: hidden;
+      align-items: center;
+      gap: 2px;
+      padding: 5px 13px;
+      background: rgba(0,207,255,.05);
+      border: 1px solid rgba(0,207,255,.15);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .tp-lane { display: flex; align-items: center; gap: 8px; }
-    .tp-lane-name {
+
+    .afb-pill:hover {
+      background: rgba(0,207,255,.11);
+      border-color: rgba(0,207,255,.4);
+    }
+
+    .afb-pill.active {
+      background: rgba(0,207,255,.16);
+      border-color: var(--cb-bright);
+    }
+
+    .afb-pill-name {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 15px;
-      color: rgba(0,207,255,.7);
-      width: 52px;
-      flex-shrink: 0;
-      letter-spacing: .05em;
-    }
-    .tp-lane-bar-wrap {
-      flex: 1;
-      height: 15px;
-      background: rgba(0,207,255,.06);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .tp-lane-bar {
-      height: 100%;
-      width: 0%;
-      background: var(--cb-mid);
-      border-radius: 3px;
-      transition: width .04s linear;
-    }
-    .tp-lane-bar.done { background: rgba(0,207,255,.4); }
-    .tp-lane-bar.best { background: var(--cb-bright); }
-    .tp-lane-stats {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 9px;
+      letter-spacing: .07em;
       color: rgba(0,207,255,.55);
-      width: 130px;
-      flex-shrink: 0;
-      text-align: right;
+      line-height: 1;
+      transition: color .15s;
     }
-    .tp-lane-star { font-size: 13px; width: 16px; flex-shrink: 0; color: var(--cb-bright); }
-    .tp-footer {
-      flex-shrink: 0;
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px solid rgba(0,207,255,.1);
+
+    .afb-pill:hover .afb-pill-name { color: rgba(0,207,255,.9); }
+    .afb-pill.active .afb-pill-name { color: var(--cb-bright); }
+
+    .afb-pill-sub {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 9px;
-      color: rgba(0,207,255,.45);
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
+      font-size: 8px;
+      color: rgba(0,207,255,.3);
+      line-height: 1;
+      transition: color .15s;
     }
-    .tp-footer b { color: var(--cb-mid); }
+
+    .afb-pill:hover .afb-pill-sub  { color: rgba(0,207,255,.55); }
+    .afb-pill.active .afb-pill-sub { color: rgba(0,207,255,.6); }
+
+    .afb-sep {
+      width: 1px;
+      height: 28px;
+      background: rgba(0,207,255,.12);
+      flex-shrink: 0;
+    }
+
+    #algo-desc {
+      flex: 1;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: rgba(0,207,255,.6);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .afb-simular {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: .08em;
+      padding: 8px 22px;
+      background: var(--cb-mid);
+      border: none;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s, box-shadow .15s;
+      flex-shrink: 0;
+    }
+
+    .afb-simular:hover {
+      background: var(--cb-bright);
+      box-shadow: 0 0 14px var(--cb-glow);
+    }
   </style>
 </head>
 
@@ -1736,65 +1706,8 @@
           </div>
         </div>
 
-        <!-- TAB 3: Algoritmo + Simular -->
-        <div class="tab-panel" id="pt-algo">
-          <div class="section-title">🧠 Algoritmo</div>
-
-          <div class="algo-grid-pag">
-            <div class="algo-card-pag active" data-algo="fifo" onclick="seleccionarAlgoritmo('fifo')">
-              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg></span>
-              <div class="algo-card-name">FIFO</div>
-              <div class="algo-card-sub">Primero en entrar</div>
-            </div>
-            <div class="algo-card-pag" data-algo="lru" onclick="seleccionarAlgoritmo('lru')">
-              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.8">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg></span>
-              <div class="algo-card-name">LRU</div>
-              <div class="algo-card-sub">Menos reciente</div>
-            </div>
-            <div class="algo-card-pag" data-algo="opt" onclick="seleccionarAlgoritmo('opt')">
-              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.8">
-                  <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg></span>
-              <div class="algo-card-name">OPT</div>
-              <div class="algo-card-sub">Óptimo / Belady</div>
-            </div>
-            <div class="algo-card-pag" data-algo="clock" onclick="seleccionarAlgoritmo('clock')">
-              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.8">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg></span>
-              <div class="algo-card-name">Clock</div>
-              <div class="algo-card-sub">Bit referencia</div>
-            </div>
-            <div class="algo-card-pag" data-algo="sc" onclick="seleccionarAlgoritmo('sc')">
-              <span class="algo-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.8">
-                  <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                  <line x1="6" y1="1" x2="6" y2="4" />
-                  <line x1="10" y1="1" x2="10" y2="4" />
-                  <line x1="14" y1="1" x2="14" y2="4" />
-                </svg></span>
-              <div class="algo-card-name">2da Oport.</div>
-              <div class="algo-card-sub">Segunda oportunidad</div>
-            </div>
-          </div>
-
-          <div id="algo-desc">Expulsa la página que lleva más tiempo en memoria.</div>
-          <button class="btn-cine" style="margin-top:8px;" onclick="iniciarSimulacion()">▶ SIMULAR</button>
-          <button class="btn-cine" style="margin-top:4px;background:transparent;border-color:rgba(0,207,255,.3);color:rgba(0,207,255,.7);font-size:12px;" onclick="mostrarComparacion()">⚡ THREADS</button>
-        </div>
+        <!-- TAB 3: stub oculto — algoritmo vive en #algo-footer-bar -->
+        <div class="tab-panel" id="pt-algo"></div>
 
       </aside>
 
@@ -1997,12 +1910,39 @@
 
         </div><!-- /cinema-wrap -->
 
-        <!-- Thread Timeline Panel (overlay) -->
-        <div id="thread-panel" style="display:none;position:absolute;inset:0;z-index:50;"></div>
-
       </main>
 
     </div>
+
+    <!-- ══════ ALGO FOOTER BAR ══════ -->
+    <div id="algo-footer-bar">
+      <span class="afb-label">🧠 Algoritmo</span>
+      <div class="afb-sep"></div>
+      <button class="afb-pill active" data-algo="fifo" onclick="seleccionarAlgoritmo('fifo')">
+        <span class="afb-pill-name">FIFO</span>
+        <span class="afb-pill-sub">Primero en entrar</span>
+      </button>
+      <button class="afb-pill" data-algo="lru" onclick="seleccionarAlgoritmo('lru')">
+        <span class="afb-pill-name">LRU</span>
+        <span class="afb-pill-sub">Menos reciente</span>
+      </button>
+      <button class="afb-pill" data-algo="opt" onclick="seleccionarAlgoritmo('opt')">
+        <span class="afb-pill-name">OPT</span>
+        <span class="afb-pill-sub">Óptimo / Belady</span>
+      </button>
+      <button class="afb-pill" data-algo="clock" onclick="seleccionarAlgoritmo('clock')">
+        <span class="afb-pill-name">Clock</span>
+        <span class="afb-pill-sub">Bit referencia</span>
+      </button>
+      <button class="afb-pill" data-algo="sc" onclick="seleccionarAlgoritmo('sc')">
+        <span class="afb-pill-name">2da Oport.</span>
+        <span class="afb-pill-sub">Segunda oportunidad</span>
+      </button>
+      <div class="afb-sep"></div>
+      <div id="algo-desc">Expulsa la página que lleva más tiempo en memoria.</div>
+      <button class="afb-simular" onclick="iniciarSimulacion()">▶ SIMULAR</button>
+    </div>
+
   </div>
 
   <!-- Stub para paginacion.js -->
@@ -2082,13 +2022,10 @@
         if (e.key === 'Enter') agregarReferencia();
       });
 
-      /* Algo cards visual */
-      document.querySelector('.algo-card-pag[data-algo="fifo"]')?.classList.add('active');
-
-      /* seleccionarAlgoritmo: añadir sync de badge y cards */
+      /* seleccionarAlgoritmo: sync badge + footer pills */
       const _origSel = window.seleccionarAlgoritmo;
       window.seleccionarAlgoritmo = function (nombre) {
-        document.querySelectorAll('.algo-card-pag').forEach(c => c.classList.toggle('active', c.dataset.algo === nombre));
+        document.querySelectorAll('.afb-pill').forEach(p => p.classList.toggle('active', p.dataset.algo === nombre));
         const badge = document.getElementById('sim-algo-badge');
         if (badge) badge.textContent = nombre.toUpperCase();
         if (_origSel) _origSel(nombre);
@@ -2100,118 +2037,10 @@
         if (el) { el.classList.remove('active'); void el.offsetWidth; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 450); }
       };
 
-      /* Sin pantalla final */
-      window.mostrarEndScreen = function () { };
-      window.cerrarEndScreen = function () { };
-
-      /* ── Thread Timeline Panel ── */
-      window.cerrarThreadPanel = function () {
-        document.getElementById('thread-panel').style.display = 'none';
-      };
-
-      window._finalizarThread = function (data, allAlgos, results, startAll, isLast) {
-        results[data.algo] = data;
-        const bar = document.getElementById('tp-bar-' + data.algo);
-        if (bar) { bar.style.width = '100%'; bar.classList.add('done'); }
-        const stats = document.getElementById('tp-stats-' + data.algo);
-        if (stats) stats.textContent = data.elapsed.toFixed(2) + 'ms  ' + data.faults + 'F ' + data.hits + 'H';
-
-        if (isLast) {
-          const elapsed = performance.now() - startAll;
-          let bestAlgo = allAlgos[0];
-          for (const a of allAlgos) {
-            if (results[a].faults < results[bestAlgo].faults) bestAlgo = a;
-          }
-          const bestBar = document.getElementById('tp-bar-' + bestAlgo);
-          if (bestBar) { bestBar.classList.remove('done'); bestBar.classList.add('best'); }
-          const bestStar = document.getElementById('tp-star-' + bestAlgo);
-          if (bestStar) bestStar.textContent = '★';
-          const seqMs = Object.values(results).reduce(function (s, r) { return s + r.elapsed; }, 0);
-          const footer = document.getElementById('tp-footer');
-          if (footer) {
-            footer.innerHTML =
-              '<span>⚡ <b>Paralelo: ' + elapsed.toFixed(2) + 'ms</b></span>' +
-              '<span>⏱ <b>Secuencial est.: ~' + seqMs.toFixed(2) + 'ms</b></span>' +
-              '<span>🏆 <b>Menor fallos: ' + bestAlgo.toUpperCase() + ' (' + results[bestAlgo].faults + 'F)</b></span>';
-          }
-        }
-      };
-
-      window.mostrarComparacion = function () {
-        const refsStr = (document.getElementById('inp-referencias')?.value || '').trim();
-        if (!refsStr) {
-          const nt = document.getElementById('narrator-text');
-          if (nt) nt.textContent = 'Agrega referencias antes de lanzar threads.';
-          return;
-        }
-        const refs = refsStr.split(/\s+/).map(Number).filter(function (n) { return !isNaN(n) && n >= 0; });
-        if (!refs.length) return;
-        const numFrames = parseInt(document.getElementById('inp-frames')?.value) || 3;
-
-        const panel = document.getElementById('thread-panel');
-        panel.style.display = 'flex';
-
-        const pid = (Math.floor(Math.random() * 60000) + 1000);
-        const algos = ['fifo', 'lru', 'opt', 'clock', 'sc'];
-        const algoNames = { fifo: 'FIFO', lru: 'LRU', opt: 'OPT', clock: 'Clock', sc: '2da-O' };
-        const results = {};
-        const startAll = performance.now();
-
-        panel.innerHTML =
-          '<div class="tp-header">' +
-            '<span class="tp-pid">PID #' + pid + '</span>' +
-            '<span class="tp-title">fork() → 5 THREADS</span>' +
-            '<span class="tp-shm-badge">SharedArrayBuffer · memoria compartida</span>' +
-          '</div>' +
-          '<div class="tp-divider"></div>' +
-          '<div class="tp-lanes" id="tp-lanes-wrap">' +
-            algos.map(function (a) {
-              return '<div class="tp-lane" id="tp-lane-' + a + '">' +
-                '<div class="tp-lane-name">' + algoNames[a] + '</div>' +
-                '<div class="tp-lane-bar-wrap"><div class="tp-lane-bar" id="tp-bar-' + a + '"></div></div>' +
-                '<div class="tp-lane-stats" id="tp-stats-' + a + '"><span class="thread-spinner"></span></div>' +
-                '<div class="tp-lane-star" id="tp-star-' + a + '"></div>' +
-              '</div>';
-            }).join('') +
-          '</div>' +
-          '<div class="tp-divider"></div>' +
-          '<div class="tp-footer" id="tp-footer"><span>⚡ Ejecutando 5 Workers en paralelo…</span></div>' +
-          '<button class="btn-cine" style="margin-top:10px;flex-shrink:0;" onclick="cerrarThreadPanel()">← Volver al Cinema</button>';
-
-        var workerCode = 'self.onmessage=function(e){' +
-          'var d=e.data,refs=d.refs,frames=d.frames,t0=performance.now(),r;' +
-          'switch(d.algo){' +
-          'case"fifo":r=fifo(refs,frames);break;' +
-          'case"lru":r=lru(refs,frames);break;' +
-          'case"opt":r=opt(refs,frames);break;' +
-          'case"clock":r=clock(refs,frames);break;' +
-          'case"sc":r=clock(refs,frames);break;}' +
-          'self.postMessage({algo:d.algo,faults:r.faults,hits:r.hits,elapsed:performance.now()-t0});};' +
-          'function fifo(refs,frames){var mem=[],f=0,h=0;for(var i=0;i<refs.length;i++){var r=refs[i];if(mem.indexOf(r)!==-1){h++;}else{f++;if(mem.length>=frames)mem.shift();mem.push(r);}}return{faults:f,hits:h};}' +
-          'function lru(refs,frames){var mem=[],f=0,h=0;for(var i=0;i<refs.length;i++){var r=refs[i],idx=mem.indexOf(r);if(idx!==-1){h++;mem.splice(idx,1);mem.push(r);}else{f++;if(mem.length>=frames)mem.shift();mem.push(r);}}return{faults:f,hits:h};}' +
-          'function opt(refs,frames){var mem=[],f=0,h=0;for(var i=0;i<refs.length;i++){var r=refs[i];if(mem.indexOf(r)!==-1){h++;}else{f++;if(mem.length>=frames){var far=-1,ev=0;for(var j=0;j<mem.length;j++){var nx=refs.indexOf(mem[j],i+1);if(nx===-1){ev=j;break;}if(nx>far){far=nx;ev=j;}}mem.splice(ev,1);}mem.push(r);}}return{faults:f,hits:h};}' +
-          'function clock(refs,frames){var mem=new Array(frames).fill(null),bits=new Array(frames).fill(0),hand=0,f=0,h=0;for(var i=0;i<refs.length;i++){var r=refs[i],idx=mem.indexOf(r);if(idx!==-1){h++;bits[idx]=1;}else{f++;while(bits[hand]===1){bits[hand]=0;hand=(hand+1)%frames;}mem[hand]=r;bits[hand]=1;hand=(hand+1)%frames;}}return{faults:f,hits:h};}';
-
-        var completed = 0;
-        algos.forEach(function (algo) {
-          var blob = new Blob([workerCode], { type: 'application/javascript' });
-          var url = URL.createObjectURL(blob);
-          var w = new Worker(url);
-          var animPct = 0;
-          var animId = setInterval(function () {
-            animPct = Math.min(animPct + 4, 88);
-            var bar = document.getElementById('tp-bar-' + algo);
-            if (bar) bar.style.width = animPct + '%';
-          }, 35);
-          w.onmessage = function (e) {
-            clearInterval(animId);
-            URL.revokeObjectURL(url);
-            w.terminate();
-            window._finalizarThread(e.data, algos, results, startAll, ++completed === algos.length);
-          };
-          w.postMessage({ algo: algo, refs: refs, frames: numFrames });
-        });
-      };
+      /* Sin pantalla final ni comparación */
+      window.mostrarEndScreen   = function () { };
+      window.cerrarEndScreen    = function () { };
+      window.mostrarComparacion = function () { };
 
       /* Al aplicar resultado → ir a tab Refs con métricas */
       const _origAplicar = window._aplicarResultadoSimulacion;
